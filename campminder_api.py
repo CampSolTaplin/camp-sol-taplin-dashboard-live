@@ -70,12 +70,19 @@ class CampMinderAPIClient:
             }
             
             logger.info("Authenticating with CampMinder API...")
+            logger.info(f"URL: {url}")
+            logger.info(f"API Key (first 20 chars): {self.api_key[:20] if self.api_key else 'None'}...")
+            logger.info(f"Subscription Key (first 10 chars): {self.subscription_key[:10] if self.subscription_key else 'None'}...")
+            
             response = requests.get(url, headers=headers, timeout=30)
+            
+            logger.info(f"Response Status: {response.status_code}")
+            logger.info(f"Response Headers: {dict(response.headers)}")
             
             if response.status_code == 200:
                 data = response.json()
                 self.jwt_token = data.get('Token')
-                self.jwt_expires_at = datetime.now() + timedelta(hours=1)  # Tokens typically expire in 1 hour
+                self.jwt_expires_at = datetime.now() + timedelta(hours=1)
                 
                 # Parse client IDs
                 client_ids_str = data.get('ClientIDs', '')
@@ -86,11 +93,14 @@ class CampMinderAPIClient:
                 logger.info(f"Authentication successful! ClientIDs: {self.client_ids}")
                 return True
             else:
-                logger.error(f"Authentication failed: {response.status_code} - {response.text}")
+                logger.error(f"Authentication failed: {response.status_code}")
+                logger.error(f"Response body: {response.text}")
                 return False
                 
         except Exception as e:
             logger.error(f"Authentication error: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return False
     
     def _ensure_authenticated(self):
