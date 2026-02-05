@@ -592,37 +592,49 @@ def api_test_auth():
 @login_required
 def api_debug_data():
     """Debug endpoint to see raw API data"""
-    if not is_api_configured():
-        return jsonify({'error': 'API not configured'})
+    # Check if API is configured
+    api_key = os.environ.get('CAMPMINDER_API_KEY')
+    sub_key = os.environ.get('CAMPMINDER_SUBSCRIPTION_KEY')
+    season_id = int(os.environ.get('CAMPMINDER_SEASON_ID', '2026'))
+    
+    if not api_key or not sub_key:
+        return jsonify({
+            'error': 'API not configured',
+            'api_key_exists': bool(api_key),
+            'sub_key_exists': bool(sub_key),
+            'CAMPMINDER_API_KEY_global': bool(CAMPMINDER_API_KEY),
+            'CAMPMINDER_SUBSCRIPTION_KEY_global': bool(CAMPMINDER_SUBSCRIPTION_KEY)
+        })
     
     try:
         from campminder_api import CampMinderAPIClient
         
-        client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
+        client = CampMinderAPIClient(api_key, sub_key)
         
         # Authenticate first
         if not client.authenticate():
-            return jsonify({'error': 'Authentication failed'})
+            return jsonify({'error': 'Authentication failed', 'client_id': client.client_id})
         
         client_id = client.client_id
         
         # Get sessions
-        sessions = client.get_sessions(CAMPMINDER_SEASON_ID, client_id)
+        sessions = client.get_sessions(season_id, client_id)
         
         # Get programs  
-        programs = client.get_programs(CAMPMINDER_SEASON_ID, client_id)
+        programs = client.get_programs(season_id, client_id)
         
-        # Get attendees (just first page for debug)
-        attendees = client.get_attendees(CAMPMINDER_SEASON_ID, client_id, status=6)
+        # Get attendees (status=6 means Enrolled+Applied)
+        attendees = client.get_attendees(season_id, client_id, status=6)
         
         return jsonify({
+            'success': True,
             'client_id': client_id,
-            'season_id': CAMPMINDER_SEASON_ID,
-            'sessions_count': len(sessions),
+            'season_id': season_id,
+            'sessions_count': len(sessions) if sessions else 0,
             'sessions_sample': sessions[:5] if sessions else [],
-            'programs_count': len(programs),
+            'programs_count': len(programs) if programs else 0,
             'programs_sample': programs[:5] if programs else [],
-            'attendees_count': len(attendees),
+            'attendees_count': len(attendees) if attendees else 0,
             'attendees_sample': attendees[:5] if attendees else []
         })
         
