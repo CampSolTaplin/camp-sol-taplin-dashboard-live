@@ -588,6 +588,51 @@ def api_test_auth():
             'error_type': type(e).__name__
         })
 
+@app.route('/api/debug-data')
+@login_required
+def api_debug_data():
+    """Debug endpoint to see raw API data"""
+    if not is_api_configured():
+        return jsonify({'error': 'API not configured'})
+    
+    try:
+        from campminder_api import CampMinderAPIClient
+        
+        client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
+        
+        # Authenticate first
+        if not client.authenticate():
+            return jsonify({'error': 'Authentication failed'})
+        
+        client_id = client.client_id
+        
+        # Get sessions
+        sessions = client.get_sessions(CAMPMINDER_SEASON_ID, client_id)
+        
+        # Get programs  
+        programs = client.get_programs(CAMPMINDER_SEASON_ID, client_id)
+        
+        # Get attendees (just first page for debug)
+        attendees = client.get_attendees(CAMPMINDER_SEASON_ID, client_id, status=6)
+        
+        return jsonify({
+            'client_id': client_id,
+            'season_id': CAMPMINDER_SEASON_ID,
+            'sessions_count': len(sessions),
+            'sessions_sample': sessions[:5] if sessions else [],
+            'programs_count': len(programs),
+            'programs_sample': programs[:5] if programs else [],
+            'attendees_count': len(attendees),
+            'attendees_sample': attendees[:5] if attendees else []
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        })
+
 # ==================== UPLOAD & DATA ROUTES ====================
 
 @app.route('/upload', methods=['POST'])
