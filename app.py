@@ -563,8 +563,9 @@ def api_test_auth():
     import requests
     
     url = "https://api.campminder.com/auth/apikey"
+    # Note: CampMinder auth endpoint does NOT want 'Bearer ' prefix
     headers = {
-        "Authorization": f"Bearer {CAMPMINDER_API_KEY}",
+        "Authorization": CAMPMINDER_API_KEY,
         "Ocp-Apim-Subscription-Key": CAMPMINDER_SUBSCRIPTION_KEY
     }
     
