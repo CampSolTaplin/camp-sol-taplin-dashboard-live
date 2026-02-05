@@ -523,16 +523,69 @@ def api_refresh_data():
 @login_required
 def api_status():
     """Get API configuration status"""
+    # Show partial keys for debugging (safe to show first/last few chars)
+    api_key_preview = None
+    sub_key_preview = None
+    
+    if CAMPMINDER_API_KEY:
+        api_key_preview = f"{CAMPMINDER_API_KEY[:10]}...{CAMPMINDER_API_KEY[-5:]}" if len(CAMPMINDER_API_KEY) > 15 else "TOO_SHORT"
+    
+    if CAMPMINDER_SUBSCRIPTION_KEY:
+        sub_key_preview = f"{CAMPMINDER_SUBSCRIPTION_KEY[:8]}...{CAMPMINDER_SUBSCRIPTION_KEY[-4:]}" if len(CAMPMINDER_SUBSCRIPTION_KEY) > 12 else "TOO_SHORT"
+    
     return jsonify({
         'api_configured': is_api_configured(),
         'api_key_set': bool(CAMPMINDER_API_KEY),
+        'api_key_length': len(CAMPMINDER_API_KEY) if CAMPMINDER_API_KEY else 0,
+        'api_key_preview': api_key_preview,
         'subscription_key_set': bool(CAMPMINDER_SUBSCRIPTION_KEY),
+        'subscription_key_length': len(CAMPMINDER_SUBSCRIPTION_KEY) if CAMPMINDER_SUBSCRIPTION_KEY else 0,
+        'subscription_key_preview': sub_key_preview,
         'season_id': CAMPMINDER_SEASON_ID,
         'cache_ttl_minutes': CACHE_TTL_MINUTES,
         'last_fetch': api_cache.get('fetched_at'),
         'is_fetching': api_cache.get('is_fetching', False),
         'has_cached_data': bool(api_cache.get('data'))
     })
+
+@app.route('/api/test-auth')
+@login_required
+def api_test_auth():
+    """Test CampMinder API authentication - for debugging"""
+    if not is_api_configured():
+        return jsonify({
+            'success': False,
+            'error': 'API not configured',
+            'api_key_set': bool(CAMPMINDER_API_KEY),
+            'subscription_key_set': bool(CAMPMINDER_SUBSCRIPTION_KEY)
+        })
+    
+    import requests
+    
+    url = "https://api.campminder.com/auth/apikey"
+    headers = {
+        "Authorization": f"Bearer {CAMPMINDER_API_KEY}",
+        "Ocp-Apim-Subscription-Key": CAMPMINDER_SUBSCRIPTION_KEY
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        
+        return jsonify({
+            'success': response.status_code == 200,
+            'status_code': response.status_code,
+            'response_text': response.text[:500] if response.text else None,
+            'response_headers': dict(response.headers),
+            'request_url': url,
+            'api_key_used': f"{CAMPMINDER_API_KEY[:10]}...{CAMPMINDER_API_KEY[-5:]}" if CAMPMINDER_API_KEY else None,
+            'subscription_key_used': f"{CAMPMINDER_SUBSCRIPTION_KEY[:8]}..." if CAMPMINDER_SUBSCRIPTION_KEY else None
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': type(e).__name__
+        })
 
 # ==================== UPLOAD & DATA ROUTES ====================
 
