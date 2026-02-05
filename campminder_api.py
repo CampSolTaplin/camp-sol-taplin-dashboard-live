@@ -64,8 +64,9 @@ class CampMinderAPIClient:
         """
         try:
             url = f"{self.BASE_URL}/auth/apikey"
+            # Note: CampMinder auth endpoint does NOT want 'Bearer ' prefix
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": self.api_key,
                 "Ocp-Apim-Subscription-Key": self.subscription_key
             }
             
