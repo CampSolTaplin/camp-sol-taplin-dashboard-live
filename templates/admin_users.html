@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Camp Sol Taplin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .admin-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .users-table th,
+        .users-table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .users-table th {
+            background: var(--bg);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        
+        .users-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .users-table tr:hover td {
+            background: var(--teal-light);
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .role-badge.admin {
+            background: #FFEDD5;
+            color: #C2410C;
+        }
+        
+        .role-badge.viewer {
+            background: #DBEAFE;
+            color: #1D4ED8;
+        }
+        
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-edit {
+            background: var(--bg);
+            color: var(--text);
+        }
+        
+        .btn-edit:hover {
+            background: var(--teal-light);
+            color: var(--teal);
+        }
+        
+        .btn-delete {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+        
+        .btn-delete:hover {
+            background: #FECACA;
+        }
+        
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .btn-back:hover {
+            color: var(--teal);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        
+        .alert-error {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        
+        .username-cell {
+            font-weight: 600;
+        }
+        
+        .current-user {
+            font-size: 11px;
+            color: var(--teal);
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Camp Sol Taplin Logo" class="camp-logo" onerror="this.style.display='none'">
+            <h2>CAMP SOL TAPLIN</h2>
+            <p>Michael-Ann Russell JCC</p>
+        </div>
+        <nav class="nav-section">
+            <div class="nav-item" onclick="window.location.href='{{ url_for('dashboard') }}'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Manage Users</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='{{ url_for('logout') }}'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Logout</span>
+            </div>
+        </nav>
+        <div class="user-info">
+            <span>👤 {{ user.id }} ({{ user.role }})</span>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="admin-container">
+            <a href="{{ url_for('dashboard') }}" class="btn-back">
+                ← Back to Dashboard
+            </a>
+            
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">👥 User Management</h1>
+                    <p class="page-subtitle">Create, edit, and manage user accounts</p>
+                </div>
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                    + Add User
+                </button>
+            </div>
+            
+            <div id="alertContainer"></div>
+            
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    {% for u in users %}
+                    <tr data-username="{{ u.username }}">
+                        <td class="username-cell">
+                            {{ u.username }}
+                            {% if u.username == user.id %}
+                            <span class="current-user">(you)</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="role-badge {{ u.role }}">{{ u.role }}</span>
+                        </td>
+                        <td>{{ u.created_at[:10] if u.created_at != 'Unknown' else 'Unknown' }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-small btn-edit" onclick="openPasswordModal('{{ u.username }}')">
+                                    🔑 Password
+                                </button>
+                                {% if u.username != user.id %}
+                                <button class="btn-small btn-edit" onclick="openRoleModal('{{ u.username }}', '{{ u.role }}')">
+                                    👤 Role
+                                </button>
+                                <button class="btn-small btn-delete" onclick="confirmDelete('{{ u.username }}')">
+                                    🗑️ Delete
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Create User Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Create New User</h3>
+                <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm" onsubmit="createUser(event)">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="newUsername" placeholder="Enter username" required minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="newPassword" placeholder="Enter password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="newRole">
+                            <option value="viewer">Viewer (can only view)</option>
+                            <option value="admin">Admin (full access)</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔑 Change Password</h3>
+                <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="passwordForm" onsubmit="changePassword(event)">
+                    <input type="hidden" id="passwordUsername">
+                    <div class="form-group">
+                        <label>User: <strong id="passwordUserDisplay"></strong></label>
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newUserPassword" placeholder="Enter new password" required minlength="6">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Role Modal -->
+    <div id="roleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👤 Change Role</h3>
+                <button class="modal-close" onclick="closeRoleModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="roleForm" onsubmit="changeRole(event)">
+                    <input type="hidden" id="roleUsername">
+                    <div class="form-group">
+                        <label>User: <strong id="roleUserDisplay"></strong></label>
+                    </div>
+                    <div class="form-group">
+                        <label>New Role</label>
+                        <select id="newUserRole">
+                            <option value="viewer">Viewer (can only view)</option>
+                            <option value="admin">Admin (full access)</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeRoleModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Change Role</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Alert functions
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Create User Modal
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newRole').value = 'viewer';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+        }
+
+        async function createUser(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newRole').value;
+            
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, role })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    closeCreateModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert(data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error creating user: ' + error.message, 'error');
+            }
+        }
+
+        // Password Modal
+        function openPasswordModal(username) {
+            document.getElementById('passwordModal').classList.add('show');
+            document.getElementById('passwordUsername').value = username;
+            document.getElementById('passwordUserDisplay').textContent = username;
+            document.getElementById('newUserPassword').value = '';
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('show');
+        }
+
+        async function changePassword(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('passwordUsername').value;
+            const password = document.getElementById('newUserPassword').value;
+            
+            try {
+                const response = await fetch(`/api/users/${username}/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    closePasswordModal();
+                } else {
+                    showAlert(data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error changing password: ' + error.message, 'error');
+            }
+        }
+
+        // Role Modal
+        function openRoleModal(username, currentRole) {
+            document.getElementById('roleModal').classList.add('show');
+            document.getElementById('roleUsername').value = username;
+            document.getElementById('roleUserDisplay').textContent = username;
+            document.getElementById('newUserRole').value = currentRole;
+        }
+
+        function closeRoleModal() {
+            document.getElementById('roleModal').classList.remove('show');
+        }
+
+        async function changeRole(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('roleUsername').value;
+            const role = document.getElementById('newUserRole').value;
+            
+            try {
+                const response = await fetch(`/api/users/${username}/role`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    closeRoleModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert(data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error changing role: ' + error.message, 'error');
+            }
+        }
+
+        // Delete User
+        async function confirmDelete(username) {
+            if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/users/${username}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert(data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error deleting user: ' + error.message, 'error');
+            }
+        }
+
+        // Close modals on outside click
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+
+        // Close modals on Escape
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+            }
+        });
+    </script>
+</body>
+</html>

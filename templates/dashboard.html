@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camp Sol Taplin - Enrollment Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Camp Sol Taplin Logo" class="camp-logo" onerror="this.style.display='none'">
+            <h2>CAMP SOL TAPLIN</h2>
+            <p>Michael-Ann Russell JCC</p>
+        </div>
+        <nav class="nav-section">
+            <div class="nav-item active" data-view="executive" onclick="switchView('executive')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" data-view="bydate" onclick="switchView('bydate')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>By Date</span>
+            </div>
+            <div class="nav-item" data-view="comparison" onclick="switchView('comparison')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span>Year Comparison</span>
+            </div>
+            <div class="nav-item" data-view="detailed" onclick="switchView('detailed')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <span>Detailed View</span>
+            </div>
+            {% if user.role == 'admin' %}
+            <div class="nav-item" id="uploadBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>Upload CSV</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='{{ url_for('admin_users') }}'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Manage Users</span>
+            </div>
+            {% endif %}
+            <div class="nav-item" onclick="window.location.href='{{ url_for('download_excel') }}'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Download Excel</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='{{ url_for('logout') }}'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Logout</span>
+            </div>
+        </nav>
+        <div class="report-date">
+            <div class="report-date-label">Report Date</div>
+            <div class="report-date-value">📅 {{ generated_at or 'No report loaded' }}</div>
+        </div>
+        <div class="user-info">
+            <span>👤 {{ user.id }} ({{ user.role }})</span>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="header">
+            <div>
+                <h1>📊 Enrollment Dashboard</h1>
+                <p class="header-subtitle">
+                    Summer 2026 
+                    {% if generated_at %}• {{ generated_at }}{% endif %}
+                    {% if data_source == 'api' %}
+                    <span class="data-source-badge live">🔴 LIVE</span>
+                    {% elif data_source == 'csv' %}
+                    <span class="data-source-badge csv">📄 CSV</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% if api_configured %}
+            <div class="header-actions">
+                <button class="btn btn-primary" id="refreshBtn" onclick="refreshData()">
+                    🔄 Refresh Data
+                </button>
+            </div>
+            {% endif %}
+        </header>
+
+        {% if not report %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h2>No Report Data</h2>
+            <p>Upload a CampMinder CSV file to generate your enrollment report.</p>
+            {% if user.role == 'admin' %}
+            <button class="btn btn-primary" onclick="document.getElementById('uploadBtn').click()">
+                📤 Upload CSV
+            </button>
+            {% endif %}
+        </div>
+        {% else %}
+        
+        <!-- EXECUTIVE SUMMARY VIEW -->
+        <div id="executive-view" class="view-content active">
+            <!-- Pace Comparison Cards -->
+            {% if pace_comparison %}
+            <div class="pace-comparison-section">
+                <h3 class="section-title">📈 Current Pace vs Previous Years</h3>
+                <div class="pace-cards">
+                    <div class="pace-card current">
+                        <div class="pace-year">2026 (Current)</div>
+                        <div class="pace-value">{{ report.summary.total_enrollment }}</div>
+                        <div class="pace-label">Campers</div>
+                        <div class="pace-weeks">{{ report.summary.total_camper_weeks }} weeks</div>
+                    </div>
+                    {% if pace_comparison.vs_2025 %}
+                    <div class="pace-card {% if pace_comparison.vs_2025.campers_diff >= 0 %}positive{% else %}negative{% endif %}">
+                        <div class="pace-year">vs 2025 (same date)</div>
+                        <div class="pace-value">{{ pace_comparison.vs_2025.campers_then }}</div>
+                        <div class="pace-label">Campers then</div>
+                        <div class="pace-diff">
+                            {% if pace_comparison.vs_2025.campers_diff >= 0 %}+{% endif %}{{ pace_comparison.vs_2025.campers_diff }} 
+                            ({% if pace_comparison.vs_2025.campers_pct >= 0 %}+{% endif %}{{ pace_comparison.vs_2025.campers_pct }}%)
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if pace_comparison.vs_2024 %}
+                    <div class="pace-card {% if pace_comparison.vs_2024.campers_diff >= 0 %}positive{% else %}negative{% endif %}">
+                        <div class="pace-year">vs 2024 (same date)</div>
+                        <div class="pace-value">{{ pace_comparison.vs_2024.campers_then }}</div>
+                        <div class="pace-label">Campers then</div>
+                        <div class="pace-diff">
+                            {% if pace_comparison.vs_2024.campers_diff >= 0 %}+{% endif %}{{ pace_comparison.vs_2024.campers_diff }}
+                            ({% if pace_comparison.vs_2024.campers_pct >= 0 %}+{% endif %}{{ pace_comparison.vs_2024.campers_pct }}%)
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="kpi-grid">
+                <div class="kpi-card enrollment">
+                    <div class="kpi-label">👥 Total Enrollment</div>
+                    <div class="kpi-value">{{ report.summary.total_enrollment }}</div>
+                </div>
+                <div class="kpi-card weeks">
+                    <div class="kpi-label">📆 Total Camper Weeks</div>
+                    <div class="kpi-value">{{ report.summary.total_camper_weeks }}</div>
+                </div>
+                <div class="kpi-card fte">
+                    <div class="kpi-label">📈 Total FTE</div>
+                    <div class="kpi-value">{{ report.summary.total_fte }}</div>
+                    <div class="kpi-subtext">Goal: {{ report.summary.goal }}</div>
+                </div>
+                <div class="kpi-card goal">
+                    <div class="kpi-label">🎯 % to Goal</div>
+                    <div class="kpi-value status-{{ 'success' if report.summary.percent_to_goal >= 60 else 'warning' if report.summary.percent_to_goal >= 40 else 'danger' }}">
+                        {{ '%.1f'|format(report.summary.percent_to_goal) }}%
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>📊 By Category</h3>
+                    <p class="section-subtitle">Click a category to view details</p>
+                </div>
+                <div class="category-summary-grid">
+                    {% for cat in report.categories %}
+                    <div class="category-summary-card" onclick="filterByCategory('{{ cat.category }}')" style="cursor: pointer;">
+                        <div class="category-summary-header">
+                            <span class="category-emoji">{{ cat.emoji }}</span>
+                            <span class="category-name">{{ cat.category }}</span>
+                        </div>
+                        <div class="category-summary-stats">
+                            <div class="category-stat">
+                                <span class="stat-value">{{ cat.fte }}</span>
+                                <span class="stat-label">FTE</span>
+                            </div>
+                            <div class="category-stat">
+                                <span class="stat-value">{{ cat.goal }}</span>
+                                <span class="stat-label">Goal</span>
+                            </div>
+                            <div class="category-stat">
+                                <span class="stat-value {{ cat.status }}">{{ '%.0f'|format(cat.percent_to_goal) }}%</span>
+                                <span class="stat-label">Progress</span>
+                            </div>
+                        </div>
+                        <div class="category-summary-bar">
+                            <div class="category-summary-fill" style="width: {% if cat.percent_to_goal > 100 %}100{% else %}{{ cat.percent_to_goal }}{% endif %}%; background: {{ cat.color }};"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- BY DATE VIEW -->
+        <div id="bydate-view" class="view-content">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>📅 Registration Timeline</h3>
+                    <p class="section-subtitle">Filter by date range and compare years</p>
+                </div>
+                
+                <!-- Date Filters -->
+                <div class="date-filters">
+                    <div class="filter-group">
+                        <label>Year:</label>
+                        <select id="yearSelect" onchange="updateDateChart()">
+                            <option value="2026" selected>2026 (Current)</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>From:</label>
+                        <input type="date" id="startDate" onchange="updateDateChart()">
+                    </div>
+                    <div class="filter-group">
+                        <label>To:</label>
+                        <input type="date" id="endDate" onchange="updateDateChart()">
+                    </div>
+                    <div class="filter-group checkbox-group">
+                        <input type="checkbox" id="overlayYears" onchange="updateDateChart()">
+                        <label for="overlayYears">📊 Compare all years</label>
+                    </div>
+                    <button class="btn btn-secondary" onclick="resetDateFilters()">Reset</button>
+                </div>
+                
+                <!-- Chart -->
+                <div class="chart-container">
+                    <canvas id="cumulativeChart"></canvas>
+                </div>
+                
+                <!-- Summary Stats -->
+                <div class="date-summary-row" id="dateSummaryRow">
+                    {% if report.date_stats and report.date_stats.daily %}
+                    {% set last_day = report.date_stats.daily[-1] %}
+                    <div class="date-summary-card">
+                        <div class="date-summary-value" id="totalCampersDisplay">{{ last_day.cumulative_campers }}</div>
+                        <div class="date-summary-label">Total Campers</div>
+                    </div>
+                    <div class="date-summary-card">
+                        <div class="date-summary-value" id="totalWeeksDisplay">{{ last_day.cumulative_weeks }}</div>
+                        <div class="date-summary-label">Total Camper Weeks</div>
+                    </div>
+                    <div class="date-summary-card">
+                        <div class="date-summary-value" id="daysCountDisplay">{{ report.date_stats.daily|length }}</div>
+                        <div class="date-summary-label">Days with Activity</div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Daily Table -->
+                <div class="daily-table-container">
+                    <h4>Daily Details <span id="dateRangeLabel"></span></h4>
+                    <table class="data-table" id="dailyTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>New Registrations</th>
+                                <th>Weeks Added</th>
+                                <th>Cumulative Campers</th>
+                                <th>Cumulative Weeks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyTableBody">
+                            {% if report.date_stats and report.date_stats.daily %}
+                            {% for day in report.date_stats.daily|reverse %}
+                            {% if loop.index <= 50 %}
+                            <tr>
+                                <td>{{ day.date }}</td>
+                                <td>{{ day.new_registrations }}</td>
+                                <td>{{ day.camper_weeks_added }}</td>
+                                <td>{{ day.cumulative_campers }}</td>
+                                <td>{{ day.cumulative_weeks }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- YEAR COMPARISON VIEW -->
+        <div id="comparison-view" class="view-content">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>📊 Year-over-Year Comparison</h3>
+                    <p class="section-subtitle">Compare enrollment trends across years</p>
+                </div>
+                
+                <!-- Multi-Year Chart -->
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+                
+                <!-- Comparison Stats -->
+                {% if historical_comparison %}
+                <div class="comparison-grid">
+                    <!-- Final Totals Comparison -->
+                    <div class="comparison-card">
+                        <h4>📈 Final Season Totals</h4>
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Campers</th>
+                                    <th>Camper Weeks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if historical_comparison.years %}
+                                {% for year, data in historical_comparison.years.items() %}
+                                <tr>
+                                    <td><strong>{{ year }}</strong></td>
+                                    <td>{{ data.summary.total_campers }}</td>
+                                    <td>{{ data.summary.total_camper_weeks }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                                <tr class="current-year-row">
+                                    <td><strong>2026</strong> (current)</td>
+                                    <td>{{ report.summary.total_enrollment }}</td>
+                                    <td>{{ report.summary.total_camper_weeks }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Growth Rates -->
+                    {% if historical_comparison.growth_rates %}
+                    <div class="comparison-card">
+                        <h4>📊 Growth 2024 → 2025</h4>
+                        <div class="growth-stats">
+                            <div class="growth-stat">
+                                <div class="growth-value {% if historical_comparison.growth_rates.campers_growth >= 0 %}positive{% else %}negative{% endif %}">
+                                    {% if historical_comparison.growth_rates.campers_growth >= 0 %}+{% endif %}{{ historical_comparison.growth_rates.campers_growth }}%
+                                </div>
+                                <div class="growth-label">Camper Growth</div>
+                            </div>
+                            <div class="growth-stat">
+                                <div class="growth-value {% if historical_comparison.growth_rates.weeks_growth >= 0 %}positive{% else %}negative{% endif %}">
+                                    {% if historical_comparison.growth_rates.weeks_growth >= 0 %}+{% endif %}{{ historical_comparison.growth_rates.weeks_growth }}%
+                                </div>
+                                <div class="growth-label">Camper Weeks Growth</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Milestones -->
+                    {% if historical_comparison.milestones %}
+                    <div class="comparison-card full-width">
+                        <h4>🏆 Milestone Race</h4>
+                        <p class="card-subtitle">Days from Jan 1 to reach each milestone</p>
+                        <table class="milestone-table">
+                            <thead>
+                                <tr>
+                                    <th>Milestone</th>
+                                    <th>2024</th>
+                                    <th>2025</th>
+                                    <th>Faster?</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in historical_comparison.milestones %}
+                                <tr>
+                                    <td><strong>{{ m.milestone }} campers</strong></td>
+                                    <td>
+                                        {% if m.year_2024 %}
+                                        Day {{ m.year_2024.days_from_start }}<br>
+                                        <small>{{ m.year_2024.date }}</small>
+                                        {% else %}-{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if m.year_2025 %}
+                                        Day {{ m.year_2025.days_from_start }}<br>
+                                        <small>{{ m.year_2025.date }}</small>
+                                        {% else %}-{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if m.year_2024 and m.year_2025 %}
+                                            {% if m.year_2025.days_from_start < m.year_2024.days_from_start %}
+                                            <span class="badge success">2025 🏆</span>
+                                            {% elif m.year_2025.days_from_start > m.year_2024.days_from_start %}
+                                            <span class="badge warning">2024 🏆</span>
+                                            {% else %}
+                                            <span class="badge">Tie</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- DETAILED VIEW -->
+        <div id="detailed-view" class="view-content">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>📋 Detailed Enrollment Matrix</h3>
+                    <p class="section-subtitle">Click any number to see participants</p>
+                </div>
+                
+                <div class="filter-bar">
+                    <label>Filter by Category:</label>
+                    <select id="categoryFilter" onchange="filterDetailedView()">
+                        <option value="all">All Categories</option>
+                        {% for cat in report.categories %}
+                        <option value="{{ cat.category }}">{{ cat.emoji }} {{ cat.category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="detailed-table-container">
+                    <table class="enrollment-matrix" id="enrollmentMatrix">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col">Program</th>
+                                <th>W1</th>
+                                <th>W2</th>
+                                <th>W3</th>
+                                <th>W4</th>
+                                <th>W5</th>
+                                <th>W6</th>
+                                <th>W7</th>
+                                <th>W8</th>
+                                <th>W9</th>
+                                <th>Total</th>
+                                <th>FTE</th>
+                                <th>Goal</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prog in report.programs %}
+                            <tr data-category="{{ prog.category }}" data-program="{{ prog.program }}">
+                                <td class="sticky-col program-name" style="background-color: {{ prog.category_color_light }};">
+                                    {{ prog.program }}
+                                </td>
+                                {% for w in range(1, 10) %}
+                                <td class="week-cell clickable" 
+                                    data-program="{{ prog.program }}" 
+                                    data-week="{{ w }}"
+                                    onclick="showParticipants('{{ prog.program }}', {{ w }})">
+                                    {{ prog['week_' ~ w] or 0 }}
+                                </td>
+                                {% endfor %}
+                                <td class="total-cell">{{ prog.total }}</td>
+                                <td class="fte-cell">{{ prog.fte }}</td>
+                                <td class="goal-cell">{{ prog.goal }}</td>
+                                <td class="percent-cell {{ 'success' if prog.percent_to_goal >= 70 else 'warning' if prog.percent_to_goal >= 50 else 'danger' }}">
+                                    {{ '%.0f'|format(prog.percent_to_goal) }}%
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    </main>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📤 Upload CampMinder CSV</h3>
+                <button class="modal-close" onclick="closeUploadModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="upload-zone" id="uploadZone">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p>Drag & drop your CSV file here</p>
+                        <p class="upload-or">or</p>
+                        <label class="btn btn-secondary">
+                            Browse Files
+                            <input type="file" name="file" id="fileInput" accept=".csv" hidden>
+                        </label>
+                    </div>
+                    <div id="fileInfo" class="file-info" style="display: none;">
+                        <span id="fileName"></span>
+                        <button type="button" class="btn-remove" onclick="clearFile()">✕</button>
+                    </div>
+                    <div class="upload-actions">
+                        <button type="submit" class="btn btn-primary" id="uploadSubmit" disabled>
+                            Upload & Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Participants Modal -->
+    <div id="participantsModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="participantsTitle">👥 Participants</h3>
+                <button class="modal-close" onclick="closeParticipantsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="participantsList" class="participants-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data for JavaScript -->
+    {% if report and report.participants %}
+    <script>window.participantsData = {{ report.participants | tojson | safe }};</script>
+    {% else %}
+    <script>window.participantsData = {};</script>
+    {% endif %}
+
+    {% if report and report.date_stats and report.date_stats.daily %}
+    <script>window.dateStats2026 = {{ report.date_stats.daily | tojson | safe }};</script>
+    {% else %}
+    <script>window.dateStats2026 = [];</script>
+    {% endif %}
+
+    {% if historical_data_2025 %}
+    <script>window.dateStats2025 = {{ historical_data_2025 | tojson | safe }};</script>
+    {% else %}
+    <script>window.dateStats2025 = [];</script>
+    {% endif %}
+
+    {% if historical_data_2024 %}
+    <script>window.dateStats2024 = {{ historical_data_2024 | tojson | safe }};</script>
+    {% else %}
+    <script>window.dateStats2024 = [];</script>
+    {% endif %}
+
+    {% if comparison_chart_data %}
+    <script>window.comparisonChartData = {{ comparison_chart_data | tojson | safe }};</script>
+    {% else %}
+    <script>window.comparisonChartData = null;</script>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
