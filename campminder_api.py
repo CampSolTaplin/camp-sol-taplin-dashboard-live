@@ -1,808 +1,747 @@
 """
-Camp Sol Taplin - Enrollment Dashboard
-Flask Application with User Management and Live CampMinder API Integration
+CampMinder API Client
+Handles authentication and data fetching from CampMinder API
 """
 
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session, flash
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-import pandas as pd
-import os
+import requests
 import json
-import traceback
+import os
 from datetime import datetime, timedelta
-from io import BytesIO
-import threading
+from typing import Dict, List, Optional, Any
+import logging
 
-# Import our custom modules
-from parser import CampMinderParser
-from historical_data import HistoricalDataManager
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Try to import CampMinder API client (optional)
-try:
-    from campminder_api import CampMinderAPIClient, EnrollmentDataProcessor
-    CAMPMINDER_API_AVAILABLE = True
-except ImportError:
-    CAMPMINDER_API_AVAILABLE = False
 
-app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'camp-sol-taplin-2026-secret-key')
-
-# Configuration
-UPLOAD_FOLDER = 'static/uploads'
-DATA_FOLDER = 'data'
-USERS_FILE = os.path.join(DATA_FOLDER, 'users.json')
-CACHE_FILE = os.path.join(DATA_FOLDER, 'api_cache.json')
-ALLOWED_EXTENSIONS = {'csv'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
-
-# CampMinder API Configuration (from environment variables)
-CAMPMINDER_API_KEY = os.environ.get('CAMPMINDER_API_KEY')
-CAMPMINDER_SUBSCRIPTION_KEY = os.environ.get('CAMPMINDER_SUBSCRIPTION_KEY')
-CAMPMINDER_SEASON_ID = int(os.environ.get('CAMPMINDER_SEASON_ID', '2026'))
-CACHE_TTL_MINUTES = 15  # Cache data for 15 minutes
-
-# Initialize Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-# ==================== USER MANAGEMENT ====================
-
-def load_users():
-    """Load users from JSON file"""
-    if os.path.exists(USERS_FILE):
-        try:
-            with open(USERS_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            pass
+class CampMinderAPIClient:
+    """Client for interacting with CampMinder API"""
     
-    # Default users if file doesn't exist
-    default_users = {
-        'admin': {
-            'password': generate_password_hash('CampSol2026!'),
-            'role': 'admin',
-            'created_at': datetime.now().isoformat()
+    BASE_URL = "https://api.campminder.com"
+    
+    def __init__(self, api_key: str = None, subscription_key: str = None):
+        """
+        Initialize the API client
+        
+        Args:
+            api_key: CampMinder API Key (or set CAMPMINDER_API_KEY env var)
+            subscription_key: Azure subscription key (or set CAMPMINDER_SUBSCRIPTION_KEY env var)
+        """
+        self.api_key = api_key or os.environ.get('CAMPMINDER_API_KEY')
+        self.subscription_key = subscription_key or os.environ.get('CAMPMINDER_SUBSCRIPTION_KEY')
+        
+        if not self.api_key or not self.subscription_key:
+            raise ValueError("API Key and Subscription Key are required")
+        
+        self.jwt_token = None
+        self.jwt_expires_at = None
+        self.client_ids = []
+        self.client_id = None  # Primary client ID
+        
+        # Cache for API responses
+        self._cache = {}
+        self._cache_ttl = 300  # 5 minutes
+    
+    def _get_headers(self, include_auth: bool = True) -> Dict[str, str]:
+        """Get headers for API requests"""
+        headers = {
+            "Content-Type": "application/json",
+            "Ocp-Apim-Subscription-Key": self.subscription_key
         }
-    }
-    save_users(default_users)
-    return default_users
-
-def save_users(users):
-    """Save users to JSON file"""
-    os.makedirs(DATA_FOLDER, exist_ok=True)
-    with open(USERS_FILE, 'w') as f:
-        json.dump(users, f, indent=2)
-
-# Load users on startup
-USERS = load_users()
-
-class User(UserMixin):
-    def __init__(self, username, role):
-        self.id = username
-        self.role = role
-
-@login_manager.user_loader
-def load_user(username):
-    users = load_users()
-    if username in users:
-        return User(username, users[username]['role'])
-    return None
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Initialize data managers
-parser = CampMinderParser()
-historical_manager = HistoricalDataManager()
-
-# Store current report data in memory
-current_report = {
-    'data': None,
-    'generated_at': None,
-    'filename': None,
-    'source': None  # 'csv' or 'api'
-}
-
-# API cache
-api_cache = {
-    'data': None,
-    'fetched_at': None,
-    'is_fetching': False
-}
-
-# ==================== CAMPMINDER API FUNCTIONS ====================
-
-def is_api_configured() -> bool:
-    """Check if CampMinder API is configured"""
-    return bool(CAMPMINDER_API_KEY and CAMPMINDER_SUBSCRIPTION_KEY and CAMPMINDER_API_AVAILABLE)
-
-def load_api_cache() -> dict:
-    """Load cached API data from file"""
-    if os.path.exists(CACHE_FILE):
+        
+        if include_auth and self.jwt_token:
+            headers["Authorization"] = f"Bearer {self.jwt_token}"
+        
+        return headers
+    
+    def authenticate(self) -> bool:
+        """
+        Authenticate with CampMinder API and get JWT token
+        
+        Returns:
+            True if authentication successful
+        """
         try:
-            with open(CACHE_FILE, 'r') as f:
-                cache = json.load(f)
-                # Check if cache is still valid
-                if cache.get('fetched_at'):
-                    fetched_at = datetime.fromisoformat(cache['fetched_at'])
-                    if datetime.now() - fetched_at < timedelta(minutes=CACHE_TTL_MINUTES):
-                        return cache
+            url = f"{self.BASE_URL}/auth/apikey"
+            # Note: CampMinder auth endpoint does NOT want 'Bearer ' prefix
+            headers = {
+                "Authorization": self.api_key,
+                "Ocp-Apim-Subscription-Key": self.subscription_key
+            }
+            
+            logger.info("Authenticating with CampMinder API...")
+            logger.info(f"URL: {url}")
+            logger.info(f"API Key (first 20 chars): {self.api_key[:20] if self.api_key else 'None'}...")
+            logger.info(f"Subscription Key (first 10 chars): {self.subscription_key[:10] if self.subscription_key else 'None'}...")
+            
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            logger.info(f"Response Status: {response.status_code}")
+            logger.info(f"Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.jwt_token = data.get('Token')
+                self.jwt_expires_at = datetime.now() + timedelta(hours=1)
+                
+                # Parse client IDs
+                client_ids_str = data.get('ClientIDs', '')
+                if client_ids_str:
+                    self.client_ids = [int(cid.strip()) for cid in client_ids_str.split(',') if cid.strip()]
+                    self.client_id = self.client_ids[0] if self.client_ids else None
+                
+                logger.info(f"Authentication successful! ClientIDs: {self.client_ids}")
+                return True
+            else:
+                logger.error(f"Authentication failed: {response.status_code}")
+                logger.error(f"Response body: {response.text}")
+                return False
+                
         except Exception as e:
-            print(f"Error loading API cache: {e}")
-    return None
+            logger.error(f"Authentication error: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return False
+    
+    def _ensure_authenticated(self):
+        """Ensure we have a valid JWT token"""
+        if not self.jwt_token or (self.jwt_expires_at and datetime.now() >= self.jwt_expires_at):
+            if not self.authenticate():
+                raise Exception("Failed to authenticate with CampMinder API")
+    
+    def _make_request(self, endpoint: str, params: Dict = None) -> Optional[Dict]:
+        """
+        Make authenticated request to API
+        
+        Args:
+            endpoint: API endpoint (e.g., '/sessions')
+            params: Query parameters
+            
+        Returns:
+            JSON response or None if error
+        """
+        self._ensure_authenticated()
+        
+        url = f"{self.BASE_URL}{endpoint}"
+        headers = self._get_headers()
+        
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=60)
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"API request failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"API request error: {e}")
+            return None
+    
+    def _paginated_request(self, endpoint: str, params: Dict = None, max_pages: int = 100) -> List[Dict]:
+        """
+        Make paginated request and collect all results
+        
+        Args:
+            endpoint: API endpoint
+            params: Base query parameters
+            max_pages: Maximum pages to fetch
+            
+        Returns:
+            List of all results
+        """
+        all_results = []
+        params = params or {}
+        params['pagenumber'] = 1
+        params['pagesize'] = 1000  # Max page size
+        
+        for page in range(1, max_pages + 1):
+            params['pagenumber'] = page
+            
+            data = self._make_request(endpoint, params)
+            if not data:
+                break
+            
+            results = data.get('Results', [])
+            all_results.extend(results)
+            
+            # Check if there are more pages
+            total_count = data.get('TotalCount', 0)
+            if len(all_results) >= total_count or not results:
+                break
+            
+            logger.info(f"Fetched page {page}, got {len(results)} results ({len(all_results)}/{total_count} total)")
+        
+        return all_results
+    
+    # ==================== SESSION ENDPOINTS ====================
+    
+    def get_sessions(self, season_id: int, client_id: int = None) -> List[Dict]:
+        """
+        Get all sessions for a season
+        
+        Args:
+            season_id: Season year (e.g., 2026)
+            client_id: Client ID (uses default if not provided)
+            
+        Returns:
+            List of session objects
+        """
+        client_id = client_id or self.client_id
+        
+        params = {
+            'clientid': client_id,
+            'seasonid': season_id
+        }
+        
+        return self._paginated_request('/sessions', params)
+    
+    def get_programs(self, season_id: int, client_id: int = None) -> List[Dict]:
+        """
+        Get all programs for a season
+        
+        Args:
+            season_id: Season year (e.g., 2026)
+            client_id: Client ID (uses default if not provided)
+            
+        Returns:
+            List of program objects
+        """
+        client_id = client_id or self.client_id
+        
+        params = {
+            'clientid': client_id,
+            'seasonid': season_id
+        }
+        
+        return self._paginated_request('/sessions/programs', params)
+    
+    def get_session_groups(self, season_id: int, client_id: int = None) -> List[Dict]:
+        """
+        Get session groups (categories)
+        
+        Args:
+            season_id: Season year
+            client_id: Client ID
+            
+        Returns:
+            List of group objects
+        """
+        client_id = client_id or self.client_id
+        
+        params = {
+            'clientid': client_id,
+            'seasonid': season_id
+        }
+        
+        return self._paginated_request('/sessions/groups', params)
+    
+    def get_attendees(self, season_id: int, client_id: int = None, 
+                      status: int = 2, session_ids: List[int] = None,
+                      program_ids: List[int] = None) -> List[Dict]:
+        """
+        Get all attendees for a season
+        
+        Args:
+            season_id: Season year (e.g., 2026)
+            client_id: Client ID
+            status: Status filter (2=Enrolled, 4=Applied, 6=Enrolled+Applied)
+            session_ids: Optional list of session IDs to filter
+            program_ids: Optional list of program IDs to filter
+            
+        Returns:
+            List of attendee objects with session/program status
+        """
+        client_id = client_id or self.client_id
+        
+        params = {
+            'clientid': client_id,
+            'seasonid': season_id,
+            'status': status  # 2=Enrolled, 4=Applied, 6=Both
+        }
+        
+        if session_ids:
+            params['sessionids'] = session_ids
+        if program_ids:
+            params['programids'] = program_ids
+        
+        return self._paginated_request('/sessions/attendees', params)
+    
+    # ==================== PERSON ENDPOINTS ====================
+    
+    def get_person(self, person_id: int, client_id: int = None) -> Optional[Dict]:
+        """
+        Get a single person by ID
+        
+        Args:
+            person_id: Person ID
+            client_id: Client ID
+            
+        Returns:
+            Person object or None
+        """
+        client_id = client_id or self.client_id
+        
+        params = {'clientid': client_id}
+        return self._make_request(f'/persons/{person_id}', params)
+    
+    def get_persons_batch(self, person_ids: List[int], client_id: int = None) -> Dict[int, Dict]:
+        """
+        Get multiple persons by ID
+        
+        Args:
+            person_ids: List of person IDs
+            client_id: Client ID
+            
+        Returns:
+            Dict mapping person_id to person data
+        """
+        results = {}
+        
+        for pid in person_ids:
+            person = self.get_person(pid, client_id)
+            if person:
+                results[pid] = person
+        
+        return results
+    
+    # ==================== ENROLLMENT DATA ====================
+    
+    def get_enrollment_report(self, season_id: int, client_id: int = None) -> Dict:
+        """
+        Get comprehensive enrollment report for dashboard
+        
+        This combines data from sessions, programs, and attendees to create
+        a report similar to the CSV export.
+        
+        Args:
+            season_id: Season year (e.g., 2026)
+            client_id: Client ID
+            
+        Returns:
+            Dict with enrollment data structured for dashboard
+        """
+        client_id = client_id or self.client_id
+        
+        logger.info(f"Fetching enrollment report for season {season_id}, client {client_id}")
+        
+        # Fetch all required data
+        sessions = self.get_sessions(season_id, client_id)
+        programs = self.get_programs(season_id, client_id)
+        attendees = self.get_attendees(season_id, client_id, status=6)  # Enrolled + Applied
+        
+        logger.info(f"Fetched: {len(sessions)} sessions, {len(programs)} programs, {len(attendees)} attendees")
+        
+        # Build lookup maps
+        session_map = {s['ID']: s for s in sessions}
+        program_map = {p['ID']: p for p in programs}
+        
+        # Build session to weeks mapping (handling multi-week sessions)
+        session_to_weeks = {}
+        for session in sessions:
+            name = session.get('Name', '')
+            week_info = self._extract_week_info(name, session.get('SortOrder', 0))
+            session_to_weeks[session['ID']] = week_info['weeks']
+            logger.debug(f"Session '{name}' -> Weeks {week_info['weeks']}")
+        
+        # Process attendees into enrollment data
+        # For multi-week sessions, create one enrollment record per week
+        enrollments = []
+        
+        for attendee in attendees:
+            person_id = attendee.get('PersonID')
+            
+            for sps in attendee.get('SessionProgramStatus', []):
+                session_id = sps.get('SessionID')
+                program_id = sps.get('ProgramID')
+                status_id = sps.get('StatusID')
+                status_name = sps.get('StatusName', '')
+                effective_date = sps.get('EffectiveDate', '')
+                post_date = sps.get('PostDate', '')
+                
+                # Only include Enrolled (2) or Applied (4)
+                if status_id not in [2, 4]:
+                    continue
+                
+                session = session_map.get(session_id, {})
+                program = program_map.get(program_id, {})
+                
+                weeks = session_to_weeks.get(session_id, [])
+                
+                # Create one enrollment record per week in the session
+                for week_num in weeks:
+                    if 1 <= week_num <= 9:
+                        enrollments.append({
+                            'person_id': person_id,
+                            'program_id': program_id,
+                            'program_name': program.get('Name', 'Unknown'),
+                            'session_id': session_id,
+                            'session_name': session.get('Name', 'Unknown'),
+                            'week': week_num,
+                            'status_id': status_id,
+                            'status_name': status_name,
+                            'enrollment_date': effective_date or (post_date[:10] if post_date else ''),
+                            'post_date': post_date
+                        })
+        
+        logger.info(f"Processed {len(enrollments)} enrollment records (expanded for multi-week sessions)")
+        
+        return {
+            'enrollments': enrollments,
+            'sessions': sessions,
+            'programs': programs,
+            'season_id': season_id,
+            'client_id': client_id,
+            'fetched_at': datetime.now().isoformat()
+        }
+    
+    def _extract_week_info(self, session_name: str, sort_order: int = 0) -> Dict:
+        """
+        Extract week information from session name
+        
+        Handles formats like:
+        - "ECA Week 1"
+        - "Week 1 (1WK)"
+        - "Week 1"
+        - "Teeny Tiny Tnuah - Full Session" (weeks 1-4)
+        - "Theater Camp Weeks 2-5"
+        - "Theater Camp Weeks 6-9"
+        
+        Args:
+            session_name: Session name from API
+            sort_order: Fallback sort order
+            
+        Returns:
+            Dict with 'weeks' list (e.g., [1], [1,2,3,4], [2,3,4,5])
+        """
+        import re
+        
+        name_lower = session_name.lower()
+        
+        # Check for "Full Session" patterns (typically weeks 1-4)
+        if 'full session' in name_lower:
+            return {'weeks': [1, 2, 3, 4], 'type': 'full_session'}
+        
+        # Check for range patterns like "Weeks 2-5" or "Weeks 6-9"
+        range_match = re.search(r'weeks?\s*(\d+)\s*[-–to]+\s*(\d+)', name_lower)
+        if range_match:
+            start = int(range_match.group(1))
+            end = int(range_match.group(2))
+            return {'weeks': list(range(start, end + 1)), 'type': 'range'}
+        
+        # Check for single week patterns
+        patterns = [
+            r'week\s*(\d+)',      # "Week 1", "ECA Week 1"
+            r'wk\s*(\d+)',        # "Wk 1"
+            r'\((\d+)wk\)',       # "(1WK)"
+            r'session\s*(\d+)',   # "Session 1"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, name_lower)
+            if match:
+                week = int(match.group(1))
+                if 1 <= week <= 10:
+                    return {'weeks': [week], 'type': 'single'}
+        
+        # Fallback to sort order
+        if 1 <= sort_order <= 10:
+            return {'weeks': [sort_order], 'type': 'sort_order'}
+        
+        return {'weeks': [], 'type': 'unknown'}
+    
+    def _extract_week_number(self, session_name: str, sort_order: int = 0) -> int:
+        """
+        Extract single week number (backward compatible)
+        
+        Returns:
+            Single week number or 0
+        """
+        info = self._extract_week_info(session_name, sort_order)
+        return info['weeks'][0] if info['weeks'] else 0
 
-def save_api_cache(data: dict):
-    """Save API data to cache file"""
-    os.makedirs(DATA_FOLDER, exist_ok=True)
-    try:
-        with open(CACHE_FILE, 'w') as f:
-            json.dump(data, f)
-    except Exception as e:
-        print(f"Error saving API cache: {e}")
 
-def fetch_live_data(force_refresh: bool = False) -> dict:
+class EnrollmentDataProcessor:
+    """Process enrollment data into dashboard-ready format"""
+    
+    # Program category mapping (same as your parser.py)
+    PROGRAM_CATEGORIES = {
+        'Early Childhood': ['Infants', 'Toddler', 'PK2', 'PK3', 'PK4'],
+        'Variety': ['Tsofim', 'Yeladim', 'Chaverim', 'Giborim', 'Ozrim', 'Madliteen', 'Madli-teen', 'Madli-Teen'],
+        'Sports': ['Basketball', 'Soccer', 'Tennis', 'Flag Football', 'Gymnastics', 'Karate', 'Multi-Sport', 'Baseball', 'Volleyball'],
+        'Performing Arts': ["T'nuah", 'Tnuah', 'Theater', 'Theatre', 'Dance', 'Music'],
+        'Teen Leadership': ['LIT', 'CIT', 'Leadership', 'Teen'],
+        "Children's Trust": ["Children's Trust", 'Koach'],
+        'Specialty': ['Art', 'Science', 'STEM', 'Coding', 'Robotics', 'Nature']
+    }
+    
+    # Program goals (same as parser.py)
+    PROGRAM_GOALS = {
+        'Infants': 6, 'Toddler': 12, 'PK2': 26, 'PK3': 36, 'PK4': 40,
+        'Tsofim': 20, 'Yeladim': 28, 'Chaverim': 24, 'Giborim': 10,
+        # ... add all goals from your parser.py
+    }
+    
+    def __init__(self):
+        self.category_colors = {
+            'Early Childhood': '#FFB347',
+            'Variety': '#7CB342',
+            'Sports': '#42A5F5',
+            'Performing Arts': '#AB47BC',
+            'Teen Leadership': '#5C6BC0',
+            "Children's Trust": '#FF7043',
+            'Specialty': '#26A69A'
+        }
+        
+        self.category_emojis = {
+            'Early Childhood': '👶',
+            'Variety': '🏕️',
+            'Sports': '⚽',
+            'Performing Arts': '🎭',
+            'Teen Leadership': '🌟',
+            "Children's Trust": '🤝',
+            'Specialty': '🎨'
+        }
+    
+    def process_enrollment_data(self, raw_data: Dict) -> Dict:
+        """
+        Process raw API data into dashboard-ready format
+        
+        Args:
+            raw_data: Output from CampMinderAPIClient.get_enrollment_report()
+            
+        Returns:
+            Dict formatted for dashboard template
+        """
+        enrollments = raw_data.get('enrollments', [])
+        
+        if not enrollments:
+            return self._empty_report()
+        
+        # Group by program
+        programs_data = {}
+        person_programs = {}  # Track unique campers
+        
+        for e in enrollments:
+            program = e['program_name']
+            week = e['week']
+            person_id = e['person_id']
+            enrollment_date = e['enrollment_date']
+            
+            if program not in programs_data:
+                programs_data[program] = {
+                    'weeks': {i: [] for i in range(1, 10)},
+                    'total': 0,
+                    'unique_campers': set()
+                }
+            
+            if 1 <= week <= 9:
+                programs_data[program]['weeks'][week].append({
+                    'person_id': person_id,
+                    'enrollment_date': enrollment_date
+                })
+                programs_data[program]['total'] += 1
+            
+            programs_data[program]['unique_campers'].add(person_id)
+            
+            # Track person across programs
+            if person_id not in person_programs:
+                person_programs[person_id] = set()
+            person_programs[person_id].add(program)
+        
+        # Build program reports
+        programs = []
+        categories_data = {}
+        total_weeks = 0
+        
+        for program_name, data in programs_data.items():
+            category = self._get_category(program_name)
+            goal = self._get_goal(program_name)
+            
+            week_counts = {f'week_{i}': len(data['weeks'][i]) for i in range(1, 10)}
+            total = sum(week_counts.values())
+            fte = round(total / 9, 2)
+            percent = round((fte / goal * 100) if goal > 0 else 0, 1)
+            
+            programs.append({
+                'program': program_name,
+                'category': category,
+                **week_counts,
+                'total': total,
+                'fte': fte,
+                'goal': goal,
+                'percent_to_goal': percent,
+                'category_color': self.category_colors.get(category, '#999'),
+                'category_color_light': self._lighten_color(self.category_colors.get(category, '#999'))
+            })
+            
+            # Aggregate by category
+            if category not in categories_data:
+                categories_data[category] = {'fte': 0, 'goal': 0, 'programs': []}
+            categories_data[category]['fte'] += fte
+            categories_data[category]['goal'] += goal
+            categories_data[category]['programs'].append(program_name)
+            
+            total_weeks += total
+        
+        # Build category summary
+        categories = []
+        for cat_name, cat_data in categories_data.items():
+            pct = round((cat_data['fte'] / cat_data['goal'] * 100) if cat_data['goal'] > 0 else 0, 1)
+            categories.append({
+                'category': cat_name,
+                'emoji': self.category_emojis.get(cat_name, '📋'),
+                'fte': round(cat_data['fte'], 1),
+                'goal': cat_data['goal'],
+                'percent_to_goal': pct,
+                'color': self.category_colors.get(cat_name, '#999'),
+                'status': 'success' if pct >= 70 else 'warning' if pct >= 50 else 'danger'
+            })
+        
+        # Calculate summary
+        total_enrollment = len(person_programs)
+        total_fte = round(total_weeks / 9, 2)
+        total_goal = sum(self.PROGRAM_GOALS.values())
+        
+        # Build date stats
+        date_stats = self._build_date_stats(enrollments)
+        
+        # Build participants data for modal
+        participants = self._build_participants_data(programs_data)
+        
+        return {
+            'summary': {
+                'total_enrollment': total_enrollment,
+                'total_camper_weeks': total_weeks,
+                'total_fte': total_fte,
+                'goal': total_goal,
+                'percent_to_goal': round((total_fte / total_goal * 100) if total_goal > 0 else 0, 1)
+            },
+            'programs': sorted(programs, key=lambda x: (x['category'], x['program'])),
+            'categories': sorted(categories, key=lambda x: x['category']),
+            'date_stats': date_stats,
+            'participants': participants,
+            'fetched_at': raw_data.get('fetched_at', datetime.now().isoformat())
+        }
+    
+    def _get_category(self, program_name: str) -> str:
+        """Get category for a program"""
+        name_lower = program_name.lower()
+        
+        for category, keywords in self.PROGRAM_CATEGORIES.items():
+            for keyword in keywords:
+                if keyword.lower() in name_lower:
+                    return category
+        
+        return 'Other'
+    
+    def _get_goal(self, program_name: str) -> int:
+        """Get goal for a program"""
+        # First try exact match
+        if program_name in self.PROGRAM_GOALS:
+            return self.PROGRAM_GOALS[program_name]
+        
+        # Try partial match
+        name_lower = program_name.lower()
+        for prog, goal in self.PROGRAM_GOALS.items():
+            if prog.lower() in name_lower:
+                return goal
+        
+        return 20  # Default goal
+    
+    def _lighten_color(self, hex_color: str) -> str:
+        """Create a lighter version of a color"""
+        # Simple approach: add transparency
+        return hex_color + '20'
+    
+    def _build_date_stats(self, enrollments: List[Dict]) -> Dict:
+        """Build date statistics from enrollments"""
+        date_counts = {}
+        
+        for e in enrollments:
+            date = e.get('enrollment_date', '')[:10]
+            if not date:
+                continue
+            
+            if date not in date_counts:
+                date_counts[date] = {'registrations': 0, 'campers': set()}
+            
+            date_counts[date]['registrations'] += 1
+            date_counts[date]['campers'].add(e['person_id'])
+        
+        # Build daily data
+        daily = []
+        cumulative_weeks = 0
+        all_campers = set()
+        
+        for date in sorted(date_counts.keys()):
+            data = date_counts[date]
+            new_campers = data['campers'] - all_campers
+            all_campers.update(data['campers'])
+            cumulative_weeks += data['registrations']
+            
+            daily.append({
+                'date': date,
+                'new_registrations': len(new_campers),
+                'camper_weeks_added': data['registrations'],
+                'cumulative_campers': len(all_campers),
+                'cumulative_weeks': cumulative_weeks
+            })
+        
+        return {'daily': daily}
+    
+    def _build_participants_data(self, programs_data: Dict) -> Dict:
+        """Build participants data for modal popups"""
+        participants = {}
+        
+        for program_name, data in programs_data.items():
+            participants[program_name] = {}
+            for week, campers in data['weeks'].items():
+                participants[program_name][str(week)] = [
+                    {
+                        'person_id': c['person_id'],
+                        'first_name': f"Camper",  # Would need person lookup for real names
+                        'last_name': str(c['person_id']),
+                        'enrollment_date': c['enrollment_date']
+                    }
+                    for c in campers
+                ]
+        
+        return participants
+    
+    def _empty_report(self) -> Dict:
+        """Return empty report structure"""
+        return {
+            'summary': {
+                'total_enrollment': 0,
+                'total_camper_weeks': 0,
+                'total_fte': 0,
+                'goal': 0,
+                'percent_to_goal': 0
+            },
+            'programs': [],
+            'categories': [],
+            'date_stats': {'daily': []},
+            'participants': {}
+        }
+
+
+# Convenience function
+def fetch_live_enrollment(api_key: str, subscription_key: str, season_id: int = 2026) -> Dict:
     """
     Fetch live enrollment data from CampMinder API
     
     Args:
-        force_refresh: If True, bypass cache
+        api_key: CampMinder API key
+        subscription_key: Azure subscription key
+        season_id: Season year (default 2026)
         
     Returns:
-        Processed enrollment data or None
+        Dashboard-ready enrollment data
     """
-    global api_cache
+    client = CampMinderAPIClient(api_key, subscription_key)
+    raw_data = client.get_enrollment_report(season_id)
     
-    if not is_api_configured():
-        print("CampMinder API not configured")
-        return None
-    
-    # Check cache first (unless force refresh)
-    if not force_refresh:
-        cached = load_api_cache()
-        if cached and cached.get('data'):
-            print("Using cached API data")
-            api_cache['data'] = cached['data']
-            api_cache['fetched_at'] = cached.get('fetched_at')
-            return cached['data']
-    
-    # Prevent concurrent fetches
-    if api_cache['is_fetching']:
-        print("API fetch already in progress")
-        return api_cache.get('data')
-    
-    try:
-        api_cache['is_fetching'] = True
-        print(f"Fetching live data from CampMinder API (Season {CAMPMINDER_SEASON_ID})...")
-        
-        # Initialize API client
-        client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
-        
-        # Fetch raw data
-        raw_data = client.get_enrollment_report(CAMPMINDER_SEASON_ID)
-        
-        # Process into dashboard format
-        processor = EnrollmentDataProcessor()
-        processed_data = processor.process_enrollment_data(raw_data)
-        
-        # Update cache
-        fetched_at = datetime.now().isoformat()
-        api_cache['data'] = processed_data
-        api_cache['fetched_at'] = fetched_at
-        
-        # Save to file
-        save_api_cache({
-            'data': processed_data,
-            'fetched_at': fetched_at
-        })
-        
-        print(f"API data fetched successfully: {processed_data['summary']['total_enrollment']} campers")
-        return processed_data
-        
-    except Exception as e:
-        print(f"Error fetching API data: {e}")
-        traceback.print_exc()
-        return api_cache.get('data')  # Return cached data if available
-        
-    finally:
-        api_cache['is_fetching'] = False
-
-# ==================== ROUTES ====================
-
-@app.route('/')
-def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip().lower()
-        password = request.form.get('password', '')
-        
-        users = load_users()
-        
-        if username in users and check_password_hash(users[username]['password'], password):
-            user = User(username, users[username]['role'])
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid username or password', 'error')
-    
-    return render_template('login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    # Determine data source: API (live) > CSV upload > None
-    report_data = None
-    generated_at = None
-    data_source = None
-    
-    # Try to get data from API first (if configured)
-    if is_api_configured():
-        api_data = fetch_live_data(force_refresh=False)
-        if api_data:
-            report_data = api_data
-            generated_at = api_cache.get('fetched_at', datetime.now().isoformat())
-            if generated_at:
-                try:
-                    dt = datetime.fromisoformat(generated_at)
-                    generated_at = dt.strftime('%B %d, %Y at %I:%M %p')
-                except:
-                    pass
-            data_source = 'api'
-    
-    # Fall back to CSV upload data
-    if not report_data and current_report.get('data'):
-        report_data = current_report.get('data')
-        generated_at = current_report.get('generated_at')
-        data_source = 'csv'
-    
-    today = datetime.now()
-    comparison_2025 = historical_manager.get_enrollment_as_of_date(2025, today.month, today.day)
-    comparison_2024 = historical_manager.get_enrollment_as_of_date(2024, today.month, today.day)
-    
-    # Get pace comparison if we have current data
-    pace_comparison = None
-    if report_data:
-        pace_comparison = historical_manager.get_pace_comparison(report_data)
-    
-    # Get historical comparison data
-    historical_comparison = historical_manager.get_comparison_data()
-    
-    # Get daily data for charts
-    historical_data_2025 = historical_manager.get_daily_data(2025)
-    historical_data_2024 = historical_manager.get_daily_data(2024)
-    
-    # Get comparison chart data
-    comparison_chart_data = historical_manager.get_weekly_comparison_chart_data()
-    
-    return render_template('dashboard.html',
-                         report=report_data,
-                         generated_at=generated_at,
-                         data_source=data_source,
-                         api_configured=is_api_configured(),
-                         comparison_2025=comparison_2025,
-                         comparison_2024=comparison_2024,
-                         pace_comparison=pace_comparison,
-                         historical_comparison=historical_comparison,
-                         historical_data_2025=historical_data_2025,
-                         historical_data_2024=historical_data_2024,
-                         comparison_chart_data=comparison_chart_data,
-                         user=current_user)
-
-# ==================== USER MANAGEMENT ROUTES ====================
-
-@app.route('/admin/users')
-@login_required
-def admin_users():
-    """User management page"""
-    if current_user.role != 'admin':
-        flash('Access denied. Admin only.', 'error')
-        return redirect(url_for('dashboard'))
-    
-    users = load_users()
-    user_list = []
-    for username, data in users.items():
-        user_list.append({
-            'username': username,
-            'role': data.get('role', 'viewer'),
-            'created_at': data.get('created_at', 'Unknown')
-        })
-    
-    return render_template('admin_users.html', users=user_list, user=current_user)
-
-@app.route('/api/users', methods=['GET'])
-@login_required
-def api_get_users():
-    """API: Get all users"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    users = load_users()
-    user_list = []
-    for username, data in users.items():
-        user_list.append({
-            'username': username,
-            'role': data.get('role', 'viewer'),
-            'created_at': data.get('created_at', 'Unknown')
-        })
-    
-    return jsonify({'users': user_list})
-
-@app.route('/api/users', methods=['POST'])
-@login_required
-def api_create_user():
-    """API: Create new user"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    data = request.get_json()
-    username = data.get('username', '').strip().lower()
-    password = data.get('password', '')
-    role = data.get('role', 'viewer')
-    
-    # Validation
-    if not username or len(username) < 3:
-        return jsonify({'error': 'Username must be at least 3 characters'}), 400
-    
-    if not password or len(password) < 6:
-        return jsonify({'error': 'Password must be at least 6 characters'}), 400
-    
-    if role not in ['admin', 'viewer']:
-        return jsonify({'error': 'Invalid role'}), 400
-    
-    # Check if username is alphanumeric
-    if not username.replace('_', '').replace('.', '').isalnum():
-        return jsonify({'error': 'Username can only contain letters, numbers, underscores and dots'}), 400
-    
-    users = load_users()
-    
-    if username in users:
-        return jsonify({'error': 'Username already exists'}), 400
-    
-    # Create user
-    users[username] = {
-        'password': generate_password_hash(password),
-        'role': role,
-        'created_at': datetime.now().isoformat()
-    }
-    
-    save_users(users)
-    
-    return jsonify({
-        'success': True,
-        'message': f'User "{username}" created successfully',
-        'user': {
-            'username': username,
-            'role': role
-        }
-    })
-
-@app.route('/api/users/<username>', methods=['DELETE'])
-@login_required
-def api_delete_user(username):
-    """API: Delete user"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    username = username.lower()
-    
-    # Cannot delete yourself
-    if username == current_user.id:
-        return jsonify({'error': 'Cannot delete your own account'}), 400
-    
-    users = load_users()
-    
-    if username not in users:
-        return jsonify({'error': 'User not found'}), 404
-    
-    del users[username]
-    save_users(users)
-    
-    return jsonify({
-        'success': True,
-        'message': f'User "{username}" deleted successfully'
-    })
-
-@app.route('/api/users/<username>/password', methods=['PUT'])
-@login_required
-def api_change_password(username):
-    """API: Change user password"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    username = username.lower()
-    data = request.get_json()
-    new_password = data.get('password', '')
-    
-    if not new_password or len(new_password) < 6:
-        return jsonify({'error': 'Password must be at least 6 characters'}), 400
-    
-    users = load_users()
-    
-    if username not in users:
-        return jsonify({'error': 'User not found'}), 404
-    
-    users[username]['password'] = generate_password_hash(new_password)
-    save_users(users)
-    
-    return jsonify({
-        'success': True,
-        'message': f'Password for "{username}" changed successfully'
-    })
-
-@app.route('/api/users/<username>/role', methods=['PUT'])
-@login_required
-def api_change_role(username):
-    """API: Change user role"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    username = username.lower()
-    
-    # Cannot change your own role
-    if username == current_user.id:
-        return jsonify({'error': 'Cannot change your own role'}), 400
-    
-    data = request.get_json()
-    new_role = data.get('role', '')
-    
-    if new_role not in ['admin', 'viewer']:
-        return jsonify({'error': 'Invalid role'}), 400
-    
-    users = load_users()
-    
-    if username not in users:
-        return jsonify({'error': 'User not found'}), 404
-    
-    users[username]['role'] = new_role
-    save_users(users)
-    
-    return jsonify({
-        'success': True,
-        'message': f'Role for "{username}" changed to {new_role}'
-    })
-
-# ==================== CAMPMINDER API ROUTES ====================
-
-@app.route('/api/refresh', methods=['POST'])
-@login_required
-def api_refresh_data():
-    """Refresh data from CampMinder API"""
-    if not is_api_configured():
-        return jsonify({
-            'success': False,
-            'error': 'CampMinder API not configured. Please set CAMPMINDER_API_KEY and CAMPMINDER_SUBSCRIPTION_KEY environment variables.'
-        }), 400
-    
-    try:
-        print("Manual refresh requested...")
-        data = fetch_live_data(force_refresh=True)
-        
-        if data:
-            return jsonify({
-                'success': True,
-                'message': 'Data refreshed successfully',
-                'summary': {
-                    'total_enrollment': data['summary']['total_enrollment'],
-                    'total_camper_weeks': data['summary']['total_camper_weeks'],
-                    'programs_count': len(data.get('programs', []))
-                },
-                'fetched_at': api_cache.get('fetched_at')
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to fetch data from API'
-            }), 500
-            
-    except Exception as e:
-        print(f"Refresh error: {e}")
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/status')
-@login_required
-def api_status():
-    """Get API configuration status"""
-    # Show partial keys for debugging (safe to show first/last few chars)
-    api_key_preview = None
-    sub_key_preview = None
-    
-    if CAMPMINDER_API_KEY:
-        api_key_preview = f"{CAMPMINDER_API_KEY[:10]}...{CAMPMINDER_API_KEY[-5:]}" if len(CAMPMINDER_API_KEY) > 15 else "TOO_SHORT"
-    
-    if CAMPMINDER_SUBSCRIPTION_KEY:
-        sub_key_preview = f"{CAMPMINDER_SUBSCRIPTION_KEY[:8]}...{CAMPMINDER_SUBSCRIPTION_KEY[-4:]}" if len(CAMPMINDER_SUBSCRIPTION_KEY) > 12 else "TOO_SHORT"
-    
-    return jsonify({
-        'api_configured': is_api_configured(),
-        'api_key_set': bool(CAMPMINDER_API_KEY),
-        'api_key_length': len(CAMPMINDER_API_KEY) if CAMPMINDER_API_KEY else 0,
-        'api_key_preview': api_key_preview,
-        'subscription_key_set': bool(CAMPMINDER_SUBSCRIPTION_KEY),
-        'subscription_key_length': len(CAMPMINDER_SUBSCRIPTION_KEY) if CAMPMINDER_SUBSCRIPTION_KEY else 0,
-        'subscription_key_preview': sub_key_preview,
-        'season_id': CAMPMINDER_SEASON_ID,
-        'cache_ttl_minutes': CACHE_TTL_MINUTES,
-        'last_fetch': api_cache.get('fetched_at'),
-        'is_fetching': api_cache.get('is_fetching', False),
-        'has_cached_data': bool(api_cache.get('data'))
-    })
-
-@app.route('/api/test-auth')
-@login_required
-def api_test_auth():
-    """Test CampMinder API authentication - for debugging"""
-    if not is_api_configured():
-        return jsonify({
-            'success': False,
-            'error': 'API not configured',
-            'api_key_set': bool(CAMPMINDER_API_KEY),
-            'subscription_key_set': bool(CAMPMINDER_SUBSCRIPTION_KEY)
-        })
-    
-    import requests
-    
-    url = "https://api.campminder.com/auth/apikey"
-    # Note: CampMinder auth endpoint does NOT want 'Bearer ' prefix
-    headers = {
-        "Authorization": CAMPMINDER_API_KEY,
-        "Ocp-Apim-Subscription-Key": CAMPMINDER_SUBSCRIPTION_KEY
-    }
-    
-    try:
-        response = requests.get(url, headers=headers, timeout=30)
-        
-        return jsonify({
-            'success': response.status_code == 200,
-            'status_code': response.status_code,
-            'response_text': response.text[:500] if response.text else None,
-            'response_headers': dict(response.headers),
-            'request_url': url,
-            'api_key_used': f"{CAMPMINDER_API_KEY[:10]}...{CAMPMINDER_API_KEY[-5:]}" if CAMPMINDER_API_KEY else None,
-            'subscription_key_used': f"{CAMPMINDER_SUBSCRIPTION_KEY[:8]}..." if CAMPMINDER_SUBSCRIPTION_KEY else None
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'error_type': type(e).__name__
-        })
-
-@app.route('/api/debug-data')
-@login_required
-def api_debug_data():
-    """Debug endpoint to see raw API data"""
-    if not is_api_configured():
-        return jsonify({'error': 'API not configured'})
-    
-    try:
-        from campminder_api import CampMinderAPIClient
-        
-        client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
-        
-        # Authenticate first
-        if not client.authenticate():
-            return jsonify({'error': 'Authentication failed'})
-        
-        client_id = client.client_id
-        
-        # Get sessions
-        sessions = client.get_sessions(CAMPMINDER_SEASON_ID, client_id)
-        
-        # Get programs  
-        programs = client.get_programs(CAMPMINDER_SEASON_ID, client_id)
-        
-        # Get attendees (just first page for debug)
-        attendees = client.get_attendees(CAMPMINDER_SEASON_ID, client_id, status=6)
-        
-        return jsonify({
-            'client_id': client_id,
-            'season_id': CAMPMINDER_SEASON_ID,
-            'sessions_count': len(sessions),
-            'sessions_sample': sessions[:5] if sessions else [],
-            'programs_count': len(programs),
-            'programs_sample': programs[:5] if programs else [],
-            'attendees_count': len(attendees),
-            'attendees_sample': attendees[:5] if attendees else []
-        })
-        
-    except Exception as e:
-        import traceback
-        return jsonify({
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        })
-
-# ==================== UPLOAD & DATA ROUTES ====================
-
-@app.route('/upload', methods=['POST'])
-@login_required
-def upload_file():
-    """Handle CSV file upload and processing"""
-    print("=" * 50)
-    print("UPLOAD REQUEST RECEIVED")
-    print("=" * 50)
-    
-    try:
-        if current_user.role != 'admin':
-            print("ERROR: User not admin")
-            return jsonify({'success': False, 'error': 'Unauthorized - admin access required'}), 403
-        
-        if 'file' not in request.files:
-            print("ERROR: No file in request")
-            return jsonify({'success': False, 'error': 'No file provided'}), 400
-        
-        file = request.files['file']
-        print(f"File received: {file.filename}")
-        
-        if file.filename == '':
-            print("ERROR: Empty filename")
-            return jsonify({'success': False, 'error': 'No file selected'}), 400
-        
-        if not allowed_file(file.filename):
-            print(f"ERROR: Invalid file type: {file.filename}")
-            return jsonify({'success': False, 'error': 'Invalid file type. Please upload a CSV file.'}), 400
-        
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-        
-        filename = secure_filename(file.filename)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        saved_filename = f"{timestamp}_{filename}"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], saved_filename)
-        
-        print(f"Saving file to: {filepath}")
-        file.save(filepath)
-        print(f"File saved successfully")
-        
-        if not os.path.exists(filepath):
-            print("ERROR: File not saved")
-            return jsonify({'success': False, 'error': 'Failed to save file'}), 500
-        
-        file_size = os.path.getsize(filepath)
-        print(f"File size: {file_size} bytes")
-        
-        if file_size == 0:
-            print("ERROR: File is empty")
-            return jsonify({'success': False, 'error': 'File is empty'}), 400
-        
-        print("Parsing CSV...")
-        try:
-            report_data = parser.parse_csv(filepath)
-            print(f"Parse successful!")
-            print(f"  - Total enrollment: {report_data['summary']['total_enrollment']}")
-            print(f"  - Total camper weeks: {report_data['summary']['total_camper_weeks']}")
-            print(f"  - Programs found: {len(report_data['programs'])}")
-        except Exception as parse_error:
-            print(f"PARSE ERROR: {str(parse_error)}")
-            print(traceback.format_exc())
-            return jsonify({
-                'success': False, 
-                'error': f'Error parsing CSV: {str(parse_error)}'
-            }), 500
-        
-        current_report['data'] = report_data
-        current_report['generated_at'] = datetime.now().strftime('%B %d, %Y at %I:%M %p')
-        current_report['filename'] = saved_filename
-        
-        print("Report data stored successfully")
-        print("=" * 50)
-        
-        return jsonify({
-            'success': True,
-            'message': 'File processed successfully',
-            'redirect': url_for('dashboard'),
-            'summary': {
-                'total_enrollment': report_data['summary']['total_enrollment'],
-                'total_camper_weeks': report_data['summary']['total_camper_weeks'],
-                'programs_count': len(report_data['programs'])
-            }
-        })
-        
-    except Exception as e:
-        print(f"UNEXPECTED ERROR: {str(e)}")
-        print(traceback.format_exc())
-        return jsonify({
-            'success': False, 
-            'error': f'Server error: {str(e)}'
-        }), 500
-
-@app.route('/api/report-data')
-@login_required
-def get_report_data():
-    """API endpoint to get current report data as JSON"""
-    if current_report['data'] is None:
-        return jsonify({'error': 'No report data available'}), 404
-    
-    today = datetime.now()
-    comparison_2025 = historical_manager.get_enrollment_as_of_date(2025, today.month, today.day)
-    comparison_2024 = historical_manager.get_enrollment_as_of_date(2024, today.month, today.day)
-    
-    return jsonify({
-        'report': current_report['data'],
-        'generated_at': current_report['generated_at'],
-        'comparison_2025': comparison_2025,
-        'comparison_2024': comparison_2024
-    })
-
-@app.route('/download-excel')
-@login_required
-def download_excel():
-    """Generate and download Excel report"""
-    if current_report['data'] is None:
-        flash('No report data available', 'error')
-        return redirect(url_for('dashboard'))
-    
-    try:
-        output = BytesIO()
-        
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            summary_data = {
-                'Metric': ['Total Enrollment', 'Total Camper Weeks', 'Total FTE', 'Goal', '% to Goal'],
-                'Value': [
-                    current_report['data']['summary']['total_enrollment'],
-                    current_report['data']['summary']['total_camper_weeks'],
-                    current_report['data']['summary']['total_fte'],
-                    current_report['data']['summary']['goal'],
-                    f"{current_report['data']['summary']['percent_to_goal']:.1f}%"
-                ]
-            }
-            pd.DataFrame(summary_data).to_excel(writer, sheet_name='Summary', index=False)
-            
-            programs_df = pd.DataFrame(current_report['data']['programs'])
-            programs_df.to_excel(writer, sheet_name='Programs', index=False)
-            
-            categories_df = pd.DataFrame(current_report['data']['categories'])
-            categories_df.to_excel(writer, sheet_name='By Category', index=False)
-        
-        output.seek(0)
-        
-        filename = f"camp_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        
-        return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=filename
-        )
-    except Exception as e:
-        flash(f'Error generating Excel: {str(e)}', 'error')
-        return redirect(url_for('dashboard'))
-
-# ==================== ERROR HANDLERS ====================
-
-@app.errorhandler(404)
-def not_found(e):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def server_error(e):
-    return render_template('500.html'), 500
-
-# ==================== MAIN ====================
-
-if __name__ == '__main__':
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    os.makedirs(DATA_FOLDER, exist_ok=True)
-    
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=os.environ.get('DEBUG', 'False') == 'True')
+    processor = EnrollmentDataProcessor()
+    return processor.process_enrollment_data(raw_data)
