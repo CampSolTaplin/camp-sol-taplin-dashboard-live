@@ -726,68 +726,85 @@ function buildMultiCampTables() {
     const container = document.getElementById('campComparisonTables');
     container.innerHTML = '';
     
+    if (selectedCamps.length === 0) return;
+    
+    // Build consolidated table like Excel
+    let tableHTML = `
+        <div class="consolidated-comparison-table">
+            <table class="comparison-matrix">
+                <thead>
+                    <tr class="header-row year-2026">
+                        <th class="program-header">Program</th>
+                        <th colspan="9" class="year-header">2026</th>
+                        <th class="total-header">Total</th>
+                    </tr>
+                    <tr class="subheader-row">
+                        <th></th>
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // 2026 Data rows
     selectedCamps.forEach((camp) => {
         const data = campDataCache[camp];
-        
-        let tableHTML = `
-            <div class="camp-table-section">
-                <h4>📋 ${camp}</h4>
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Week</th>
-                            <th>2026</th>
-                            <th>2025</th>
-                            <th>Diff</th>
-                            <th>%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-        
-        let total2026 = 0, total2025 = 0;
-        
-        for (let i = 1; i <= 9; i++) {
-            const val2026 = data.data_2026 ? (data.data_2026[`week_${i}`] || 0) : 0;
-            const val2025 = data.data_2025 ? (data.data_2025[`week_${i}`] || 0) : 0;
-            const diff = val2026 - val2025;
-            const pctChange = val2025 > 0 ? Math.round((diff / val2025) * 100) : (val2026 > 0 ? 100 : 0);
-            
-            total2026 += val2026;
-            total2025 += val2025;
-            
-            const diffClass = diff > 0 ? 'positive' : (diff < 0 ? 'negative' : '');
-            const diffSign = diff > 0 ? '+' : '';
-            
-            tableHTML += `
-                <tr>
-                    <td>Wk ${i}</td>
-                    <td>${val2026}</td>
-                    <td>${val2025}</td>
-                    <td class="${diffClass}">${diffSign}${diff}</td>
-                    <td class="${diffClass}">${diffSign}${pctChange}%</td>
-                </tr>
-            `;
-        }
-        
-        const totalDiff = total2026 - total2025;
-        const totalPct = total2025 > 0 ? Math.round((totalDiff / total2025) * 100) : 0;
-        const totalClass = totalDiff > 0 ? 'positive' : (totalDiff < 0 ? 'negative' : '');
-        const totalSign = totalDiff > 0 ? '+' : '';
+        const d = data.data_2026 || {};
+        const weeks = [d.week_1||0, d.week_2||0, d.week_3||0, d.week_4||0, d.week_5||0, d.week_6||0, d.week_7||0, d.week_8||0, d.week_9||0];
+        const total = weeks.reduce((a,b) => a+b, 0);
         
         tableHTML += `
-                    <tr class="total-row">
-                        <td><strong>Total</strong></td>
-                        <td><strong>${total2026}</strong></td>
-                        <td><strong>${total2025}</strong></td>
-                        <td class="${totalClass}"><strong>${totalSign}${totalDiff}</strong></td>
-                        <td class="${totalClass}"><strong>${totalSign}${totalPct}%</strong></td>
+            <tr class="data-row year-2026">
+                <td class="program-name">${camp}</td>
+                ${weeks.map(w => `<td class="week-cell">${w || ''}</td>`).join('')}
+                <td class="total-cell">${total}</td>
+            </tr>
+        `;
+    });
+    
+    // Separator row
+    tableHTML += `
+                </tbody>
+            </table>
+            
+            <table class="comparison-matrix table-2025">
+                <thead>
+                    <tr class="header-row year-2025">
+                        <th class="program-header">Program</th>
+                        <th colspan="9" class="year-header">2025</th>
+                        <th class="total-header">Total</th>
                     </tr>
+                    <tr class="subheader-row">
+                        <th></th>
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // 2025 Data rows
+    selectedCamps.forEach((camp) => {
+        const data = campDataCache[camp];
+        const d = data.data_2025 || {};
+        const weeks = [d.week_1||0, d.week_2||0, d.week_3||0, d.week_4||0, d.week_5||0, d.week_6||0, d.week_7||0, d.week_8||0, d.week_9||0];
+        const total = weeks.reduce((a,b) => a+b, 0);
+        
+        tableHTML += `
+            <tr class="data-row year-2025">
+                <td class="program-name">${camp}</td>
+                ${weeks.map(w => `<td class="week-cell">${w || ''}</td>`).join('')}
+                <td class="total-cell">${total}</td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
                 </tbody>
             </table>
         </div>
-        `;
-        
-        container.innerHTML += tableHTML;
-    });
+    `;
+    
+    container.innerHTML = tableHTML;
 }
