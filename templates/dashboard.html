@@ -27,6 +27,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 <span>Year Comparison</span>
             </div>
+            <div class="nav-item" data-view="campcomparison" onclick="switchView('campcomparison')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+                <span>Camp Comparison</span>
+            </div>
             <div class="nav-item" data-view="detailed" onclick="switchView('detailed')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                 <span>Detailed View</span>
@@ -147,6 +151,10 @@
                     <div class="kpi-label">📈 Total FTE</div>
                     <div class="kpi-value">{{ report.summary.total_fte }}</div>
                     <div class="kpi-subtext">Goal: {{ report.summary.goal }}</div>
+                </div>
+                <div class="kpi-card avg-weeks">
+                    <div class="kpi-label">📊 Avg Weeks/Camper</div>
+                    <div class="kpi-value">{{ '%.1f'|format(report.summary.avg_weeks_per_camper) if report.summary.avg_weeks_per_camper else '0.0' }}</div>
                 </div>
                 <div class="kpi-card goal">
                     <div class="kpi-label">🎯 % to Goal</div>
@@ -460,6 +468,53 @@
                                 </td>
                             </tr>
                             {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAMP COMPARISON VIEW -->
+        <div id="campcomparison-view" class="view-content">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>📊 Camp-by-Camp Comparison: 2026 vs 2025</h3>
+                    <p class="section-subtitle">Compare enrollment by week for each camp between years</p>
+                </div>
+                
+                <div class="camp-comparison-filters">
+                    <label>Select Camp:</label>
+                    <select id="campComparisonSelect" onchange="updateCampComparison()">
+                        <option value="">-- Select a Camp --</option>
+                        {% if report and report.programs %}
+                        {% for prog in report.programs %}
+                        <option value="{{ prog.program }}">{{ prog.program }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                
+                <div id="campComparisonContent" class="camp-comparison-content">
+                    <p class="placeholder-text">Select a camp above to see the year-over-year comparison</p>
+                </div>
+                
+                <div id="campComparisonChart" class="chart-container" style="display: none;">
+                    <canvas id="campCompareChart"></canvas>
+                </div>
+                
+                <div id="campComparisonTable" style="display: none;">
+                    <h4>📋 Week-by-Week Comparison</h4>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>2026</th>
+                                <th>2025</th>
+                                <th>Difference</th>
+                                <th>% Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="campComparisonTableBody">
                         </tbody>
                     </table>
                 </div>
