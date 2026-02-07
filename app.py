@@ -53,23 +53,45 @@ login_manager.login_view = 'login'
 
 def load_users():
     """Load users from JSON file"""
+    # Check if we need to recreate default users (version check)
+    recreate = False
     if os.path.exists(USERS_FILE):
         try:
             with open(USERS_FILE, 'r') as f:
-                return json.load(f)
+                existing = json.load(f)
+                # Check if Admin user exists with correct case
+                if 'Admin' not in existing and 'admin' in existing:
+                    recreate = True  # Need to update to new user structure
+                elif 'Admin' in existing:
+                    return existing
         except:
-            pass
+            recreate = True
+    else:
+        recreate = True
     
-    # Default users if file doesn't exist
-    default_users = {
-        'admin': {
-            'password': generate_password_hash('CampSol2026!'),
-            'role': 'admin',
-            'created_at': datetime.now().isoformat()
+    if recreate:
+        # Default users
+        default_users = {
+            'Admin': {
+                'password': generate_password_hash('Admin'),
+                'role': 'admin',
+                'created_at': datetime.now().isoformat()
+            },
+            'CampTest': {
+                'password': generate_password_hash('CampTest'),
+                'role': 'viewer',
+                'created_at': datetime.now().isoformat()
+            },
+            'UnitLeader': {
+                'password': generate_password_hash('Cst1234'),
+                'role': 'unit_leader',
+                'created_at': datetime.now().isoformat()
+            }
         }
-    }
-    save_users(default_users)
-    return default_users
+        save_users(default_users)
+        return default_users
+    
+    return {}
 
 def save_users(users):
     """Save users to JSON file"""
@@ -224,13 +246,22 @@ def login():
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
-        username = request.form.get('username', '').strip().lower()
+        username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         
         users = load_users()
         
-        if username in users and check_password_hash(users[username]['password'], password):
-            user = User(username, users[username]['role'])
+        # Find user (case-insensitive)
+        matched_user = None
+        matched_username = None
+        for stored_username, user_data in users.items():
+            if stored_username.lower() == username.lower():
+                matched_user = user_data
+                matched_username = stored_username
+                break
+        
+        if matched_user and check_password_hash(matched_user['password'], password):
+            user = User(matched_username, matched_user['role'])
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
@@ -363,7 +394,7 @@ def api_create_user():
     if not password or len(password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters'}), 400
     
-    if role not in ['admin', 'viewer']:
+    if role not in ['admin', 'viewer', 'unit_leader']:
         return jsonify({'error': 'Invalid role'}), 400
     
     # Check if username is alphanumeric
