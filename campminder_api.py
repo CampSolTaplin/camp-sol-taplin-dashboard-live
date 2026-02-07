@@ -566,23 +566,75 @@ class CampMinderAPIClient:
 class EnrollmentDataProcessor:
     """Process enrollment data into dashboard-ready format"""
     
-    # Program category mapping (same as your parser.py)
+    # Program order (for consistent display)
+    PROGRAM_ORDER = [
+        'Infants', 'Toddler', 'PK2', 'PK3', 'PK4',
+        'Tsofim', "Tsofim Children's Trust",
+        'Yeladim', "Yeladim Children's Trust",
+        'Chaverim', "Chaverim Children's Trust",
+        'Giborim', "Giborim Children's Trust",
+        'Madli-Teen', "Madli-Teen Children's Trust",
+        'Teen Travel', 'Teen Travel: Epic Trip to Orlando',
+        'Basketball', 'Flag Football', 'Soccer',
+        'Sports Academy 1', 'Sports Academy 2',
+        'Tennis Academy', 'Tennis Academy - Half Day',
+        'Swim Academy',
+        'Tiny Tumblers Gymnastics', 'Recreational Gymnastics',
+        'Competitive Gymnastics Team', 'Volleyball', 'MMA Camp',
+        'Teeny Tiny Tnuah', 'Tiny Tnuah 1', 'Tiny Tnuah 2',
+        'Tnuah 1', 'Tnuah 2', 'Extreme Tnuah',
+        'Art Exploration', 'Music Camp', 'Theater Camp',
+        'Madatzim 9th Grade', 'Madatzim 10th Grade',
+        'OMETZ'
+    ]
+    
+    # Program category mapping
     PROGRAM_CATEGORIES = {
         'Early Childhood': ['Infants', 'Toddler', 'PK2', 'PK3', 'PK4'],
-        'Variety': ['Tsofim', 'Yeladim', 'Chaverim', 'Giborim', 'Ozrim', 'Madliteen', 'Madli-teen', 'Madli-Teen'],
-        'Sports': ['Basketball', 'Soccer', 'Tennis', 'Flag Football', 'Gymnastics', 'Karate', 'Multi-Sport', 'Baseball', 'Volleyball'],
-        'Performing Arts': ["T'nuah", 'Tnuah', 'Theater', 'Theatre', 'Dance', 'Music'],
-        'Teen Leadership': ['LIT', 'CIT', 'Leadership', 'Teen'],
+        'Variety': ['Tsofim', 'Yeladim', 'Chaverim', 'Giborim'],
+        'Sports': [
+            'Basketball', 'Soccer', 'Tennis', 'Flag Football', 
+            'Gymnastics', 'Volleyball', 'Baseball',
+            'MMA Camp', 'Sports Academy 1', 'Sports Academy 2', 'Swim Academy'
+        ],
+        'Performing Arts': ["T'nuah", 'Tnuah', 'Theater', 'Theatre', 'Dance', 'Music', 'Art Exploration'],
+        'Teen Leadership': ['Teen Travel', 'Madli-Teen', 'Madli-teen'],
+        'Teen Camps': ['Madatzim'],
         "Children's Trust": ["Children's Trust", 'Koach'],
-        'Specialty': ['Art', 'Science', 'STEM', 'Coding', 'Robotics', 'Nature']
+        'Special Needs': ['OMETZ']
     }
     
-    # Program goals (same as parser.py)
+    # Program goals - COMPLETE LIST
     PROGRAM_GOALS = {
+        # Early Childhood
         'Infants': 6, 'Toddler': 12, 'PK2': 26, 'PK3': 36, 'PK4': 40,
-        'Tsofim': 20, 'Yeladim': 28, 'Chaverim': 24, 'Giborim': 10,
-        # ... add all goals from your parser.py
+        # Variety Camps
+        'Tsofim': 100, "Tsofim Children's Trust": 10,
+        'Yeladim': 100, "Yeladim Children's Trust": 10,
+        'Chaverim': 75, "Chaverim Children's Trust": 10,
+        'Giborim': 60, "Giborim Children's Trust": 10,
+        'Madli-Teen': 40, "Madli-Teen Children's Trust": 5,
+        # Teen Leadership
+        'Teen Travel': 30, 'Teen Travel: Epic Trip to Orlando': 15,
+        # Sports
+        'Basketball': 25, 'Flag Football': 20, 'Soccer': 25,
+        'Sports Academy 1': 20, 'Sports Academy 2': 20,
+        'Tennis Academy': 20, 'Tennis Academy - Half Day': 15,
+        'Swim Academy': 20,
+        'Tiny Tumblers Gymnastics': 15, 'Recreational Gymnastics': 20,
+        'Competitive Gymnastics Team': 15, 'Volleyball': 20, 'MMA Camp': 15,
+        # Performing Arts / Tnuah
+        'Teeny Tiny Tnuah': 20, 'Tiny Tnuah 1': 25, 'Tiny Tnuah 2': 25,
+        'Tnuah 1': 30, 'Tnuah 2': 30, 'Extreme Tnuah': 20,
+        'Art Exploration': 20, 'Music Camp': 20, 'Theater Camp': 25,
+        # Teen Camps
+        'Madatzim 9th Grade': 25, 'Madatzim 10th Grade': 20,
+        # Special Needs
+        'OMETZ': 15
     }
+    
+    # Total goal is 750 FTE
+    TOTAL_GOAL = 750
     
     def __init__(self):
         self.category_colors = {
@@ -591,8 +643,10 @@ class EnrollmentDataProcessor:
             'Sports': '#42A5F5',
             'Performing Arts': '#AB47BC',
             'Teen Leadership': '#5C6BC0',
+            'Teen Camps': '#8D6E63',
             "Children's Trust": '#FF7043',
-            'Specialty': '#26A69A'
+            'Special Needs': '#26A69A',
+            'Other': '#999999'
         }
         
         self.category_emojis = {
@@ -601,8 +655,10 @@ class EnrollmentDataProcessor:
             'Sports': '⚽',
             'Performing Arts': '🎭',
             'Teen Leadership': '🌟',
+            'Teen Camps': '🎓',
             "Children's Trust": '🤝',
-            'Specialty': '🎨'
+            'Special Needs': '💙',
+            'Other': '📋'
         }
     
     def process_enrollment_data(self, raw_data: Dict) -> Dict:
@@ -703,7 +759,7 @@ class EnrollmentDataProcessor:
         # Calculate summary
         total_enrollment = len(person_programs)
         total_fte = round(total_weeks / 9, 2)
-        total_goal = sum(self.PROGRAM_GOALS.values())
+        avg_weeks = round(total_weeks / total_enrollment, 2) if total_enrollment > 0 else 0
         
         # Build date stats
         date_stats = self._build_date_stats(enrollments)
@@ -711,20 +767,36 @@ class EnrollmentDataProcessor:
         # Build participants data for modal
         participants = self._build_participants_data(programs_data)
         
+        # Sort programs by custom order
+        programs = self._sort_programs(programs)
+        
         return {
             'summary': {
                 'total_enrollment': total_enrollment,
                 'total_camper_weeks': total_weeks,
                 'total_fte': total_fte,
-                'goal': total_goal,
-                'percent_to_goal': round((total_fte / total_goal * 100) if total_goal > 0 else 0, 1)
+                'avg_weeks_per_camper': avg_weeks,
+                'goal': self.TOTAL_GOAL,
+                'percent_to_goal': round((total_fte / self.TOTAL_GOAL * 100) if self.TOTAL_GOAL > 0 else 0, 1)
             },
-            'programs': sorted(programs, key=lambda x: (x['category'], x['program'])),
+            'programs': programs,
             'categories': sorted(categories, key=lambda x: x['category']),
             'date_stats': date_stats,
             'participants': participants,
             'fetched_at': raw_data.get('fetched_at', datetime.now().isoformat())
         }
+    
+    def _sort_programs(self, programs: List[Dict]) -> List[Dict]:
+        """Sort programs according to PROGRAM_ORDER"""
+        def get_sort_key(program):
+            name = program['program']
+            try:
+                return self.PROGRAM_ORDER.index(name)
+            except ValueError:
+                # If not in list, sort alphabetically at the end
+                return len(self.PROGRAM_ORDER) + ord(name[0]) if name else 999
+        
+        return sorted(programs, key=get_sort_key)
     
     def _get_category(self, program_name: str) -> str:
         """Get category for a program"""
