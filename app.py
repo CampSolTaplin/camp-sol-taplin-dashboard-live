@@ -535,6 +535,7 @@ def api_status():
     
     return jsonify({
         'api_configured': is_api_configured(),
+        'campminder_api_module_available': CAMPMINDER_API_AVAILABLE,
         'api_key_set': bool(CAMPMINDER_API_KEY),
         'api_key_length': len(CAMPMINDER_API_KEY) if CAMPMINDER_API_KEY else 0,
         'api_key_preview': api_key_preview,
@@ -597,13 +598,18 @@ def api_debug_data():
     sub_key = os.environ.get('CAMPMINDER_SUBSCRIPTION_KEY')
     season_id = int(os.environ.get('CAMPMINDER_SEASON_ID', '2026'))
     
+    # First check - are env vars set?
     if not api_key or not sub_key:
         return jsonify({
-            'error': 'API not configured',
+            'error': 'Environment variables not set',
             'api_key_exists': bool(api_key),
-            'sub_key_exists': bool(sub_key),
-            'CAMPMINDER_API_KEY_global': bool(CAMPMINDER_API_KEY),
-            'CAMPMINDER_SUBSCRIPTION_KEY_global': bool(CAMPMINDER_SUBSCRIPTION_KEY)
+            'sub_key_exists': bool(sub_key)
+        })
+    
+    # Second check - is campminder_api module available?
+    if not CAMPMINDER_API_AVAILABLE:
+        return jsonify({
+            'error': 'campminder_api module not available - check if file exists and has no import errors'
         })
     
     try:
@@ -612,8 +618,13 @@ def api_debug_data():
         client = CampMinderAPIClient(api_key, sub_key)
         
         # Authenticate first
-        if not client.authenticate():
-            return jsonify({'error': 'Authentication failed', 'client_id': client.client_id})
+        auth_result = client.authenticate()
+        if not auth_result:
+            return jsonify({
+                'error': 'Authentication failed',
+                'client_id': client.client_id,
+                'jwt_token_exists': bool(client.jwt_token)
+            })
         
         client_id = client.client_id
         
