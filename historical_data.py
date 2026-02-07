@@ -223,3 +223,34 @@ class HistoricalDataManager:
                     chart_data[year].append(0)
         
         return chart_data
+    
+    def get_program_data(self, year: int, program_name: str) -> Optional[Dict]:
+        """
+        Get enrollment data for a specific program in a specific year
+        
+        Returns week-by-week enrollment for the program
+        """
+        year_data = self.get_year_data(year)
+        if not year_data or 'programs' not in year_data:
+            return None
+        
+        # Find the program
+        for prog in year_data['programs']:
+            if prog.get('program') == program_name or prog.get('name') == program_name:
+                return {
+                    'program': program_name,
+                    'year': year,
+                    'week_1': prog.get('week_1', 0),
+                    'week_2': prog.get('week_2', 0),
+                    'week_3': prog.get('week_3', 0),
+                    'week_4': prog.get('week_4', 0),
+                    'week_5': prog.get('week_5', 0),
+                    'week_6': prog.get('week_6', 0),
+                    'week_7': prog.get('week_7', 0),
+                    'week_8': prog.get('week_8', 0),
+                    'week_9': prog.get('week_9', 0),
+                    'total': prog.get('total', 0),
+                    'fte': prog.get('fte', 0)
+                }
+        
+        return None
