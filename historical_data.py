@@ -187,14 +187,21 @@ class HistoricalDataManager:
     def get_weekly_comparison_chart_data(self) -> Dict:
         """
         Get data formatted for a multi-year comparison chart
-        Aligns years by days from Jan 1 for fair comparison
+        Uses day/month format for labels (ignoring year for comparison)
         """
+        from datetime import date, timedelta
+        
         chart_data = {
-            'labels': [],  # Days from Jan 1
+            'labels': [],  # Day/Month format (e.g., "Jan 15", "Feb 7")
+            'days': [],    # Days from Jan 1 (for internal use)
             '2024': [],
             '2025': [],
             '2026': []  # Will be filled with current data if available
         }
+        
+        # Get today's day of year to limit 2026 data
+        today = date.today()
+        today_day_of_year = (today - date(today.year, 1, 1)).days
         
         # Get max days we have data for
         max_days = 0
@@ -205,9 +212,14 @@ class HistoricalDataManager:
                     days = self._days_from_year_start(day['date'])
                     max_days = max(max_days, days)
         
-        # Create aligned data points
+        # Create aligned data points with date labels
         for days_offset in range(0, max_days + 1, 7):  # Weekly intervals
-            chart_data['labels'].append(days_offset)
+            # Create date label (using 2024 as reference year, only showing day/month)
+            ref_date = date(2024, 1, 1) + timedelta(days=days_offset)
+            label = ref_date.strftime('%b %d')  # e.g., "Jan 15", "Feb 07"
+            
+            chart_data['labels'].append(label)
+            chart_data['days'].append(days_offset)
             
             for year in ['2024', '2025']:
                 if year in self.data and 'daily' in self.data[year]:
@@ -221,6 +233,16 @@ class HistoricalDataManager:
                     chart_data[year].append(cumulative)
                 else:
                     chart_data[year].append(0)
+            
+            # For 2026, only include data up to today
+            # (Will be filled by frontend with current data)
+            if days_offset <= today_day_of_year:
+                chart_data['2026'].append(None)  # Placeholder, filled by frontend
+            else:
+                chart_data['2026'].append(None)
+        
+        # Add today's day of year for frontend to know where to cut 2026 line
+        chart_data['today_day_of_year'] = today_day_of_year
         
         return chart_data
     
@@ -240,14 +262,28 @@ class HistoricalDataManager:
         if not programs:
             return None
         
+        # Program name mapping for year-over-year comparison
+        # Maps 2026 names to their 2025 equivalents
+        name_mapping_2025 = {
+            'MMA Camp': 'Karate',
+            'Madatzim 9th Grade': 'Madatzim CIT',
+            'Madatzim 10th Grade': 'Madatzim CIT',  # May need adjustment
+        }
+        
+        # Get the name to search for
+        search_name = program_name
+        if year == 2025 and program_name in name_mapping_2025:
+            search_name = name_mapping_2025[program_name]
+        
         # Find the program
         for prog in programs:
             # Skip if prog is not a dict (defensive check)
             if not isinstance(prog, dict):
                 continue
-                
-            if prog.get('program') == program_name or prog.get('name') == program_name:
-                return {
+            
+            prog_name = prog.get('program') or prog.get('name', '')
+            if prog_name == search_name or prog_name == program_name:
+                result = {
                     'program': program_name,
                     'year': year,
                     'week_1': prog.get('week_1', 0),
@@ -262,5 +298,23 @@ class HistoricalDataManager:
                     'total': prog.get('total', 0),
                     'fte': prog.get('fte', 0)
                 }
+                
+                # Special handling for Theater Camp - extend weeks
+                if prog_name == 'Theater Camp' and year == 2025:
+                    # Week 2 data extends to weeks 3, 4, 5
+                    week_2_val = result['week_2']
+                    result['week_3'] = week_2_val
+                    result['week_4'] = week_2_val
+                    result['week_5'] = week_2_val
+                    # Week 6 data extends to weeks 7, 8, 9
+                    week_6_val = result['week_6']
+                    result['week_7'] = week_6_val
+                    result['week_8'] = week_6_val
+                    result['week_9'] = week_6_val
+                    # Recalculate total
+                    result['total'] = sum([result[f'week_{i}'] for i in range(1, 10)])
+                    result['fte'] = round(result['total'] / 9, 2)
+                
+                return result
         
         return None
