@@ -234,8 +234,18 @@ class HistoricalDataManager:
         if not year_data or 'programs' not in year_data:
             return None
         
+        programs = year_data['programs']
+        
+        # Handle case where programs might be in different formats
+        if not programs:
+            return None
+        
         # Find the program
-        for prog in year_data['programs']:
+        for prog in programs:
+            # Skip if prog is not a dict (defensive check)
+            if not isinstance(prog, dict):
+                continue
+                
             if prog.get('program') == program_name or prog.get('name') == program_name:
                 return {
                     'program': program_name,
