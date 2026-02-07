@@ -333,20 +333,42 @@ class CampMinderAPIClient:
         
         logger.info(f"Fetched: {len(sessions)} sessions, {len(programs)} programs, {len(attendees)} attendees")
         
-        # Build lookup maps
-        session_map = {s['ID']: s for s in sessions}
+        # Build program map: ID -> program data
         program_map = {p['ID']: p for p in programs}
         
-        # Build session to weeks mapping (handling multi-week sessions)
-        session_to_weeks = {}
-        for session in sessions:
-            name = session.get('Name', '')
-            week_info = self._extract_week_info(name, session.get('SortOrder', 0))
-            session_to_weeks[session['ID']] = week_info['weeks']
-            logger.debug(f"Session '{name}' -> Weeks {week_info['weeks']}")
+        # Build comprehensive session map from multiple sources:
+        # 1. Main sessions endpoint
+        # 2. ProgramSeasons within each program
+        session_map = {}
+        
+        # Add sessions from main endpoint
+        for s in sessions:
+            session_map[s['ID']] = {
+                'name': s.get('Name', ''),
+                'start_date': s.get('StartDate', ''),
+                'end_date': s.get('EndDate', ''),
+                'sort_order': s.get('SortOrder', 0)
+            }
+        
+        # Add sessions from ProgramSeasons (these might have different IDs)
+        for program in programs:
+            for ps in program.get('ProgramSeasons', []):
+                session_id = ps.get('SessionID')
+                if session_id and session_id not in session_map:
+                    session_map[session_id] = {
+                        'name': f"Week from {ps.get('StartDate', '')[:10]}",
+                        'start_date': ps.get('StartDate', ''),
+                        'end_date': ps.get('EndDate', ''),
+                        'sort_order': 0
+                    }
+        
+        logger.info(f"Built session map with {len(session_map)} entries")
+        
+        # Define camp week date ranges for 2026
+        # This maps date ranges to week numbers
+        week_date_ranges = self._build_week_date_ranges(season_id)
         
         # Process attendees into enrollment data
-        # For multi-week sessions, create one enrollment record per week
         enrollments = []
         
         for attendee in attendees:
@@ -364,28 +386,27 @@ class CampMinderAPIClient:
                 if status_id not in [2, 4]:
                     continue
                 
-                session = session_map.get(session_id, {})
                 program = program_map.get(program_id, {})
+                session_info = session_map.get(session_id, {})
                 
-                weeks = session_to_weeks.get(session_id, [])
+                # Determine week number from session info
+                week_num = self._get_week_from_session(session_info, week_date_ranges)
                 
-                # Create one enrollment record per week in the session
-                for week_num in weeks:
-                    if 1 <= week_num <= 9:
-                        enrollments.append({
-                            'person_id': person_id,
-                            'program_id': program_id,
-                            'program_name': program.get('Name', 'Unknown'),
-                            'session_id': session_id,
-                            'session_name': session.get('Name', 'Unknown'),
-                            'week': week_num,
-                            'status_id': status_id,
-                            'status_name': status_name,
-                            'enrollment_date': effective_date or (post_date[:10] if post_date else ''),
-                            'post_date': post_date
-                        })
+                if week_num > 0:
+                    enrollments.append({
+                        'person_id': person_id,
+                        'program_id': program_id,
+                        'program_name': program.get('Name', 'Unknown'),
+                        'session_id': session_id,
+                        'session_name': session_info.get('name', 'Unknown'),
+                        'week': week_num,
+                        'status_id': status_id,
+                        'status_name': status_name,
+                        'enrollment_date': effective_date or (post_date[:10] if post_date else ''),
+                        'post_date': post_date
+                    })
         
-        logger.info(f"Processed {len(enrollments)} enrollment records (expanded for multi-week sessions)")
+        logger.info(f"Processed {len(enrollments)} enrollment records")
         
         return {
             'enrollments': enrollments,
@@ -395,6 +416,86 @@ class CampMinderAPIClient:
             'client_id': client_id,
             'fetched_at': datetime.now().isoformat()
         }
+    
+    def _build_week_date_ranges(self, season_id: int) -> List[Dict]:
+        """
+        Build week date ranges for the camp season
+        
+        For 2026, camp typically runs:
+        - Week 1: June 8-12 (Mon-Fri)
+        - Week 2: June 15-19
+        - Week 3: June 22-26
+        - Week 4: June 29 - July 3
+        - Week 5: July 6-10
+        - Week 6: July 13-17
+        - Week 7: July 20-24
+        - Week 8: July 27-31
+        - Week 9: Aug 3-7
+        """
+        from datetime import date
+        
+        if season_id == 2026:
+            return [
+                {'week': 1, 'start': date(2026, 6, 8), 'end': date(2026, 6, 12)},
+                {'week': 2, 'start': date(2026, 6, 15), 'end': date(2026, 6, 19)},
+                {'week': 3, 'start': date(2026, 6, 22), 'end': date(2026, 6, 26)},
+                {'week': 4, 'start': date(2026, 6, 29), 'end': date(2026, 7, 3)},
+                {'week': 5, 'start': date(2026, 7, 6), 'end': date(2026, 7, 10)},
+                {'week': 6, 'start': date(2026, 7, 13), 'end': date(2026, 7, 17)},
+                {'week': 7, 'start': date(2026, 7, 20), 'end': date(2026, 7, 24)},
+                {'week': 8, 'start': date(2026, 7, 27), 'end': date(2026, 7, 31)},
+                {'week': 9, 'start': date(2026, 8, 3), 'end': date(2026, 8, 7)},
+            ]
+        elif season_id == 2025:
+            return [
+                {'week': 1, 'start': date(2025, 6, 9), 'end': date(2025, 6, 13)},
+                {'week': 2, 'start': date(2025, 6, 16), 'end': date(2025, 6, 20)},
+                {'week': 3, 'start': date(2025, 6, 23), 'end': date(2025, 6, 27)},
+                {'week': 4, 'start': date(2025, 6, 30), 'end': date(2025, 7, 4)},
+                {'week': 5, 'start': date(2025, 7, 7), 'end': date(2025, 7, 11)},
+                {'week': 6, 'start': date(2025, 7, 14), 'end': date(2025, 7, 18)},
+                {'week': 7, 'start': date(2025, 7, 21), 'end': date(2025, 7, 25)},
+                {'week': 8, 'start': date(2025, 7, 28), 'end': date(2025, 8, 1)},
+                {'week': 9, 'start': date(2025, 8, 4), 'end': date(2025, 8, 8)},
+            ]
+        else:
+            # Generic summer weeks starting second Monday of June
+            return [{'week': i, 'start': date(season_id, 6, 8 + (i-1)*7), 'end': date(season_id, 6, 12 + (i-1)*7)} for i in range(1, 10)]
+    
+    def _get_week_from_session(self, session_info: Dict, week_date_ranges: List[Dict]) -> int:
+        """
+        Determine week number from session info
+        
+        First tries to extract from session name, then falls back to date matching
+        """
+        from datetime import date
+        
+        # First, try to extract week from session name
+        name = session_info.get('name', '')
+        week_info = self._extract_week_info(name, session_info.get('sort_order', 0))
+        if week_info['weeks']:
+            return week_info['weeks'][0]
+        
+        # Fall back to date-based matching
+        start_date_str = session_info.get('start_date', '')
+        if start_date_str:
+            try:
+                # Parse ISO date (could be "2026-06-15T13:00:00+00:00" or similar)
+                date_part = start_date_str[:10]  # Get YYYY-MM-DD
+                year, month, day = map(int, date_part.split('-'))
+                session_date = date(year, month, day)
+                
+                # Find which week this date falls into
+                for week_range in week_date_ranges:
+                    if week_range['start'] <= session_date <= week_range['end']:
+                        return week_range['week']
+                    # Also check if session starts within 2 days of week start (for slight variations)
+                    if abs((session_date - week_range['start']).days) <= 2:
+                        return week_range['week']
+            except Exception as e:
+                logger.debug(f"Could not parse date {start_date_str}: {e}")
+        
+        return 0
     
     def _extract_week_info(self, session_name: str, sort_order: int = 0) -> Dict:
         """
