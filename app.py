@@ -785,6 +785,38 @@ def get_report_data():
         'comparison_2024': comparison_2024
     })
 
+@app.route('/api/program-comparison/<program_name>')
+@login_required
+def get_program_comparison(program_name):
+    """Get historical comparison data for a specific program"""
+    # Get 2026 data from API or current report
+    data_2026 = None
+    if is_api_configured() and api_cache.get('data'):
+        data_2026 = api_cache['data']
+    elif current_report.get('data'):
+        data_2026 = current_report['data']
+    
+    # Find program in 2026 data
+    program_2026 = None
+    if data_2026 and data_2026.get('programs'):
+        for prog in data_2026['programs']:
+            if prog['program'] == program_name:
+                program_2026 = prog
+                break
+    
+    # Get 2025 historical data
+    program_2025 = historical_manager.get_program_data(2025, program_name)
+    
+    # Get 2024 historical data  
+    program_2024 = historical_manager.get_program_data(2024, program_name)
+    
+    return jsonify({
+        'program_name': program_name,
+        'data_2026': program_2026,
+        'data_2025': program_2025,
+        'data_2024': program_2024
+    })
+
 @app.route('/download-excel')
 @login_required
 def download_excel():
