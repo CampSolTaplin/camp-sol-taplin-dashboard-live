@@ -244,6 +244,7 @@ function initComparisonChart() {
     }
     
     const datasets = [];
+    const todayDayOfYear = data.today_day_of_year || 365;
     
     if (data['2024'] && data['2024'].length > 0) {
         datasets.push({
@@ -270,13 +271,20 @@ function initComparisonChart() {
         });
     }
     
-    // Add 2026 if we have current data
+    // Add 2026 if we have current data - cut at today's date
     if (window.dateStats2026 && window.dateStats2026.length > 0) {
         const data2026 = [];
-        const labels = data.labels || [];
+        const days = data.days || [];
         
-        for (let i = 0; i < labels.length; i++) {
-            const daysOffset = labels[i];
+        for (let i = 0; i < days.length; i++) {
+            const daysOffset = days[i];
+            
+            // Only show data up to today
+            if (daysOffset > todayDayOfYear) {
+                data2026.push(null);
+                continue;
+            }
+            
             let cumulative = 0;
             
             for (const day of window.dateStats2026) {
@@ -308,7 +316,7 @@ function initComparisonChart() {
     comparisonChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: (data.labels || []).map(d => 'Day ' + d),
+            labels: data.labels || [],
             datasets: datasets
         },
         options: {
@@ -318,14 +326,14 @@ function initComparisonChart() {
                 legend: { display: true, position: 'top' },
                 title: {
                     display: true,
-                    text: 'Cumulative Camper Weeks by Days from January 1',
+                    text: 'Cumulative Camper Weeks Comparison',
                     font: { size: 16 }
                 }
             },
             scales: {
                 x: {
-                    title: { display: true, text: 'Days from January 1', font: { weight: 'bold' } },
-                    ticks: { maxTicksLimit: 20 }
+                    title: { display: true, text: 'Date', font: { weight: 'bold' } },
+                    ticks: { maxTicksLimit: 15 }
                 },
                 y: {
                     title: { display: true, text: 'Cumulative Camper Weeks', font: { weight: 'bold' } },
@@ -561,16 +569,45 @@ document.addEventListener('DOMContentLoaded', function() {
 // ==================== CAMP COMPARISON FUNCTIONS ====================
 
 let campCompareChart = null;
+let selectedCamps = [];
+let campDataCache = {};
 
-async function updateCampComparison() {
-    const select = document.getElementById('campComparisonSelect');
-    const programName = select.value;
+// Colors for multiple camps
+const campColors = [
+    { bg: 'rgba(38, 166, 154, 0.8)', border: 'rgba(38, 166, 154, 1)' },
+    { bg: 'rgba(255, 179, 71, 0.8)', border: 'rgba(255, 179, 71, 1)' },
+    { bg: 'rgba(66, 165, 245, 0.8)', border: 'rgba(66, 165, 245, 1)' },
+    { bg: 'rgba(171, 71, 188, 0.8)', border: 'rgba(171, 71, 188, 1)' },
+    { bg: 'rgba(255, 112, 67, 0.8)', border: 'rgba(255, 112, 67, 1)' },
+    { bg: 'rgba(124, 179, 66, 0.8)', border: 'rgba(124, 179, 66, 1)' },
+    { bg: 'rgba(141, 110, 99, 0.8)', border: 'rgba(141, 110, 99, 1)' },
+    { bg: 'rgba(92, 107, 192, 0.8)', border: 'rgba(92, 107, 192, 1)' }
+];
+
+function clearCampSelection() {
+    document.querySelectorAll('#campCheckboxes input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+    selectedCamps = [];
+    campDataCache = {};
+    document.getElementById('campComparisonContent').innerHTML = 
+        '<p class="placeholder-text">Select camps above to see the year-over-year comparison</p>';
+    document.getElementById('campComparisonChart').style.display = 'none';
+    document.getElementById('campComparisonTables').innerHTML = '';
+}
+
+async function updateMultiCampComparison() {
+    // Get all selected camps
+    selectedCamps = [];
+    document.querySelectorAll('#campCheckboxes input[type="checkbox"]:checked').forEach(cb => {
+        selectedCamps.push(cb.value);
+    });
     
-    if (!programName) {
+    if (selectedCamps.length === 0) {
         document.getElementById('campComparisonContent').innerHTML = 
-            '<p class="placeholder-text">Select a camp above to see the year-over-year comparison</p>';
+            '<p class="placeholder-text">Select camps above to see the year-over-year comparison</p>';
         document.getElementById('campComparisonChart').style.display = 'none';
-        document.getElementById('campComparisonTable').style.display = 'none';
+        document.getElementById('campComparisonTables').innerHTML = '';
         return;
     }
     
@@ -579,18 +616,27 @@ async function updateCampComparison() {
         '<p class="placeholder-text">Loading comparison data...</p>';
     
     try {
-        const response = await fetch(`/api/program-comparison/${encodeURIComponent(programName)}`);
-        const data = await response.json();
+        // Fetch data for all selected camps
+        const fetchPromises = selectedCamps.map(async (camp) => {
+            if (!campDataCache[camp]) {
+                const response = await fetch(`/api/program-comparison/${encodeURIComponent(camp)}`);
+                campDataCache[camp] = await response.json();
+            }
+            return campDataCache[camp];
+        });
+        
+        await Promise.all(fetchPromises);
         
         // Hide placeholder
         document.getElementById('campComparisonContent').innerHTML = '';
         
-        // Build comparison chart and table
-        buildCampComparisonChart(data);
-        buildCampComparisonTable(data);
+        // Build chart with all camps
+        buildMultiCampChart();
+        
+        // Build tables for each camp
+        buildMultiCampTables();
         
         document.getElementById('campComparisonChart').style.display = 'block';
-        document.getElementById('campComparisonTable').style.display = 'block';
         
     } catch (error) {
         console.error('Error loading camp comparison:', error);
@@ -599,7 +645,7 @@ async function updateCampComparison() {
     }
 }
 
-function buildCampComparisonChart(data) {
+function buildMultiCampChart() {
     const ctx = document.getElementById('campCompareChart').getContext('2d');
     
     // Destroy existing chart
@@ -607,40 +653,50 @@ function buildCampComparisonChart(data) {
         campCompareChart.destroy();
     }
     
-    const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8', 'Week 9'];
+    const weeks = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6', 'Wk 7', 'Wk 8', 'Wk 9'];
+    const datasets = [];
     
-    const data2026 = data.data_2026 ? 
-        [data.data_2026.week_1, data.data_2026.week_2, data.data_2026.week_3, 
-         data.data_2026.week_4, data.data_2026.week_5, data.data_2026.week_6,
-         data.data_2026.week_7, data.data_2026.week_8, data.data_2026.week_9] : 
-        [0,0,0,0,0,0,0,0,0];
-    
-    const data2025 = data.data_2025 ? 
-        [data.data_2025.week_1, data.data_2025.week_2, data.data_2025.week_3,
-         data.data_2025.week_4, data.data_2025.week_5, data.data_2025.week_6,
-         data.data_2025.week_7, data.data_2025.week_8, data.data_2025.week_9] :
-        [0,0,0,0,0,0,0,0,0];
+    selectedCamps.forEach((camp, index) => {
+        const data = campDataCache[camp];
+        const colorIndex = index % campColors.length;
+        
+        // 2026 data
+        const data2026 = data.data_2026 ? 
+            [data.data_2026.week_1, data.data_2026.week_2, data.data_2026.week_3, 
+             data.data_2026.week_4, data.data_2026.week_5, data.data_2026.week_6,
+             data.data_2026.week_7, data.data_2026.week_8, data.data_2026.week_9] : 
+            [0,0,0,0,0,0,0,0,0];
+        
+        datasets.push({
+            label: `${camp} (2026)`,
+            data: data2026,
+            backgroundColor: campColors[colorIndex].bg,
+            borderColor: campColors[colorIndex].border,
+            borderWidth: 1
+        });
+        
+        // 2025 data (lighter/striped)
+        const data2025 = data.data_2025 ? 
+            [data.data_2025.week_1, data.data_2025.week_2, data.data_2025.week_3,
+             data.data_2025.week_4, data.data_2025.week_5, data.data_2025.week_6,
+             data.data_2025.week_7, data.data_2025.week_8, data.data_2025.week_9] :
+            [0,0,0,0,0,0,0,0,0];
+        
+        datasets.push({
+            label: `${camp} (2025)`,
+            data: data2025,
+            backgroundColor: campColors[colorIndex].bg.replace('0.8', '0.3'),
+            borderColor: campColors[colorIndex].border,
+            borderWidth: 1,
+            borderDash: [5, 5]
+        });
+    });
     
     campCompareChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: weeks,
-            datasets: [
-                {
-                    label: '2026',
-                    data: data2026,
-                    backgroundColor: 'rgba(38, 166, 154, 0.8)',
-                    borderColor: 'rgba(38, 166, 154, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: '2025',
-                    data: data2025,
-                    backgroundColor: 'rgba(255, 179, 71, 0.8)',
-                    borderColor: 'rgba(255, 179, 71, 1)',
-                    borderWidth: 1
-                }
-            ]
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -648,68 +704,90 @@ function buildCampComparisonChart(data) {
             plugins: {
                 title: {
                     display: true,
-                    text: `${data.program_name} - Enrollment by Week`,
+                    text: 'Enrollment by Week - 2026 vs 2025',
                     font: { size: 16 }
                 },
                 legend: {
-                    position: 'top'
+                    position: 'top',
+                    labels: { boxWidth: 12, font: { size: 10 } }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Campers'
-                    }
+                    title: { display: true, text: 'Campers' }
                 }
             }
         }
     });
 }
 
-function buildCampComparisonTable(data) {
-    const tbody = document.getElementById('campComparisonTableBody');
-    tbody.innerHTML = '';
+function buildMultiCampTables() {
+    const container = document.getElementById('campComparisonTables');
+    container.innerHTML = '';
     
-    let total2026 = 0, total2025 = 0;
-    
-    for (let i = 1; i <= 9; i++) {
-        const val2026 = data.data_2026 ? (data.data_2026[`week_${i}`] || 0) : 0;
-        const val2025 = data.data_2025 ? (data.data_2025[`week_${i}`] || 0) : 0;
-        const diff = val2026 - val2025;
-        const pctChange = val2025 > 0 ? Math.round((diff / val2025) * 100) : (val2026 > 0 ? 100 : 0);
+    selectedCamps.forEach((camp) => {
+        const data = campDataCache[camp];
         
-        total2026 += val2026;
-        total2025 += val2025;
-        
-        const diffClass = diff > 0 ? 'positive' : (diff < 0 ? 'negative' : '');
-        const diffSign = diff > 0 ? '+' : '';
-        
-        tbody.innerHTML += `
-            <tr>
-                <td>Week ${i}</td>
-                <td>${val2026}</td>
-                <td>${val2025}</td>
-                <td class="${diffClass}">${diffSign}${diff}</td>
-                <td class="${diffClass}">${diffSign}${pctChange}%</td>
-            </tr>
+        let tableHTML = `
+            <div class="camp-table-section">
+                <h4>📋 ${camp}</h4>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Week</th>
+                            <th>2026</th>
+                            <th>2025</th>
+                            <th>Diff</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
-    }
-    
-    // Add totals row
-    const totalDiff = total2026 - total2025;
-    const totalPct = total2025 > 0 ? Math.round((totalDiff / total2025) * 100) : 0;
-    const totalClass = totalDiff > 0 ? 'positive' : (totalDiff < 0 ? 'negative' : '');
-    const totalSign = totalDiff > 0 ? '+' : '';
-    
-    tbody.innerHTML += `
-        <tr class="total-row">
-            <td><strong>Total</strong></td>
-            <td><strong>${total2026}</strong></td>
-            <td><strong>${total2025}</strong></td>
-            <td class="${totalClass}"><strong>${totalSign}${totalDiff}</strong></td>
-            <td class="${totalClass}"><strong>${totalSign}${totalPct}%</strong></td>
-        </tr>
-    `;
+        
+        let total2026 = 0, total2025 = 0;
+        
+        for (let i = 1; i <= 9; i++) {
+            const val2026 = data.data_2026 ? (data.data_2026[`week_${i}`] || 0) : 0;
+            const val2025 = data.data_2025 ? (data.data_2025[`week_${i}`] || 0) : 0;
+            const diff = val2026 - val2025;
+            const pctChange = val2025 > 0 ? Math.round((diff / val2025) * 100) : (val2026 > 0 ? 100 : 0);
+            
+            total2026 += val2026;
+            total2025 += val2025;
+            
+            const diffClass = diff > 0 ? 'positive' : (diff < 0 ? 'negative' : '');
+            const diffSign = diff > 0 ? '+' : '';
+            
+            tableHTML += `
+                <tr>
+                    <td>Wk ${i}</td>
+                    <td>${val2026}</td>
+                    <td>${val2025}</td>
+                    <td class="${diffClass}">${diffSign}${diff}</td>
+                    <td class="${diffClass}">${diffSign}${pctChange}%</td>
+                </tr>
+            `;
+        }
+        
+        const totalDiff = total2026 - total2025;
+        const totalPct = total2025 > 0 ? Math.round((totalDiff / total2025) * 100) : 0;
+        const totalClass = totalDiff > 0 ? 'positive' : (totalDiff < 0 ? 'negative' : '');
+        const totalSign = totalDiff > 0 ? '+' : '';
+        
+        tableHTML += `
+                    <tr class="total-row">
+                        <td><strong>Total</strong></td>
+                        <td><strong>${total2026}</strong></td>
+                        <td><strong>${total2025}</strong></td>
+                        <td class="${totalClass}"><strong>${totalSign}${totalDiff}</strong></td>
+                        <td class="${totalClass}"><strong>${totalSign}${totalPct}%</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        `;
+        
+        container.innerHTML += tableHTML;
+    });
 }
