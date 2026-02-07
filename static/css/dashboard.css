@@ -1056,3 +1056,115 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
         opacity: 1;
     }
 }
+
+/* ==================== CAMP COMPARISON VIEW ==================== */
+.camp-comparison-filters {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+.camp-comparison-filters label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.camp-comparison-filters select {
+    flex: 1;
+    max-width: 400px;
+    padding: 10px 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.camp-comparison-content {
+    min-height: 100px;
+}
+
+.placeholder-text {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px;
+    font-size: 16px;
+}
+
+.placeholder-text.error {
+    color: var(--danger);
+}
+
+#campComparisonChart {
+    height: 350px;
+    margin-bottom: 30px;
+}
+
+#campComparisonTable h4 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.comparison-table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.comparison-table td.positive {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.comparison-table td.negative {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.comparison-table .total-row {
+    background: var(--bg-secondary);
+    font-weight: 600;
+}
+
+.comparison-table .total-row td {
+    border-top: 2px solid var(--border);
+}
+
+/* KPI Grid - 5 cards */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 1200px) {
+    .kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.kpi-card.avg-weeks {
+    border-top: 4px solid #9C27B0;
+}
