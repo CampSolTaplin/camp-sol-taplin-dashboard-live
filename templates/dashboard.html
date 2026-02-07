@@ -15,6 +15,7 @@
             <p>Michael-Ann Russell JCC</p>
         </div>
         <nav class="nav-section">
+            {% if user.role != 'unit_leader' %}
             <div class="nav-item active" data-view="executive" onclick="switchView('executive')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span>Dashboard</span>
@@ -27,7 +28,8 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 <span>Year Comparison</span>
             </div>
-            <div class="nav-item" data-view="campcomparison" onclick="switchView('campcomparison')">
+            {% endif %}
+            <div class="nav-item {% if user.role == 'unit_leader' %}active{% endif %}" data-view="campcomparison" onclick="switchView('campcomparison')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
                 <span>Camp Comparison</span>
             </div>
@@ -45,10 +47,12 @@
                 <span>Manage Users</span>
             </div>
             {% endif %}
+            {% if user.role != 'unit_leader' %}
             <div class="nav-item" onclick="window.location.href='{{ url_for('download_excel') }}'">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 <span>Download Excel</span>
             </div>
+            {% endif %}
             <div class="nav-item" onclick="window.location.href='{{ url_for('logout') }}'">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 <span>Logout</span>
@@ -101,7 +105,7 @@
         
         <!-- EXECUTIVE SUMMARY VIEW -->
         <div id="executive-view" class="view-content active">
-            <!-- Pace Comparison Cards -->
+            <!-- Pace Comparison Cards - Unique Campers -->
             {% if pace_comparison %}
             <div class="pace-comparison-section">
                 <h3 class="section-title">📈 Current Pace vs Previous Years</h3>
@@ -109,27 +113,29 @@
                     <div class="pace-card current">
                         <div class="pace-year">2026 (Current)</div>
                         <div class="pace-value">{{ report.summary.total_enrollment }}</div>
-                        <div class="pace-label">Campers</div>
-                        <div class="pace-weeks">{{ report.summary.total_camper_weeks }} weeks</div>
+                        <div class="pace-label">Unique Campers</div>
+                        <div class="pace-weeks">{{ report.summary.total_camper_weeks }} camper weeks</div>
                     </div>
                     {% if pace_comparison.vs_2025 %}
                     <div class="pace-card {% if pace_comparison.vs_2025.campers_diff >= 0 %}positive{% else %}negative{% endif %}">
-                        <div class="pace-year">vs 2025 (same date)</div>
+                        <div class="pace-year">2025 (same date)</div>
                         <div class="pace-value">{{ pace_comparison.vs_2025.campers_then }}</div>
-                        <div class="pace-label">Campers then</div>
+                        <div class="pace-label">Unique Campers</div>
+                        <div class="pace-weeks">{{ pace_comparison.vs_2025.weeks_then }} camper weeks</div>
                         <div class="pace-diff">
-                            {% if pace_comparison.vs_2025.campers_diff >= 0 %}+{% endif %}{{ pace_comparison.vs_2025.campers_diff }} 
+                            {% if pace_comparison.vs_2025.campers_diff >= 0 %}+{% endif %}{{ pace_comparison.vs_2025.campers_diff }} campers
                             ({% if pace_comparison.vs_2025.campers_pct >= 0 %}+{% endif %}{{ pace_comparison.vs_2025.campers_pct }}%)
                         </div>
                     </div>
                     {% endif %}
                     {% if pace_comparison.vs_2024 %}
                     <div class="pace-card {% if pace_comparison.vs_2024.campers_diff >= 0 %}positive{% else %}negative{% endif %}">
-                        <div class="pace-year">vs 2024 (same date)</div>
+                        <div class="pace-year">2024 (same date)</div>
                         <div class="pace-value">{{ pace_comparison.vs_2024.campers_then }}</div>
-                        <div class="pace-label">Campers then</div>
+                        <div class="pace-label">Unique Campers</div>
+                        <div class="pace-weeks">{{ pace_comparison.vs_2024.weeks_then }} camper weeks</div>
                         <div class="pace-diff">
-                            {% if pace_comparison.vs_2024.campers_diff >= 0 %}+{% endif %}{{ pace_comparison.vs_2024.campers_diff }}
+                            {% if pace_comparison.vs_2024.campers_diff >= 0 %}+{% endif %}{{ pace_comparison.vs_2024.campers_diff }} campers
                             ({% if pace_comparison.vs_2024.campers_pct >= 0 %}+{% endif %}{{ pace_comparison.vs_2024.campers_pct }}%)
                         </div>
                     </div>
@@ -138,15 +144,7 @@
             </div>
             {% endif %}
 
-            <div class="kpi-grid">
-                <div class="kpi-card enrollment">
-                    <div class="kpi-label">👥 Total Enrollment</div>
-                    <div class="kpi-value">{{ report.summary.total_enrollment }}</div>
-                </div>
-                <div class="kpi-card weeks">
-                    <div class="kpi-label">📆 Total Camper Weeks</div>
-                    <div class="kpi-value">{{ report.summary.total_camper_weeks }}</div>
-                </div>
+            <div class="kpi-grid kpi-grid-3">
                 <div class="kpi-card fte">
                     <div class="kpi-label">📈 Total FTE</div>
                     <div class="kpi-value">{{ report.summary.total_fte }}</div>
@@ -479,44 +477,33 @@
             <div class="section-card">
                 <div class="section-header">
                     <h3>📊 Camp-by-Camp Comparison: 2026 vs 2025</h3>
-                    <p class="section-subtitle">Compare enrollment by week for each camp between years</p>
+                    <p class="section-subtitle">Select one or more camps to compare enrollment by week</p>
                 </div>
                 
                 <div class="camp-comparison-filters">
-                    <label>Select Camp:</label>
-                    <select id="campComparisonSelect" onchange="updateCampComparison()">
-                        <option value="">-- Select a Camp --</option>
+                    <label>Select Camps to Compare:</label>
+                    <div class="camp-checkboxes" id="campCheckboxes">
                         {% if report and report.programs %}
                         {% for prog in report.programs %}
-                        <option value="{{ prog.program }}">{{ prog.program }}</option>
+                        <label class="camp-checkbox">
+                            <input type="checkbox" value="{{ prog.program }}" onchange="updateMultiCampComparison()">
+                            <span>{{ prog.program }}</span>
+                        </label>
                         {% endfor %}
                         {% endif %}
-                    </select>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="clearCampSelection()">Clear All</button>
                 </div>
                 
                 <div id="campComparisonContent" class="camp-comparison-content">
-                    <p class="placeholder-text">Select a camp above to see the year-over-year comparison</p>
+                    <p class="placeholder-text">Select camps above to see the year-over-year comparison</p>
                 </div>
                 
                 <div id="campComparisonChart" class="chart-container" style="display: none;">
                     <canvas id="campCompareChart"></canvas>
                 </div>
                 
-                <div id="campComparisonTable" style="display: none;">
-                    <h4>📋 Week-by-Week Comparison</h4>
-                    <table class="comparison-table">
-                        <thead>
-                            <tr>
-                                <th>Week</th>
-                                <th>2026</th>
-                                <th>2025</th>
-                                <th>Difference</th>
-                                <th>% Change</th>
-                            </tr>
-                        </thead>
-                        <tbody id="campComparisonTableBody">
-                        </tbody>
-                    </table>
+                <div id="campComparisonTables">
                 </div>
             </div>
         </div>
