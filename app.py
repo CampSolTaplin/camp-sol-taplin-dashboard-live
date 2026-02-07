@@ -637,16 +637,34 @@ def api_debug_data():
         # Get attendees (status=6 means Enrolled+Applied)
         attendees = client.get_attendees(season_id, client_id, status=6)
         
+        # Create a simple session map: ID -> Name
+        session_map = {s['ID']: s['Name'] for s in sessions} if sessions else {}
+        
+        # Create program map: ID -> Name
+        program_map = {p['ID']: p['Name'] for p in programs} if programs else {}
+        
+        # Get unique session IDs from attendees
+        attendee_session_ids = set()
+        for att in (attendees or []):
+            for sps in att.get('SessionProgramStatus', []):
+                attendee_session_ids.add(sps.get('SessionID'))
+        
+        # Check which session IDs from attendees are missing from sessions
+        missing_session_ids = attendee_session_ids - set(session_map.keys())
+        
         return jsonify({
             'success': True,
             'client_id': client_id,
             'season_id': season_id,
             'sessions_count': len(sessions) if sessions else 0,
-            'sessions_sample': sessions[:5] if sessions else [],
+            'sessions_all': [{'id': s['ID'], 'name': s['Name'], 'sort': s.get('SortOrder')} for s in (sessions or [])],
             'programs_count': len(programs) if programs else 0,
-            'programs_sample': programs[:5] if programs else [],
+            'programs_all': [{'id': p['ID'], 'name': p['Name']} for p in (programs or [])],
             'attendees_count': len(attendees) if attendees else 0,
-            'attendees_sample': attendees[:5] if attendees else []
+            'attendees_sample': attendees[:3] if attendees else [],
+            'unique_session_ids_in_attendees': list(attendee_session_ids),
+            'missing_session_ids': list(missing_session_ids),
+            'session_map_sample': dict(list(session_map.items())[:10])
         })
         
     except Exception as e:
