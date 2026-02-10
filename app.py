@@ -892,6 +892,53 @@ def download_excel():
         flash(f'Error generating Excel: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
+# Cache for retention data (expensive to calculate)
+retention_cache = {
+    'data': None,
+    'fetched_at': None
+}
+RETENTION_CACHE_TTL_HOURS = 24  # Cache retention for 24 hours
+
+@app.route('/api/retention')
+@login_required
+def get_retention():
+    """Get retention rate data from CampMinder API"""
+    global retention_cache
+    
+    if not is_api_configured():
+        return jsonify({'error': 'API not configured'}), 400
+    
+    # Check cache
+    if retention_cache['data'] and retention_cache['fetched_at']:
+        cache_age = datetime.now() - datetime.fromisoformat(retention_cache['fetched_at'])
+        if cache_age.total_seconds() < RETENTION_CACHE_TTL_HOURS * 3600:
+            return jsonify(retention_cache['data'])
+    
+    try:
+        client = CampMinderAPIClient(
+            api_key=CAMPMINDER_API_KEY,
+            subscription_key=CAMPMINDER_SUBSCRIPTION_KEY
+        )
+        
+        if not client.authenticate():
+            return jsonify({'error': 'Authentication failed'}), 401
+        
+        retention_data = client.get_retention_rate(
+            current_season=2026,
+            previous_season=2025
+        )
+        
+        # Update cache
+        retention_cache['data'] = retention_data
+        retention_cache['fetched_at'] = datetime.now().isoformat()
+        
+        return jsonify(retention_data)
+        
+    except Exception as e:
+        print(f"Error fetching retention data: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 # ==================== ERROR HANDLERS ====================
 
 @app.errorhandler(404)
