@@ -306,6 +306,56 @@ class CampMinderAPIClient:
         
         return results
     
+    def get_retention_rate(self, current_season: int = 2026, previous_season: int = 2025, 
+                           client_id: int = None) -> Dict:
+        """
+        Calculate retention rate between two seasons
+        
+        Retention Rate = (Campers in both seasons / Campers in previous season) * 100
+        
+        Args:
+            current_season: Current season year (e.g., 2026)
+            previous_season: Previous season year (e.g., 2025)
+            client_id: Client ID
+            
+        Returns:
+            Dict with retention statistics
+        """
+        client_id = client_id or self.client_id
+        
+        logger.info(f"Calculating retention rate: {previous_season} -> {current_season}")
+        
+        # Get attendees for both seasons
+        attendees_current = self.get_attendees(current_season, client_id, status=6)
+        attendees_previous = self.get_attendees(previous_season, client_id, status=6)
+        
+        # Extract unique PersonIDs
+        person_ids_current = set(a.get('PersonID') for a in attendees_current if a.get('PersonID'))
+        person_ids_previous = set(a.get('PersonID') for a in attendees_previous if a.get('PersonID'))
+        
+        # Calculate retention
+        returning_campers = person_ids_current & person_ids_previous  # Intersection
+        new_campers = person_ids_current - person_ids_previous  # In current but not previous
+        lost_campers = person_ids_previous - person_ids_current  # In previous but not current
+        
+        retention_rate = 0
+        if len(person_ids_previous) > 0:
+            retention_rate = round((len(returning_campers) / len(person_ids_previous)) * 100, 1)
+        
+        logger.info(f"Retention: {len(returning_campers)}/{len(person_ids_previous)} = {retention_rate}%")
+        
+        return {
+            'current_season': current_season,
+            'previous_season': previous_season,
+            'campers_previous': len(person_ids_previous),
+            'campers_current': len(person_ids_current),
+            'returning_campers': len(returning_campers),
+            'new_campers': len(new_campers),
+            'lost_campers': len(lost_campers),
+            'retention_rate': retention_rate,
+            'new_camper_rate': round((len(new_campers) / len(person_ids_current)) * 100, 1) if len(person_ids_current) > 0 else 0
+        }
+    
     # ==================== ENROLLMENT DATA ====================
     
     def get_enrollment_report(self, season_id: int, client_id: int = None) -> Dict:
