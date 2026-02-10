@@ -144,7 +144,7 @@
             </div>
             {% endif %}
 
-            <div class="kpi-grid kpi-grid-3">
+            <div class="kpi-grid kpi-grid-4">
                 <div class="kpi-card fte">
                     <div class="kpi-label">📈 Total FTE</div>
                     <div class="kpi-value">{{ report.summary.total_fte }}</div>
@@ -159,6 +159,13 @@
                     <div class="kpi-value status-{{ 'success' if report.summary.percent_to_goal >= 60 else 'warning' if report.summary.percent_to_goal >= 40 else 'danger' }}">
                         {{ '%.1f'|format(report.summary.percent_to_goal) }}%
                     </div>
+                </div>
+                <div class="kpi-card retention" id="retentionCard">
+                    <div class="kpi-label">🔄 Retention Rate</div>
+                    <div class="kpi-value" id="retentionValue">
+                        <span class="loading-dots">...</span>
+                    </div>
+                    <div class="kpi-subtext" id="retentionSubtext">Loading...</div>
                 </div>
             </div>
 
