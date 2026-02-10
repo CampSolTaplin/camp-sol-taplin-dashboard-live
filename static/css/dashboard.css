@@ -1349,3 +1349,34 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .camp-table-section {
     display: none;
 }
+
+/* KPI Grid 4 columns */
+.kpi-grid-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+}
+
+@media (max-width: 1200px) {
+    .kpi-grid-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .kpi-grid-4 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Retention KPI Card */
+.kpi-card.retention {
+    border-top: 4px solid #00BCD4;
+}
+
+.loading-dots {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    25%, 75% { opacity: 0.3; }
+}
