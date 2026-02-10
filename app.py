@@ -3,6 +3,9 @@ Camp Sol Taplin - Enrollment Dashboard
 Flask Application with User Management and Live CampMinder API Integration
 """
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash

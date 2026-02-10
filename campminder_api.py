@@ -648,8 +648,7 @@ class EnrollmentDataProcessor:
             'MMA Camp', 'Sports Academy 1', 'Sports Academy 2', 'Swim Academy'
         ],
         'Performing Arts': ["T'nuah", 'Tnuah', 'Theater', 'Theatre', 'Dance', 'Music', 'Art Exploration'],
-        'Teen Leadership': ['Teen Travel', 'Madli-Teen', 'Madli-teen'],
-        'Teen Camps': ['Madatzim'],
+        'Teen Camps': ['Teen Travel', 'Madli-Teen', 'Madli-teen', 'Madatzim'],
         "Children's Trust": ["Children's Trust", 'Koach'],
         'Special Needs': ['OMETZ']
     }
@@ -664,7 +663,7 @@ class EnrollmentDataProcessor:
         'Chaverim': 75, "Chaverim Children's Trust": 10,
         'Giborim': 60, "Giborim Children's Trust": 10,
         'Madli-Teen': 40, "Madli-Teen Children's Trust": 5,
-        # Teen Leadership
+        # Teen Camps
         'Teen Travel': 30, 'Teen Travel: Epic Trip to Orlando': 15,
         # Sports
         'Basketball': 25, 'Flag Football': 20, 'Soccer': 25,
@@ -692,8 +691,7 @@ class EnrollmentDataProcessor:
             'Variety': '#7CB342',
             'Sports': '#42A5F5',
             'Performing Arts': '#AB47BC',
-            'Teen Leadership': '#5C6BC0',
-            'Teen Camps': '#8D6E63',
+            'Teen Camps': '#5C6BC0',
             "Children's Trust": '#FF7043',
             'Special Needs': '#26A69A',
             'Other': '#999999'
@@ -704,8 +702,7 @@ class EnrollmentDataProcessor:
             'Variety': '🏕️',
             'Sports': '⚽',
             'Performing Arts': '🎭',
-            'Teen Leadership': '🌟',
-            'Teen Camps': '🎓',
+            'Teen Camps': '🎒',
             "Children's Trust": '🤝',
             'Special Needs': '💙',
             'Other': '📋'

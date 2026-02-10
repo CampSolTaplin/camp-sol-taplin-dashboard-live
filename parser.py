@@ -56,9 +56,7 @@ CATEGORIES = {
             'Tsofim', "Tsofim Children's Trust",
             'Yeladim', "Yeladim Children's Trust",
             'Chaverim', "Chaverim Children's Trust",
-            'Giborim', "Giborim Children's Trust",
-            'Madli-Teen', "Madli-Teen Children's Trust",
-            'Teen Travel', 'Teen Travel: Epic Trip to Orlando'
+            'Giborim', "Giborim Children's Trust"
         ]
     },
     'Sports Camps': {
@@ -88,7 +86,11 @@ CATEGORIES = {
         'color': '#5C6BC0',
         'color_light': '#E8EAF6',
         'emoji': '🎒',
-        'programs': ['Madatzim 9th Grade', 'Madatzim 10th Grade']
+        'programs': [
+            'Madatzim 9th Grade', 'Madatzim 10th Grade',
+            'Madli-Teen', "Madli-Teen Children's Trust",
+            'Teen Travel', 'Teen Travel: Epic Trip to Orlando'
+        ]
     },
     'Special Needs Camps': {
         'color': '#FF7043',
