@@ -808,3 +808,48 @@ function buildMultiCampTables() {
     
     container.innerHTML = tableHTML;
 }
+
+// ==================== RETENTION RATE ====================
+
+async function loadRetentionRate() {
+    const valueEl = document.getElementById('retentionValue');
+    const subtextEl = document.getElementById('retentionSubtext');
+    const cardEl = document.getElementById('retentionCard');
+    
+    if (!valueEl || !subtextEl) return;
+    
+    try {
+        const response = await fetch('/api/retention');
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch retention data');
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            valueEl.textContent = 'N/A';
+            subtextEl.textContent = data.error;
+            return;
+        }
+        
+        // Display retention rate
+        const rate = data.retention_rate || 0;
+        valueEl.innerHTML = `<span class="status-${rate >= 70 ? 'success' : rate >= 50 ? 'warning' : 'danger'}">${rate}%</span>`;
+        subtextEl.innerHTML = `${data.returning_campers} of ${data.campers_previous} returned`;
+        
+        // Add tooltip with more details
+        cardEl.title = `Returning: ${data.returning_campers}\nNew Campers: ${data.new_campers}\nLost: ${data.lost_campers}`;
+        
+    } catch (error) {
+        console.error('Error loading retention rate:', error);
+        valueEl.textContent = 'N/A';
+        subtextEl.textContent = 'Unable to load';
+    }
+}
+
+// Load retention rate on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load retention rate asynchronously (it can take a few seconds)
+    setTimeout(loadRetentionRate, 1000);
+});
