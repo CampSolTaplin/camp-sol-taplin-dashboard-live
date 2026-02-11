@@ -515,10 +515,12 @@ class CampMinderAPIClient:
         Returns:
             Dict with enrollment data structured for dashboard
         """
+        # Ensure authenticated before resolving client_id
+        self._ensure_authenticated()
         client_id = client_id or self.client_id
-        
+
         logger.info(f"Fetching enrollment report for season {season_id}, client {client_id}")
-        
+
         # Fetch all required data
         sessions = self.get_sessions(season_id, client_id)
         programs = self.get_programs(season_id, client_id)
@@ -583,17 +585,31 @@ class CampMinderAPIClient:
 
                 program = program_map.get(program_id, {})
                 session_info = session_map.get(session_id, {})
+                session_name = session_info.get('name', 'Unknown')
 
-                # Determine week number from session info
-                week_num = self._get_week_from_session(session_info, week_date_ranges)
+                # For Children's Trust sessions, derive program name from session name
+                # Sessions like "Children's Trust: Tsofim" have ProgramID=None
+                # Show as separate program: "Children's Trust Tsofim"
+                program_name = program.get('Name', 'Unknown')
+                if (program_name == 'Unknown' or not program_id) and "children's trust" in session_name.lower():
+                    parts = session_name.split(':')
+                    if len(parts) >= 2:
+                        derived = parts[-1].strip()
+                        # Remove "(Koach)" suffix if present
+                        if '(' in derived:
+                            derived = derived[:derived.index('(')].strip()
+                        program_name = f"Children's Trust {derived}"
 
-                if week_num > 0:
+                # Determine week number(s) from session info
+                week_list = self._get_weeks_from_session(session_info, week_date_ranges)
+
+                for week_num in week_list:
                     enrollments.append({
                         'person_id': person_id,
                         'program_id': program_id,
-                        'program_name': program.get('Name', 'Unknown'),
+                        'program_name': program_name,
                         'session_id': session_id,
-                        'session_name': session_info.get('name', 'Unknown'),
+                        'session_name': session_name,
                         'week': week_num,
                         'status_id': status_id,
                         'status_name': status_name,
@@ -657,40 +673,43 @@ class CampMinderAPIClient:
             # Generic summer weeks starting second Monday of June
             return [{'week': i, 'start': date(season_id, 6, 8 + (i-1)*7), 'end': date(season_id, 6, 12 + (i-1)*7)} for i in range(1, 10)]
     
-    def _get_week_from_session(self, session_info: Dict, week_date_ranges: List[Dict]) -> int:
+    def _get_weeks_from_session(self, session_info: Dict, week_date_ranges: List[Dict]) -> list:
         """
-        Determine week number from session info
-        
+        Determine week number(s) from session info.
+        Returns a list of week numbers (e.g., [1] for single week, [1,2,3,4,5,6,7,8] for Children's Trust)
+
         First tries to extract from session name, then falls back to date matching
         """
         from datetime import date
-        
+
         # First, try to extract week from session name
         name = session_info.get('name', '')
         week_info = self._extract_week_info(name, session_info.get('sort_order', 0))
         if week_info['weeks']:
-            return week_info['weeks'][0]
-        
+            return week_info['weeks']
+
         # Fall back to date-based matching
         start_date_str = session_info.get('start_date', '')
         if start_date_str:
             try:
-                # Parse ISO date (could be "2026-06-15T13:00:00+00:00" or similar)
-                date_part = start_date_str[:10]  # Get YYYY-MM-DD
+                date_part = start_date_str[:10]
                 year, month, day = map(int, date_part.split('-'))
                 session_date = date(year, month, day)
-                
-                # Find which week this date falls into
+
                 for week_range in week_date_ranges:
                     if week_range['start'] <= session_date <= week_range['end']:
-                        return week_range['week']
-                    # Also check if session starts within 2 days of week start (for slight variations)
+                        return [week_range['week']]
                     if abs((session_date - week_range['start']).days) <= 2:
-                        return week_range['week']
+                        return [week_range['week']]
             except Exception as e:
                 logger.debug(f"Could not parse date {start_date_str}: {e}")
-        
-        return 0
+
+        return []
+
+    def _get_week_from_session(self, session_info: Dict, week_date_ranges: List[Dict]) -> int:
+        """Backward-compatible single week extraction"""
+        weeks = self._get_weeks_from_session(session_info, week_date_ranges)
+        return weeks[0] if weeks else 0
     
     def _extract_week_info(self, session_name: str, sort_order: int = 0) -> Dict:
         """
@@ -714,7 +733,11 @@ class CampMinderAPIClient:
         import re
         
         name_lower = session_name.lower()
-        
+
+        # Check for "Children's Trust" patterns (always weeks 1-8)
+        if "children's trust" in name_lower or "childrens trust" in name_lower:
+            return {'weeks': [1, 2, 3, 4, 5, 6, 7, 8], 'type': 'childrens_trust'}
+
         # Check for "Full Session" patterns (typically weeks 1-4)
         if 'full session' in name_lower:
             return {'weeks': [1, 2, 3, 4], 'type': 'full_session'}
@@ -764,11 +787,11 @@ class EnrollmentDataProcessor:
     # Program order (for consistent display)
     PROGRAM_ORDER = [
         'Infants', 'Toddler', 'PK2', 'PK3', 'PK4',
-        'Tsofim', "Tsofim Children's Trust",
-        'Yeladim', "Yeladim Children's Trust",
-        'Chaverim', "Chaverim Children's Trust",
-        'Giborim', "Giborim Children's Trust",
-        'Madli-Teen', "Madli-Teen Children's Trust",
+        'Tsofim', "Children's Trust Tsofim",
+        'Yeladim', "Children's Trust Yeladim",
+        'Chaverim', "Children's Trust Chaverim",
+        'Giborim', "Children's Trust Giborim",
+        'Madli-Teen', "Children's Trust Madli-Teen",
         'Teen Travel', 'Teen Travel: Epic Trip to Orlando',
         'Basketball', 'Flag Football', 'Soccer',
         'Sports Academy 1', 'Sports Academy 2',
@@ -794,7 +817,7 @@ class EnrollmentDataProcessor:
         ],
         'Performing Arts': ["T'nuah", 'Tnuah', 'Theater', 'Theatre', 'Dance', 'Music', 'Art Exploration'],
         'Teen Camps': ['Teen Travel', 'Madli-Teen', 'Madli-teen', 'Madatzim'],
-        "Children's Trust": ["Children's Trust", 'Koach'],
+        "Children's Trust": ["Children's Trust"],
         'Special Needs': ['OMETZ']
     }
     
@@ -803,11 +826,11 @@ class EnrollmentDataProcessor:
         # Early Childhood
         'Infants': 6, 'Toddler': 12, 'PK2': 26, 'PK3': 36, 'PK4': 40,
         # Variety Camps
-        'Tsofim': 100, "Tsofim Children's Trust": 10,
-        'Yeladim': 100, "Yeladim Children's Trust": 10,
-        'Chaverim': 75, "Chaverim Children's Trust": 10,
-        'Giborim': 60, "Giborim Children's Trust": 10,
-        'Madli-Teen': 40, "Madli-Teen Children's Trust": 5,
+        'Tsofim': 100, "Children's Trust Tsofim": 10,
+        'Yeladim': 100, "Children's Trust Yeladim": 10,
+        'Chaverim': 75, "Children's Trust Chaverim": 10,
+        'Giborim': 60, "Children's Trust Giborim": 10,
+        'Madli-Teen': 40, "Children's Trust Madli-Teen": 5,
         # Teen Camps
         'Teen Travel': 30, 'Teen Travel: Epic Trip to Orlando': 15,
         # Sports
