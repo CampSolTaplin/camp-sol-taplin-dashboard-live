@@ -62,38 +62,33 @@ def load_users():
         try:
             with open(USERS_FILE, 'r') as f:
                 existing = json.load(f)
-                # Check if Admin user exists with correct case
-                if 'Admin' not in existing and 'admin' in existing:
-                    recreate = True  # Need to update to new user structure
-                elif 'Admin' in existing:
+                # Check if new admin user exists
+                if 'campsoltaplin@marjcc.org' in existing:
                     return existing
+                else:
+                    recreate = True  # Need to update to new user structure
         except:
             recreate = True
     else:
         recreate = True
-    
+
     if recreate:
         # Default users
         default_users = {
-            'Admin': {
-                'password': generate_password_hash('Admin'),
+            'campsoltaplin@marjcc.org': {
+                'password': generate_password_hash('M@rjcc2026'),
                 'role': 'admin',
                 'created_at': datetime.now().isoformat()
             },
-            'CampTest': {
-                'password': generate_password_hash('CampTest'),
+            'onlyview': {
+                'password': generate_password_hash('M@rjcc2026'),
                 'role': 'viewer',
-                'created_at': datetime.now().isoformat()
-            },
-            'UnitLeader': {
-                'password': generate_password_hash('Cst1234'),
-                'role': 'unit_leader',
                 'created_at': datetime.now().isoformat()
             }
         }
         save_users(default_users)
         return default_users
-    
+
     return {}
 
 def save_users(users):
@@ -552,6 +547,147 @@ def api_refresh_data():
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/participants/<program>/<int:week>')
+@login_required
+def api_participants(program, week):
+    """Fetch participant details (names + guardian emails) for a specific program/week"""
+    # Get participants from cached report data
+    data = api_cache.get('data')
+    if not data or 'participants' not in data:
+        return jsonify({'participants': [], 'error': 'No data available'}), 404
+
+    program_data = data['participants'].get(program, {})
+    participants = program_data.get(str(week), [])
+
+    if not participants:
+        return jsonify({'participants': []})
+
+    # Get unique person_ids that need lookup
+    person_ids = [p['person_id'] for p in participants]
+
+    # Load persons cache from file
+    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
+    persons_cache = {}
+    try:
+        if os.path.exists(persons_cache_file):
+            with open(persons_cache_file, 'r') as f:
+                persons_cache = json.load(f)
+    except Exception:
+        pass
+
+    # Fetch any missing persons using batch endpoint
+    pids_to_fetch = [pid for pid in person_ids if str(pid) not in persons_cache]
+
+    if pids_to_fetch and is_api_configured():
+        try:
+            client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
+            if not client.authenticate():
+                print("Failed to authenticate with CampMinder API for persons lookup")
+                raise Exception("Authentication failed")
+
+            # Step 1: Batch fetch all campers (with relatives info)
+            print(f"Fetching {len(pids_to_fetch)} persons via batch API...")
+            camper_results = client.get_persons_batch(
+                pids_to_fetch,
+                include_contact_details=True,
+                include_relatives=True
+            )
+            print(f"Got {len(camper_results)} camper results from API")
+
+            # Build a map of camper ID -> camper data
+            camper_map = {}
+            guardian_ids_needed = set()
+            for person in camper_results:
+                pid = person.get('ID')
+                if pid:
+                    camper_map[pid] = person
+                    # Collect guardian IDs we need to fetch for emails
+                    for rel in person.get('Relatives', []):
+                        if rel.get('IsGuardian'):
+                            guardian_ids_needed.add(rel['ID'])
+
+            # Step 2: Batch fetch all guardians (with contact details for emails)
+            guardian_map = {}
+            if guardian_ids_needed:
+                guardian_ids_list = list(guardian_ids_needed)
+                print(f"Fetching {len(guardian_ids_list)} guardians via batch API...")
+                guardian_results = client.get_persons_batch(
+                    guardian_ids_list,
+                    include_contact_details=True,
+                    include_relatives=False
+                )
+                for g in guardian_results:
+                    gid = g.get('ID')
+                    if gid:
+                        guardian_map[gid] = g
+                print(f"Got {len(guardian_map)} guardian results from API")
+
+            # Step 3: Build person_info for each camper
+            for pid in pids_to_fetch:
+                camper = camper_map.get(pid)
+                if camper:
+                    person_info = {
+                        'first_name': camper.get('Name', {}).get('First', ''),
+                        'last_name': camper.get('Name', {}).get('Last', ''),
+                        'f1p1_email': '', 'f1p1_email2': '',
+                        'f1p2_email': '', 'f1p2_email2': ''
+                    }
+
+                    # Get guardians sorted by IsPrimary
+                    relatives = camper.get('Relatives', [])
+                    guardians = [r for r in relatives if r.get('IsGuardian')]
+                    guardians.sort(key=lambda r: (not r.get('IsPrimary', False)))
+
+                    for g_idx, guardian in enumerate(guardians[:2]):
+                        g_id = guardian.get('ID')
+                        g_person = guardian_map.get(g_id)
+                        if g_person:
+                            emails = g_person.get('ContactDetails', {}).get('Emails', [])
+                            prefix = 'f1p1' if g_idx == 0 else 'f1p2'
+                            if len(emails) > 0:
+                                person_info[f'{prefix}_email'] = emails[0].get('Address', '')
+                            if len(emails) > 1:
+                                person_info[f'{prefix}_email2'] = emails[1].get('Address', '')
+
+                    persons_cache[str(pid)] = person_info
+                else:
+                    persons_cache[str(pid)] = {
+                        'first_name': 'Camper', 'last_name': str(pid),
+                        'f1p1_email': '', 'f1p1_email2': '',
+                        'f1p2_email': '', 'f1p2_email2': ''
+                    }
+
+            # Save updated cache
+            try:
+                with open(persons_cache_file, 'w') as f:
+                    json.dump(persons_cache, f)
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"Error fetching persons batch: {e}")
+            traceback.print_exc()
+
+    # Build enriched participants list
+    enriched = []
+    for p in participants:
+        pid = str(p['person_id'])
+        info = persons_cache.get(pid, {})
+        enriched.append({
+            'person_id': p['person_id'],
+            'first_name': info.get('first_name', 'Camper'),
+            'last_name': info.get('last_name', str(p['person_id'])),
+            'enrollment_date': p.get('enrollment_date', ''),
+            'f1p1_email': info.get('f1p1_email', ''),
+            'f1p1_email2': info.get('f1p1_email2', ''),
+            'f1p2_email': info.get('f1p2_email', ''),
+            'f1p2_email2': info.get('f1p2_email2', '')
+        })
+
+    # Sort by last name
+    enriched.sort(key=lambda x: (x['last_name'].lower(), x['first_name'].lower()))
+
+    return jsonify({'participants': enriched})
 
 @app.route('/api/status')
 @login_required

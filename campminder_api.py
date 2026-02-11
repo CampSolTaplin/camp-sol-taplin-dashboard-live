@@ -57,52 +57,64 @@ class CampMinderAPIClient:
     
     def authenticate(self) -> bool:
         """
-        Authenticate with CampMinder API and get JWT token
-        
+        Authenticate with CampMinder API and get JWT token.
+        Handles 429 rate limiting with retry.
+
         Returns:
             True if authentication successful
         """
-        try:
-            url = f"{self.BASE_URL}/auth/apikey"
-            # Note: CampMinder auth endpoint does NOT want 'Bearer ' prefix
-            headers = {
-                "Authorization": self.api_key,
-                "Ocp-Apim-Subscription-Key": self.subscription_key
-            }
-            
-            logger.info("Authenticating with CampMinder API...")
-            logger.info(f"URL: {url}")
-            logger.info(f"API Key (first 20 chars): {self.api_key[:20] if self.api_key else 'None'}...")
-            logger.info(f"Subscription Key (first 10 chars): {self.subscription_key[:10] if self.subscription_key else 'None'}...")
-            
-            response = requests.get(url, headers=headers, timeout=30)
-            
-            logger.info(f"Response Status: {response.status_code}")
-            logger.info(f"Response Headers: {dict(response.headers)}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.jwt_token = data.get('Token')
-                self.jwt_expires_at = datetime.now() + timedelta(hours=1)
-                
-                # Parse client IDs
-                client_ids_str = data.get('ClientIDs', '')
-                if client_ids_str:
-                    self.client_ids = [int(cid.strip()) for cid in client_ids_str.split(',') if cid.strip()]
-                    self.client_id = self.client_ids[0] if self.client_ids else None
-                
-                logger.info(f"Authentication successful! ClientIDs: {self.client_ids}")
-                return True
-            else:
-                logger.error(f"Authentication failed: {response.status_code}")
-                logger.error(f"Response body: {response.text}")
+        import time as _time
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                url = f"{self.BASE_URL}/auth/apikey"
+                # Note: CampMinder auth endpoint does NOT want 'Bearer ' prefix
+                headers = {
+                    "Authorization": self.api_key,
+                    "Ocp-Apim-Subscription-Key": self.subscription_key
+                }
+
+                logger.info("Authenticating with CampMinder API...")
+                logger.info(f"URL: {url}")
+                logger.info(f"API Key (first 20 chars): {self.api_key[:20] if self.api_key else 'None'}...")
+                logger.info(f"Subscription Key (first 10 chars): {self.subscription_key[:10] if self.subscription_key else 'None'}...")
+
+                response = requests.get(url, headers=headers, timeout=30)
+
+                logger.info(f"Response Status: {response.status_code}")
+
+                if response.status_code == 200:
+                    data = response.json()
+                    self.jwt_token = data.get('Token')
+                    self.jwt_expires_at = datetime.now() + timedelta(hours=1)
+
+                    # Parse client IDs
+                    client_ids_str = data.get('ClientIDs', '')
+                    if client_ids_str:
+                        self.client_ids = [int(cid.strip()) for cid in client_ids_str.split(',') if cid.strip()]
+                        self.client_id = self.client_ids[0] if self.client_ids else None
+
+                    logger.info(f"Authentication successful! ClientIDs: {self.client_ids}")
+                    return True
+                elif response.status_code == 429:
+                    retry_after = int(response.headers.get('Retry-After', 60))
+                    logger.warning(f"Rate limited (429). Waiting {retry_after}s before retry {attempt + 1}/{max_retries}")
+                    _time.sleep(retry_after)
+                    continue
+                else:
+                    logger.error(f"Authentication failed: {response.status_code}")
+                    logger.error(f"Response body: {response.text}")
+                    return False
+
+            except Exception as e:
+                logger.error(f"Authentication error: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
                 return False
-                
-        except Exception as e:
-            logger.error(f"Authentication error: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
-            return False
+
+        logger.error("Authentication failed after max retries (rate limited)")
+        return False
     
     def _ensure_authenticated(self):
         """Ensure we have a valid JWT token"""
@@ -112,32 +124,44 @@ class CampMinderAPIClient:
     
     def _make_request(self, endpoint: str, params: Dict = None) -> Optional[Dict]:
         """
-        Make authenticated request to API
-        
+        Make authenticated request to API. Handles 429 rate limiting.
+
         Args:
             endpoint: API endpoint (e.g., '/sessions')
             params: Query parameters
-            
+
         Returns:
             JSON response or None if error
         """
+        import time as _time
+
         self._ensure_authenticated()
-        
+
         url = f"{self.BASE_URL}{endpoint}"
         headers = self._get_headers()
-        
-        try:
-            response = requests.get(url, headers=headers, params=params, timeout=60)
-            
-            if response.status_code == 200:
-                return response.json()
-            else:
-                logger.error(f"API request failed: {response.status_code} - {response.text}")
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, headers=headers, params=params, timeout=60)
+
+                if response.status_code == 200:
+                    return response.json()
+                elif response.status_code == 429:
+                    retry_after = int(response.headers.get('Retry-After', 60))
+                    logger.warning(f"Rate limited on {endpoint}. Waiting {retry_after}s (attempt {attempt + 1}/{max_retries})")
+                    _time.sleep(retry_after)
+                    continue
+                else:
+                    logger.error(f"API request failed: {response.status_code} - {response.text}")
+                    return None
+
+            except Exception as e:
+                logger.error(f"API request error: {e}")
                 return None
-                
-        except Exception as e:
-            logger.error(f"API request error: {e}")
-            return None
+
+        logger.error(f"API request to {endpoint} failed after max retries (rate limited)")
+        return None
     
     def _paginated_request(self, endpoint: str, params: Dict = None, max_pages: int = 100) -> List[Dict]:
         """
@@ -286,25 +310,64 @@ class CampMinderAPIClient:
         params = {'clientid': client_id}
         return self._make_request(f'/persons/{person_id}', params)
     
-    def get_persons_batch(self, person_ids: List[int], client_id: int = None) -> Dict[int, Dict]:
+    def get_persons_batch(self, person_ids: List[int], client_id: int = None,
+                          include_contact_details: bool = True,
+                          include_relatives: bool = True) -> List[Dict]:
         """
-        Get multiple persons by ID
-        
+        Get multiple persons using the List endpoint with id filter.
+        Much more efficient than individual get_person calls.
+
         Args:
-            person_ids: List of person IDs
+            person_ids: List of person IDs to fetch
             client_id: Client ID
-            
+            include_contact_details: Include email/phone data
+            include_relatives: Include guardian/relative data
+
         Returns:
-            Dict mapping person_id to person data
+            List of person objects from API
         """
-        results = {}
-        
-        for pid in person_ids:
-            person = self.get_person(pid, client_id)
-            if person:
-                results[pid] = person
-        
-        return results
+        client_id = client_id or self.client_id
+        all_results = []
+
+        # API may have limits on query string length, so batch in groups of 50
+        batch_size = 50
+        for i in range(0, len(person_ids), batch_size):
+            batch = person_ids[i:i + batch_size]
+
+            self._ensure_authenticated()
+
+            url = f"{self.BASE_URL}/persons/"
+            headers = self._get_headers()
+
+            # Build params - 'id' needs to be repeated for each person
+            params = {
+                'clientid': client_id,
+                'pagenumber': 1,
+                'pagesize': 1000,
+                'includecontactdetails': str(include_contact_details).lower(),
+                'includerelatives': str(include_relatives).lower()
+            }
+
+            # Build query string manually for repeated 'id' params
+            id_params = '&'.join([f'id={pid}' for pid in batch])
+            base_params = '&'.join([f'{k}={v}' for k, v in params.items()])
+            full_url = f"{url}?{base_params}&{id_params}"
+
+            try:
+                logger.info(f"Fetching persons batch {i//batch_size + 1}: {len(batch)} persons")
+                response = requests.get(full_url, headers=headers, timeout=60)
+
+                if response.status_code == 200:
+                    data = response.json()
+                    results = data.get('Results', [])
+                    all_results.extend(results)
+                    logger.info(f"Got {len(results)} persons in batch")
+                else:
+                    logger.error(f"Persons batch request failed: {response.status_code} - {response.text[:200]}")
+            except Exception as e:
+                logger.error(f"Persons batch request error: {e}")
+
+        return all_results
     
     def get_retention_rate(self, current_season: int = 2026, previous_season: int = 2025, 
                            client_id: int = None) -> Dict:
@@ -420,10 +483,12 @@ class CampMinderAPIClient:
         
         # Process attendees into enrollment data
         enrollments = []
-        
+        unique_person_ids = set()
+
         for attendee in attendees:
             person_id = attendee.get('PersonID')
-            
+            unique_person_ids.add(person_id)
+
             for sps in attendee.get('SessionProgramStatus', []):
                 session_id = sps.get('SessionID')
                 program_id = sps.get('ProgramID')
@@ -431,17 +496,17 @@ class CampMinderAPIClient:
                 status_name = sps.get('StatusName', '')
                 effective_date = sps.get('EffectiveDate', '')
                 post_date = sps.get('PostDate', '')
-                
+
                 # Only include Enrolled (2) or Applied (4)
                 if status_id not in [2, 4]:
                     continue
-                
+
                 program = program_map.get(program_id, {})
                 session_info = session_map.get(session_id, {})
-                
+
                 # Determine week number from session info
                 week_num = self._get_week_from_session(session_info, week_date_ranges)
-                
+
                 if week_num > 0:
                     enrollments.append({
                         'person_id': person_id,
@@ -455,9 +520,9 @@ class CampMinderAPIClient:
                         'enrollment_date': effective_date or (post_date[:10] if post_date else ''),
                         'post_date': post_date
                     })
-        
+
         logger.info(f"Processed {len(enrollments)} enrollment records")
-        
+
         return {
             'enrollments': enrollments,
             'sessions': sessions,
@@ -812,7 +877,8 @@ class EnrollmentDataProcessor:
         date_stats = self._build_date_stats(enrollments)
         
         # Build participants data for modal
-        participants = self._build_participants_data(programs_data)
+        persons_cache = raw_data.get('persons', {})
+        participants = self._build_participants_data(programs_data, persons_cache)
         
         # Sort programs by custom order
         programs = self._sort_programs(programs)
@@ -911,23 +977,32 @@ class EnrollmentDataProcessor:
         
         return {'daily': daily}
     
-    def _build_participants_data(self, programs_data: Dict) -> Dict:
-        """Build participants data for modal popups"""
+    def _build_participants_data(self, programs_data: Dict, persons_cache: Dict = None) -> Dict:
+        """Build participants data for modal popups with names and guardian emails"""
         participants = {}
-        
+        persons_cache = persons_cache or {}
+
         for program_name, data in programs_data.items():
             participants[program_name] = {}
             for week, campers in data['weeks'].items():
-                participants[program_name][str(week)] = [
-                    {
-                        'person_id': c['person_id'],
-                        'first_name': f"Camper",  # Would need person lookup for real names
-                        'last_name': str(c['person_id']),
-                        'enrollment_date': c['enrollment_date']
-                    }
-                    for c in campers
-                ]
-        
+                week_participants = []
+                for c in campers:
+                    pid = c['person_id']
+                    person_info = persons_cache.get(str(pid), persons_cache.get(pid, {}))
+                    week_participants.append({
+                        'person_id': pid,
+                        'first_name': person_info.get('first_name', 'Camper'),
+                        'last_name': person_info.get('last_name', str(pid)),
+                        'enrollment_date': c['enrollment_date'],
+                        'f1p1_email': person_info.get('f1p1_email', ''),
+                        'f1p1_email2': person_info.get('f1p1_email2', ''),
+                        'f1p2_email': person_info.get('f1p2_email', ''),
+                        'f1p2_email2': person_info.get('f1p2_email2', '')
+                    })
+                # Sort by last name, then first name
+                week_participants.sort(key=lambda p: (p['last_name'].lower(), p['first_name'].lower()))
+                participants[program_name][str(week)] = week_participants
+
         return participants
     
     def _empty_report(self) -> Dict:

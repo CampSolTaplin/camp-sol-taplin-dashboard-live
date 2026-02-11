@@ -803,7 +803,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 }
 
 .modal-large {
-    max-width: 700px;
+    max-width: 1100px;
 }
 
 .modal-header {
@@ -831,6 +831,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 .modal-body {
     padding: 24px;
+    overflow-x: auto;
 }
 
 /* Upload Zone */
@@ -883,38 +884,80 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 /* Participants */
 .participants-list {
-    max-height: 400px;
+    max-height: 500px;
     overflow-y: auto;
 }
 
-.participant-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
+.participants-table-wrapper {
+    overflow-x: auto;
 }
 
-.participant-item:last-child {
-    border-bottom: none;
+.participants-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
 }
 
-.participant-name {
+.participants-table thead th {
+    background: var(--bg);
+    padding: 10px 12px;
+    text-align: left;
     font-weight: 600;
-    font-size: 14px;
-}
-
-.participant-date {
     font-size: 12px;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.participants-table tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.participants-table tbody tr:hover {
+    background: var(--teal-light);
+}
+
+.participant-name-cell {
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .participant-count {
     text-align: center;
-    padding: 16px;
+    padding: 12px 16px;
     font-size: 14px;
     color: var(--text-muted);
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.copy-emails-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copy-emails-btn:hover {
+    background: var(--teal-dark);
+    transform: translateY(-1px);
 }
 
 /* Empty State */

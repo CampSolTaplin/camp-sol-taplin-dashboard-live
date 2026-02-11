@@ -53,35 +53,111 @@ function filterDetailedView() {
     });
 }
 
-// Show participants modal
+// Render participants table from data
+function renderParticipantsTable(participants, list) {
+    if (participants.length === 0) {
+        list.innerHTML = '<div class="participant-count">No participants found</div>';
+        return;
+    }
+
+    // Collect all emails for copy button
+    var allEmails = [];
+    participants.forEach(function(p) {
+        if (p.f1p1_email) allEmails.push(p.f1p1_email);
+        if (p.f1p1_email2) allEmails.push(p.f1p1_email2);
+        if (p.f1p2_email) allEmails.push(p.f1p2_email);
+        if (p.f1p2_email2) allEmails.push(p.f1p2_email2);
+    });
+    allEmails = allEmails.filter(function(v, i, a) { return a.indexOf(v) === i; });
+
+    var html = '<div class="participant-count">' + participants.length + ' participant' + (participants.length !== 1 ? 's' : '');
+    if (allEmails.length > 0) {
+        html += ' &nbsp; <button class="copy-emails-btn" onclick="copyAllEmails(this)" data-emails="' + allEmails.join(',') + '">📋 Copy All Emails (' + allEmails.length + ')</button>';
+    }
+    html += '</div>';
+
+    html += '<div class="participants-table-wrapper"><table class="participants-table">';
+    html += '<thead><tr>';
+    html += '<th>#</th>';
+    html += '<th>Name</th>';
+    html += '<th>F1P1 Login/Email</th>';
+    html += '<th>F1P1 Email 2</th>';
+    html += '<th>F1P2 Login/Email</th>';
+    html += '<th>F1P2 Email 2</th>';
+    html += '</tr></thead><tbody>';
+
+    participants.forEach(function(p, index) {
+        html += '<tr>';
+        html += '<td>' + (index + 1) + '</td>';
+        html += '<td class="participant-name-cell">' + p.first_name + ' ' + p.last_name + '</td>';
+        html += '<td>' + (p.f1p1_email || '-') + '</td>';
+        html += '<td>' + (p.f1p1_email2 || '-') + '</td>';
+        html += '<td>' + (p.f1p2_email || '-') + '</td>';
+        html += '<td>' + (p.f1p2_email2 || '-') + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    list.innerHTML = html;
+}
+
+// Show participants modal - fetches details on demand
 function showParticipants(program, week) {
     const modal = document.getElementById('participantsModal');
     const title = document.getElementById('participantsTitle');
     const list = document.getElementById('participantsList');
-    
-    if (!modal || !window.participantsData) return;
-    
-    const programData = window.participantsData[program];
-    const participants = programData ? (programData[String(week)] || []) : [];
-    
+
+    if (!modal) return;
+
     title.textContent = '👥 ' + program + ' - Week ' + week;
-    
-    if (participants.length === 0) {
-        list.innerHTML = '<div class="participant-count">No participants found</div>';
-    } else {
-        let html = '<div class="participant-count">' + participants.length + ' participant' + (participants.length !== 1 ? 's' : '') + '</div>';
-        html += '<div class="participants-items">';
-        participants.forEach(function(p, index) {
-            html += '<div class="participant-item">';
-            html += '<div class="participant-name">' + (index + 1) + '. ' + p.first_name + ' ' + p.last_name + '</div>';
-            html += '<div class="participant-date">' + (p.enrollment_date || 'N/A') + '</div>';
-            html += '</div>';
-        });
-        html += '</div>';
-        list.innerHTML = html;
-    }
-    
+    list.innerHTML = '<div class="participant-count">Loading participants... ⏳</div>';
     modal.classList.add('show');
+
+    // Fetch enriched data from API
+    fetch('/api/participants/' + encodeURIComponent(program) + '/' + week)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var participants = data.participants || [];
+            renderParticipantsTable(participants, list);
+        })
+        .catch(function(err) {
+            // Fallback to pre-loaded data (without emails)
+            if (window.participantsData) {
+                var programData = window.participantsData[program];
+                var participants = programData ? (programData[String(week)] || []) : [];
+                renderParticipantsTable(participants, list);
+            } else {
+                list.innerHTML = '<div class="participant-count">Failed to load participants</div>';
+            }
+        });
+}
+
+function copyAllEmails(btn) {
+    var emails = btn.getAttribute('data-emails');
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(emails.replace(/,/g, '; ')).then(function() {
+            var original = btn.textContent;
+            btn.textContent = '✅ Copied!';
+            btn.style.background = '#4CAF50';
+            btn.style.color = 'white';
+            setTimeout(function() {
+                btn.innerHTML = original;
+                btn.style.background = '';
+                btn.style.color = '';
+            }, 2000);
+        });
+    } else {
+        // Fallback
+        var ta = document.createElement('textarea');
+        ta.value = emails.replace(/,/g, '; ');
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        var original = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(function() { btn.innerHTML = original; }, 2000);
+    }
 }
 
 function closeParticipantsModal() {
