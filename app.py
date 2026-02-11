@@ -35,12 +35,22 @@ app.secret_key = os.environ.get('SECRET_KEY', 'camp-sol-taplin-2026-secret-key')
 # Configuration
 UPLOAD_FOLDER = 'static/uploads'
 DATA_FOLDER = 'data'
-USERS_FILE = os.path.join(DATA_FOLDER, 'users.json')
 CACHE_FILE = os.path.join(DATA_FOLDER, 'api_cache.json')
-GROUP_ASSIGNMENTS_FILE = os.path.join(DATA_FOLDER, 'group_assignments.json')
 ALLOWED_EXTENSIONS = {'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+
+# ==================== DATABASE CONFIG ====================
+from flask_sqlalchemy import SQLAlchemy
+
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///local.db')
+# Render PostgreSQL uses "postgres://" but SQLAlchemy needs "postgresql://"
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
 
 # CampMinder API Configuration (from environment variables)
 CAMPMINDER_API_KEY = os.environ.get('CAMPMINDER_API_KEY')
@@ -53,69 +63,42 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# ==================== USER MANAGEMENT ====================
+# ==================== DATABASE MODELS ====================
 
-def load_users():
-    """Load users from JSON file"""
-    # Check if we need to recreate default users (version check)
-    recreate = False
-    if os.path.exists(USERS_FILE):
-        try:
-            with open(USERS_FILE, 'r') as f:
-                existing = json.load(f)
-                # Check if new admin user exists
-                if 'campsoltaplin@marjcc.org' in existing:
-                    return existing
-                else:
-                    recreate = True  # Need to update to new user structure
-        except:
-            recreate = True
-    else:
-        recreate = True
+class UserAccount(db.Model):
+    __tablename__ = 'users'
+    username = db.Column(db.String(120), primary_key=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default='viewer')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    if recreate:
-        # Default users
-        default_users = {
-            'campsoltaplin@marjcc.org': {
-                'password': generate_password_hash('M@rjcc2026'),
-                'role': 'admin',
-                'created_at': datetime.now().isoformat()
-            },
-            'onlyview': {
-                'password': generate_password_hash('M@rjcc2026'),
-                'role': 'viewer',
-                'created_at': datetime.now().isoformat()
-            }
-        }
-        save_users(default_users)
-        return default_users
+class GroupAssignment(db.Model):
+    __tablename__ = 'group_assignments'
+    id = db.Column(db.Integer, primary_key=True)
+    program = db.Column(db.String(100), nullable=False)
+    week = db.Column(db.Integer, nullable=False)
+    person_id = db.Column(db.String(20), nullable=False)
+    group_number = db.Column(db.Integer, nullable=False)
+    __table_args__ = (db.UniqueConstraint('program', 'week', 'person_id'),)
 
-    return {}
+# ==================== INIT DB & DEFAULT USERS ====================
 
-def save_users(users):
-    """Save users to JSON file"""
-    os.makedirs(DATA_FOLDER, exist_ok=True)
-    with open(USERS_FILE, 'w') as f:
-        json.dump(users, f, indent=2)
-
-def load_group_assignments():
-    """Load group assignments from JSON file"""
-    if os.path.exists(GROUP_ASSIGNMENTS_FILE):
-        try:
-            with open(GROUP_ASSIGNMENTS_FILE, 'r') as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
-
-def save_group_assignments(assignments):
-    """Save group assignments to JSON file"""
-    os.makedirs(DATA_FOLDER, exist_ok=True)
-    with open(GROUP_ASSIGNMENTS_FILE, 'w') as f:
-        json.dump(assignments, f, indent=2)
-
-# Load users on startup
-USERS = load_users()
+with app.app_context():
+    db.create_all()
+    # Create default users if they don't exist
+    if not UserAccount.query.filter_by(username='campsoltaplin@marjcc.org').first():
+        db.session.add(UserAccount(
+            username='campsoltaplin@marjcc.org',
+            password_hash=generate_password_hash('M@rjcc2026'),
+            role='admin'
+        ))
+    if not UserAccount.query.filter_by(username='onlyview').first():
+        db.session.add(UserAccount(
+            username='onlyview',
+            password_hash=generate_password_hash('M@rjcc2026'),
+            role='viewer'
+        ))
+    db.session.commit()
 
 class User(UserMixin):
     def __init__(self, username, role):
@@ -124,9 +107,9 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(username):
-    users = load_users()
-    if username in users:
-        return User(username, users[username]['role'])
+    u = db.session.get(UserAccount, username)
+    if u:
+        return User(u.username, u.role)
     return None
 
 def allowed_file(filename):
@@ -263,25 +246,17 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        
-        users = load_users()
-        
+
         # Find user (case-insensitive)
-        matched_user = None
-        matched_username = None
-        for stored_username, user_data in users.items():
-            if stored_username.lower() == username.lower():
-                matched_user = user_data
-                matched_username = stored_username
-                break
-        
-        if matched_user and check_password_hash(matched_user['password'], password):
-            user = User(matched_username, matched_user['role'])
+        u = UserAccount.query.filter(db.func.lower(UserAccount.username) == username.lower()).first()
+
+        if u and check_password_hash(u.password_hash, password):
+            user = User(u.username, u.role)
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid username or password', 'error')
-    
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -361,15 +336,15 @@ def admin_users():
         flash('Access denied. Admin only.', 'error')
         return redirect(url_for('dashboard'))
     
-    users = load_users()
+    all_users = UserAccount.query.all()
     user_list = []
-    for username, data in users.items():
+    for u in all_users:
         user_list.append({
-            'username': username,
-            'role': data.get('role', 'viewer'),
-            'created_at': data.get('created_at', 'Unknown')
+            'username': u.username,
+            'role': u.role,
+            'created_at': u.created_at.isoformat() if u.created_at else 'Unknown'
         })
-    
+
     return render_template('admin_users.html', users=user_list, user=current_user)
 
 @app.route('/api/users', methods=['GET'])
@@ -379,15 +354,15 @@ def api_get_users():
     if current_user.role != 'admin':
         return jsonify({'error': 'Unauthorized'}), 403
     
-    users = load_users()
+    all_users = UserAccount.query.all()
     user_list = []
-    for username, data in users.items():
+    for u in all_users:
         user_list.append({
-            'username': username,
-            'role': data.get('role', 'viewer'),
-            'created_at': data.get('created_at', 'Unknown')
+            'username': u.username,
+            'role': u.role,
+            'created_at': u.created_at.isoformat() if u.created_at else 'Unknown'
         })
-    
+
     return jsonify({'users': user_list})
 
 @app.route('/api/users', methods=['POST'])
@@ -416,20 +391,19 @@ def api_create_user():
     if not username.replace('_', '').replace('.', '').isalnum():
         return jsonify({'error': 'Username can only contain letters, numbers, underscores and dots'}), 400
     
-    users = load_users()
-    
-    if username in users:
+    existing = UserAccount.query.filter_by(username=username).first()
+    if existing:
         return jsonify({'error': 'Username already exists'}), 400
-    
+
     # Create user
-    users[username] = {
-        'password': generate_password_hash(password),
-        'role': role,
-        'created_at': datetime.now().isoformat()
-    }
-    
-    save_users(users)
-    
+    new_user = UserAccount(
+        username=username,
+        password_hash=generate_password_hash(password),
+        role=role
+    )
+    db.session.add(new_user)
+    db.session.commit()
+
     return jsonify({
         'success': True,
         'message': f'User "{username}" created successfully',
@@ -452,14 +426,13 @@ def api_delete_user(username):
     if username == current_user.id:
         return jsonify({'error': 'Cannot delete your own account'}), 400
     
-    users = load_users()
-    
-    if username not in users:
+    u = UserAccount.query.filter_by(username=username).first()
+    if not u:
         return jsonify({'error': 'User not found'}), 404
-    
-    del users[username]
-    save_users(users)
-    
+
+    db.session.delete(u)
+    db.session.commit()
+
     return jsonify({
         'success': True,
         'message': f'User "{username}" deleted successfully'
@@ -479,14 +452,13 @@ def api_change_password(username):
     if not new_password or len(new_password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters'}), 400
     
-    users = load_users()
-    
-    if username not in users:
+    u = UserAccount.query.filter_by(username=username).first()
+    if not u:
         return jsonify({'error': 'User not found'}), 404
-    
-    users[username]['password'] = generate_password_hash(new_password)
-    save_users(users)
-    
+
+    u.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+
     return jsonify({
         'success': True,
         'message': f'Password for "{username}" changed successfully'
@@ -511,14 +483,13 @@ def api_change_role(username):
     if new_role not in ['admin', 'viewer']:
         return jsonify({'error': 'Invalid role'}), 400
     
-    users = load_users()
-    
-    if username not in users:
+    u = UserAccount.query.filter_by(username=username).first()
+    if not u:
         return jsonify({'error': 'User not found'}), 404
-    
-    users[username]['role'] = new_role
-    save_users(users)
-    
+
+    u.role = new_role
+    db.session.commit()
+
     return jsonify({
         'success': True,
         'message': f'Role for "{username}" changed to {new_role}'
@@ -730,10 +701,9 @@ def api_participants(program, week):
             print(f"Error fetching persons batch: {e}")
             traceback.print_exc()
 
-    # Load group assignments for this program/week
-    assignments = load_group_assignments()
-    key = f"{program}_{week}"
-    group_map = assignments.get(key, {})
+    # Load group assignments for this program/week from DB
+    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
+    group_map = {ga.person_id: ga.group_number for ga in ga_rows}
 
     # Build enriched participants list
     enriched = []
@@ -777,19 +747,23 @@ def api_save_group_assignment(program, week):
     if not person_id:
         return jsonify({'error': 'person_id is required'}), 400
 
-    assignments = load_group_assignments()
-    key = f"{program}_{week}"
-
-    if key not in assignments:
-        assignments[key] = {}
+    existing = GroupAssignment.query.filter_by(program=program, week=week, person_id=person_id).first()
 
     if group is None or group == 0:
-        assignments[key].pop(person_id, None)
+        # Remove assignment
+        if existing:
+            db.session.delete(existing)
+            db.session.commit()
     else:
-        assignments[key][person_id] = int(group)
+        if existing:
+            existing.group_number = int(group)
+        else:
+            db.session.add(GroupAssignment(
+                program=program, week=week, person_id=person_id, group_number=int(group)
+            ))
+        db.session.commit()
 
-    save_group_assignments(assignments)
-    return jsonify({'success': True, 'key': key, 'person_id': person_id, 'group': group})
+    return jsonify({'success': True, 'key': f"{program}_{week}", 'person_id': person_id, 'group': group})
 
 @app.route('/api/download-by-groups/<program>/<int:week>')
 @login_required
@@ -816,10 +790,9 @@ def download_by_groups(program, week):
     except Exception:
         pass
 
-    # Load group assignments
-    assignments = load_group_assignments()
-    key = f"{program}_{week}"
-    group_map = assignments.get(key, {})
+    # Load group assignments from DB
+    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
+    group_map = {ga.person_id: ga.group_number for ga in ga_rows}
 
     # Build camper list
     campers = []
@@ -948,9 +921,8 @@ def print_by_groups(program, week):
     except Exception:
         pass
 
-    assignments = load_group_assignments()
-    key = f"{program}_{week}"
-    group_map = assignments.get(key, {})
+    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
+    group_map = {ga.person_id: ga.group_number for ga in ga_rows}
 
     campers = []
     for p in participants:

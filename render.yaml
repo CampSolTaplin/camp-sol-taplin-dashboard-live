@@ -1,3 +1,9 @@
+databases:
+  - name: camp-sol-taplin-db
+    plan: free
+    databaseName: campdb
+    user: campuser
+
 services:
   - type: web
     name: camp-sol-taplin-dashboard-live
@@ -15,3 +21,7 @@ services:
         generateValue: true
       - key: PYTHON_VERSION
         value: "3.11.0"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: camp-sol-taplin-db
+          property: connectionString
