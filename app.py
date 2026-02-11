@@ -37,6 +37,7 @@ UPLOAD_FOLDER = 'static/uploads'
 DATA_FOLDER = 'data'
 USERS_FILE = os.path.join(DATA_FOLDER, 'users.json')
 CACHE_FILE = os.path.join(DATA_FOLDER, 'api_cache.json')
+GROUP_ASSIGNMENTS_FILE = os.path.join(DATA_FOLDER, 'group_assignments.json')
 ALLOWED_EXTENSIONS = {'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
@@ -96,6 +97,22 @@ def save_users(users):
     os.makedirs(DATA_FOLDER, exist_ok=True)
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=2)
+
+def load_group_assignments():
+    """Load group assignments from JSON file"""
+    if os.path.exists(GROUP_ASSIGNMENTS_FILE):
+        try:
+            with open(GROUP_ASSIGNMENTS_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def save_group_assignments(assignments):
+    """Save group assignments to JSON file"""
+    os.makedirs(DATA_FOLDER, exist_ok=True)
+    with open(GROUP_ASSIGNMENTS_FILE, 'w') as f:
+        json.dump(assignments, f, indent=2)
 
 # Load users on startup
 USERS = load_users()
@@ -623,7 +640,40 @@ def api_participants(program, week):
                         guardian_map[gid] = g
                 print(f"Got {len(guardian_map)} guardian results from API")
 
-            # Step 3: Build person_info for each camper
+            # Step 3: Get "Share Group With" custom field
+            share_group_map = {}  # pid -> value
+            try:
+                # Find the custom field definition for "Share Group With"
+                # Note: custom fields API returns camelCase keys (name, id)
+                cf_defs = client.get_custom_field_definitions()
+                share_group_field_id = None
+                print(f"Found {len(cf_defs)} custom field definitions")
+                for cf in cf_defs:
+                    # Handle both camelCase and PascalCase
+                    cf_name = cf.get('name', cf.get('Name', ''))
+                    cf_id = cf.get('id', cf.get('Id'))
+                    if 'share' in cf_name.lower() and 'group' in cf_name.lower():
+                        share_group_field_id = cf_id
+                        print(f"Found 'Share Group With' custom field: ID={share_group_field_id}, Name={cf_name}")
+                        break
+
+                if share_group_field_id:
+                    cf_data = client.get_custom_fields_for_persons(
+                        pids_to_fetch, field_id=share_group_field_id,
+                        season_id=CAMPMINDER_SEASON_ID
+                    )
+                    for pid, fields in cf_data.items():
+                        for f in fields:
+                            # Handle both camelCase and PascalCase
+                            val = f.get('value', f.get('Value', ''))
+                            if val:
+                                share_group_map[pid] = val
+                else:
+                    print("Custom field 'Share Group With' not found in definitions")
+            except Exception as e:
+                print(f"Error fetching custom fields: {e}")
+
+            # Step 4: Build person_info for each camper
             for pid in pids_to_fetch:
                 camper = camper_map.get(pid)
                 if camper:
@@ -631,10 +681,16 @@ def api_participants(program, week):
                         'first_name': camper.get('Name', {}).get('First', ''),
                         'last_name': camper.get('Name', {}).get('Last', ''),
                         'f1p1_email': '', 'f1p1_email2': '',
-                        'f1p2_email': '', 'f1p2_email2': ''
+                        'f1p2_email': '', 'f1p2_email2': '',
+                        'share_group_with': share_group_map.get(pid, ''),
+                        'gender': camper.get('GenderName', ''),
+                        'medical_notes': '',
+                        'siblings': [],
+                        'aftercare': '',
+                        'carpool': ''
                     }
 
-                    # Get guardians sorted by IsPrimary
+                    # Get guardians and siblings from relatives
                     relatives = camper.get('Relatives', [])
                     guardians = [r for r in relatives if r.get('IsGuardian')]
                     guardians.sort(key=lambda r: (not r.get('IsPrimary', False)))
@@ -655,7 +711,13 @@ def api_participants(program, week):
                     persons_cache[str(pid)] = {
                         'first_name': 'Camper', 'last_name': str(pid),
                         'f1p1_email': '', 'f1p1_email2': '',
-                        'f1p2_email': '', 'f1p2_email2': ''
+                        'f1p2_email': '', 'f1p2_email2': '',
+                        'share_group_with': '',
+                        'gender': '',
+                        'medical_notes': '',
+                        'siblings': [],
+                        'aftercare': '',
+                        'carpool': ''
                     }
 
             # Save updated cache
@@ -667,6 +729,11 @@ def api_participants(program, week):
         except Exception as e:
             print(f"Error fetching persons batch: {e}")
             traceback.print_exc()
+
+    # Load group assignments for this program/week
+    assignments = load_group_assignments()
+    key = f"{program}_{week}"
+    group_map = assignments.get(key, {})
 
     # Build enriched participants list
     enriched = []
@@ -681,13 +748,245 @@ def api_participants(program, week):
             'f1p1_email': info.get('f1p1_email', ''),
             'f1p1_email2': info.get('f1p1_email2', ''),
             'f1p2_email': info.get('f1p2_email', ''),
-            'f1p2_email2': info.get('f1p2_email2', '')
+            'f1p2_email2': info.get('f1p2_email2', ''),
+            'share_group_with': info.get('share_group_with', ''),
+            'gender': info.get('gender', ''),
+            'medical_notes': info.get('medical_notes', ''),
+            'siblings': ', '.join(info.get('siblings', [])) if isinstance(info.get('siblings'), list) else str(info.get('siblings', '')),
+            'aftercare': info.get('aftercare', ''),
+            'carpool': info.get('carpool', ''),
+            'group': group_map.get(pid, 0)
         })
 
     # Sort by last name
     enriched.sort(key=lambda x: (x['last_name'].lower(), x['first_name'].lower()))
 
     return jsonify({'participants': enriched})
+
+@app.route('/api/group-assignment/<program>/<int:week>', methods=['POST'])
+@login_required
+def api_save_group_assignment(program, week):
+    """Save a group assignment for a single camper"""
+    if current_user.role not in ['admin', 'unit_leader']:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    data = request.get_json()
+    person_id = str(data.get('person_id', ''))
+    group = data.get('group')
+
+    if not person_id:
+        return jsonify({'error': 'person_id is required'}), 400
+
+    assignments = load_group_assignments()
+    key = f"{program}_{week}"
+
+    if key not in assignments:
+        assignments[key] = {}
+
+    if group is None or group == 0:
+        assignments[key].pop(person_id, None)
+    else:
+        assignments[key][person_id] = int(group)
+
+    save_group_assignments(assignments)
+    return jsonify({'success': True, 'key': key, 'person_id': person_id, 'group': group})
+
+@app.route('/api/download-by-groups/<program>/<int:week>')
+@login_required
+def download_by_groups(program, week):
+    """Generate and download Excel file organized by groups with attendance columns"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+
+    # Get participants data
+    data = api_cache.get('data')
+    if not data or 'participants' not in data:
+        return jsonify({'error': 'No data available'}), 404
+
+    program_data = data['participants'].get(program, {})
+    participants = program_data.get(str(week), [])
+
+    # Load persons cache
+    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
+    persons_cache = {}
+    try:
+        if os.path.exists(persons_cache_file):
+            with open(persons_cache_file, 'r') as f:
+                persons_cache = json.load(f)
+    except Exception:
+        pass
+
+    # Load group assignments
+    assignments = load_group_assignments()
+    key = f"{program}_{week}"
+    group_map = assignments.get(key, {})
+
+    # Build camper list
+    campers = []
+    for p in participants:
+        pid = str(p['person_id'])
+        info = persons_cache.get(pid, {})
+        campers.append({
+            'first_name': info.get('first_name', 'Camper'),
+            'last_name': info.get('last_name', ''),
+            'gender': info.get('gender', ''),
+            'medical_notes': info.get('medical_notes', ''),
+            'siblings': ', '.join(info.get('siblings', [])) if isinstance(info.get('siblings'), list) else str(info.get('siblings', '')),
+            'aftercare': info.get('aftercare', ''),
+            'carpool': info.get('carpool', ''),
+            'share_group_with': info.get('share_group_with', ''),
+            'group': group_map.get(pid, 0)
+        })
+
+    # Separate into groups
+    groups = {}
+    unassigned = []
+    for c in campers:
+        g = c['group']
+        if g and g > 0:
+            groups.setdefault(g, []).append(c)
+        else:
+            unassigned.append(c)
+
+    # Create workbook
+    wb = Workbook()
+    wb.remove(wb.active)
+
+    title_font = Font(bold=True, size=14)
+    header_font = Font(bold=True, size=11)
+    header_fill = PatternFill(start_color='CCE5FF', end_color='CCE5FF', fill_type='solid')
+    thin_border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+
+    def create_group_sheet(wb, sheet_title, group_label, camper_list):
+        ws = wb.create_sheet(title=sheet_title)
+        camper_list.sort(key=lambda c: (c['last_name'].lower(), c['first_name'].lower()))
+
+        ws.merge_cells('A1:M1')
+        ws['A1'] = f'{program} - Week {week} | {group_label}'
+        ws['A1'].font = title_font
+
+        headers = ['#', 'First Name', 'Last Name', 'Gender',
+                   'Medical Notes', 'Siblings', 'Share Group With',
+                   'AfterCare', 'Carpool', 'M', 'T', 'W', 'T', 'F']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=3, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal='center', wrap_text=True)
+
+        for idx, camper in enumerate(camper_list, 1):
+            row = idx + 3
+            values = [idx, camper['first_name'], camper['last_name'],
+                      camper['gender'], camper['medical_notes'],
+                      camper['siblings'], camper['share_group_with'],
+                      camper['aftercare'], camper['carpool'],
+                      '', '', '', '', '']
+            for col, val in enumerate(values, 1):
+                cell = ws.cell(row=row, column=col, value=val)
+                cell.border = thin_border
+
+        ws.column_dimensions['A'].width = 4
+        ws.column_dimensions['B'].width = 14
+        ws.column_dimensions['C'].width = 14
+        ws.column_dimensions['D'].width = 8
+        ws.column_dimensions['E'].width = 22
+        ws.column_dimensions['F'].width = 18
+        ws.column_dimensions['G'].width = 18
+        ws.column_dimensions['H'].width = 10
+        ws.column_dimensions['I'].width = 10
+        for col_letter in ['J', 'K', 'L', 'M', 'N']:
+            ws.column_dimensions[col_letter].width = 5
+
+        ws.page_setup.orientation = 'landscape'
+        ws.page_setup.fitToWidth = 1
+        ws.page_setup.fitToHeight = 1
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+    for group_num in sorted(groups.keys()):
+        create_group_sheet(wb, f'Group {group_num}', f'Group {group_num}', groups[group_num])
+
+    if unassigned:
+        create_group_sheet(wb, 'Unassigned', 'Unassigned', unassigned)
+
+    if not wb.sheetnames:
+        ws = wb.create_sheet(title='No Groups')
+        ws['A1'] = 'No group assignments found. Please assign groups first.'
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"{program}_Week{week}_ByGroups.xlsx"
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
+
+@app.route('/print-by-groups/<program>/<int:week>')
+@login_required
+def print_by_groups(program, week):
+    """Render print-friendly page showing groups with attendance columns"""
+    data = api_cache.get('data')
+    if not data or 'participants' not in data:
+        return "No data available", 404
+
+    program_data = data['participants'].get(program, {})
+    participants = program_data.get(str(week), [])
+
+    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
+    persons_cache = {}
+    try:
+        if os.path.exists(persons_cache_file):
+            with open(persons_cache_file, 'r') as f:
+                persons_cache = json.load(f)
+    except Exception:
+        pass
+
+    assignments = load_group_assignments()
+    key = f"{program}_{week}"
+    group_map = assignments.get(key, {})
+
+    campers = []
+    for p in participants:
+        pid = str(p['person_id'])
+        info = persons_cache.get(pid, {})
+        campers.append({
+            'first_name': info.get('first_name', 'Camper'),
+            'last_name': info.get('last_name', ''),
+            'gender': info.get('gender', ''),
+            'medical_notes': info.get('medical_notes', ''),
+            'siblings': ', '.join(info.get('siblings', [])) if isinstance(info.get('siblings'), list) else str(info.get('siblings', '')),
+            'aftercare': info.get('aftercare', ''),
+            'carpool': info.get('carpool', ''),
+            'share_group_with': info.get('share_group_with', ''),
+            'group': group_map.get(pid, 0)
+        })
+
+    groups = {}
+    unassigned = []
+    for c in campers:
+        g = c['group']
+        if g and g > 0:
+            groups.setdefault(g, []).append(c)
+        else:
+            unassigned.append(c)
+
+    # Sort each group
+    for g in groups:
+        groups[g].sort(key=lambda c: (c['last_name'].lower(), c['first_name'].lower()))
+    unassigned.sort(key=lambda c: (c['last_name'].lower(), c['first_name'].lower()))
+
+    return render_template('print_by_groups.html',
+                         program=program,
+                         week=week,
+                         groups=groups,
+                         unassigned=unassigned)
 
 @app.route('/api/status')
 @login_required

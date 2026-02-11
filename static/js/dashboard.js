@@ -53,12 +53,18 @@ function filterDetailedView() {
     });
 }
 
+// Current modal context
+var currentModalProgram = '';
+var currentModalWeek = 0;
+
 // Render participants table from data
-function renderParticipantsTable(participants, list) {
+function renderParticipantsTable(participants, list, program, week) {
     if (participants.length === 0) {
         list.innerHTML = '<div class="participant-count">No participants found</div>';
         return;
     }
+
+    var isAdmin = (window.userRole === 'admin' || window.userRole === 'unit_leader');
 
     // Collect all emails for copy button
     var allEmails = [];
@@ -70,16 +76,28 @@ function renderParticipantsTable(participants, list) {
     });
     allEmails = allEmails.filter(function(v, i, a) { return a.indexOf(v) === i; });
 
-    var html = '<div class="participant-count">' + participants.length + ' participant' + (participants.length !== 1 ? 's' : '');
+    // Action bar with buttons
+    var html = '<div class="participant-actions-bar">';
+    html += '<div class="participant-count">' + participants.length + ' participant' + (participants.length !== 1 ? 's' : '');
     if (allEmails.length > 0) {
         html += ' &nbsp; <button class="copy-emails-btn" onclick="copyAllEmails(this)" data-emails="' + allEmails.join(',') + '">📋 Copy All Emails (' + allEmails.length + ')</button>';
+    }
+    html += '</div>';
+    if (program && week) {
+        html += '<div class="participant-action-buttons">';
+        html += '<button class="btn-action btn-download" onclick="downloadByGroups()">📥 Download By Groups</button>';
+        html += '<button class="btn-action btn-print" onclick="printByGroups()">🖨️ Print By Groups</button>';
+        html += '</div>';
     }
     html += '</div>';
 
     html += '<div class="participants-table-wrapper"><table class="participants-table">';
     html += '<thead><tr>';
     html += '<th>#</th>';
+    html += '<th>Group</th>';
     html += '<th>Name</th>';
+    html += '<th>Gender</th>';
+    html += '<th>Share Group With</th>';
     html += '<th>F1P1 Login/Email</th>';
     html += '<th>F1P1 Email 2</th>';
     html += '<th>F1P2 Login/Email</th>';
@@ -89,7 +107,26 @@ function renderParticipantsTable(participants, list) {
     participants.forEach(function(p, index) {
         html += '<tr>';
         html += '<td>' + (index + 1) + '</td>';
+
+        // Group column
+        if (isAdmin && program && week) {
+            var groupVal = p.group || 0;
+            html += '<td class="group-cell">';
+            html += '<select class="group-select" data-person-id="' + p.person_id + '" onchange="saveGroupAssignment(this)">';
+            html += '<option value="0"' + (groupVal === 0 ? ' selected' : '') + '>-</option>';
+            html += '<option value="1"' + (groupVal === 1 ? ' selected' : '') + '>1</option>';
+            html += '<option value="2"' + (groupVal === 2 ? ' selected' : '') + '>2</option>';
+            html += '<option value="3"' + (groupVal === 3 ? ' selected' : '') + '>3</option>';
+            html += '</select>';
+            html += '</td>';
+        } else {
+            var groupDisplay = p.group && p.group > 0 ? p.group : '-';
+            html += '<td class="group-cell">' + groupDisplay + '</td>';
+        }
+
         html += '<td class="participant-name-cell">' + p.first_name + ' ' + p.last_name + '</td>';
+        html += '<td>' + (p.gender || '-') + '</td>';
+        html += '<td>' + (p.share_group_with || '-') + '</td>';
         html += '<td>' + (p.f1p1_email || '-') + '</td>';
         html += '<td>' + (p.f1p1_email2 || '-') + '</td>';
         html += '<td>' + (p.f1p2_email || '-') + '</td>';
@@ -101,6 +138,50 @@ function renderParticipantsTable(participants, list) {
     list.innerHTML = html;
 }
 
+// Save group assignment via AJAX
+function saveGroupAssignment(selectEl) {
+    var personId = selectEl.getAttribute('data-person-id');
+    var group = parseInt(selectEl.value);
+
+    selectEl.classList.add('saving');
+
+    fetch('/api/group-assignment/' + encodeURIComponent(currentModalProgram) + '/' + currentModalWeek, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ person_id: personId, group: group })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        selectEl.classList.remove('saving');
+        if (data.success) {
+            selectEl.classList.add('saved');
+            setTimeout(function() { selectEl.classList.remove('saved'); }, 1000);
+        } else {
+            selectEl.classList.add('error');
+            setTimeout(function() { selectEl.classList.remove('error'); }, 2000);
+            alert('Error saving group: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(function(err) {
+        selectEl.classList.remove('saving');
+        selectEl.classList.add('error');
+        setTimeout(function() { selectEl.classList.remove('error'); }, 2000);
+        alert('Failed to save group assignment: ' + err.message);
+    });
+}
+
+// Download By Groups Excel
+function downloadByGroups() {
+    if (!currentModalProgram || !currentModalWeek) return;
+    window.open('/api/download-by-groups/' + encodeURIComponent(currentModalProgram) + '/' + currentModalWeek, '_blank');
+}
+
+// Print By Groups
+function printByGroups() {
+    if (!currentModalProgram || !currentModalWeek) return;
+    window.open('/print-by-groups/' + encodeURIComponent(currentModalProgram) + '/' + currentModalWeek, '_blank');
+}
+
 // Show participants modal - fetches details on demand
 function showParticipants(program, week) {
     const modal = document.getElementById('participantsModal');
@@ -108,6 +189,10 @@ function showParticipants(program, week) {
     const list = document.getElementById('participantsList');
 
     if (!modal) return;
+
+    // Set global context for group operations
+    currentModalProgram = program;
+    currentModalWeek = week;
 
     title.textContent = '👥 ' + program + ' - Week ' + week;
     list.innerHTML = '<div class="participant-count">Loading participants... ⏳</div>';
@@ -118,14 +203,14 @@ function showParticipants(program, week) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             var participants = data.participants || [];
-            renderParticipantsTable(participants, list);
+            renderParticipantsTable(participants, list, program, week);
         })
         .catch(function(err) {
             // Fallback to pre-loaded data (without emails)
             if (window.participantsData) {
                 var programData = window.participantsData[program];
                 var participants = programData ? (programData[String(week)] || []) : [];
-                renderParticipantsTable(participants, list);
+                renderParticipantsTable(participants, list, program, week);
             } else {
                 list.innerHTML = '<div class="participant-count">Failed to load participants</div>';
             }

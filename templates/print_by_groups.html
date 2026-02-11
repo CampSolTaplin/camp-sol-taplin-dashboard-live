@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ program }} - Week {{ week }} | By Groups</title>
+    <style>
+        @page {
+            size: landscape;
+            margin: 0.5in;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            color: #333;
+        }
+
+        .group-section {
+            page-break-after: always;
+            padding: 10px 0;
+        }
+
+        .group-section:last-child {
+            page-break-after: auto;
+        }
+
+        .group-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #006B82;
+            color: #006B82;
+        }
+
+        .group-count {
+            font-size: 12px;
+            color: #666;
+            font-weight: normal;
+            margin-left: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 5px 6px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        th {
+            background: #CCE5FF;
+            font-weight: bold;
+            font-size: 10px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        td.name-cell {
+            text-align: left;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        td.notes-cell {
+            text-align: left;
+            font-size: 10px;
+            max-width: 150px;
+            word-wrap: break-word;
+        }
+
+        td.day-cell {
+            width: 30px;
+            min-width: 30px;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .no-print {
+            text-align: center;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .no-print button {
+            padding: 10px 24px;
+            margin: 0 8px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-print {
+            background: #006B82;
+            color: white;
+        }
+
+        .btn-close {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="btn-print" onclick="window.print()">🖨️ Print</button>
+        <button class="btn-close" onclick="window.close()">✕ Close</button>
+    </div>
+
+    {% for group_num in groups.keys()|sort %}
+    <div class="group-section">
+        <div class="group-title">
+            {{ program }} - Week {{ week }} | Group {{ group_num }}
+            <span class="group-count">({{ groups[group_num]|length }} campers)</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Gender</th>
+                    <th>Medical Notes</th>
+                    <th>Siblings</th>
+                    <th>Share Group With</th>
+                    <th>AfterCare</th>
+                    <th>Carpool</th>
+                    <th class="day-cell">M</th>
+                    <th class="day-cell">T</th>
+                    <th class="day-cell">W</th>
+                    <th class="day-cell">T</th>
+                    <th class="day-cell">F</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for camper in groups[group_num] %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="name-cell">{{ camper.first_name }}</td>
+                    <td class="name-cell">{{ camper.last_name }}</td>
+                    <td>{{ camper.gender }}</td>
+                    <td class="notes-cell">{{ camper.medical_notes }}</td>
+                    <td class="notes-cell">{{ camper.siblings }}</td>
+                    <td class="notes-cell">{{ camper.share_group_with }}</td>
+                    <td>{{ camper.aftercare }}</td>
+                    <td>{{ camper.carpool }}</td>
+                    <td class="day-cell"></td>
+                    <td class="day-cell"></td>
+                    <td class="day-cell"></td>
+                    <td class="day-cell"></td>
+                    <td class="day-cell"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+
+    {% if unassigned and unassigned|length > 0 %}
+    <div class="group-section">
+        <div class="group-title" style="color: #999;">
+            {{ program }} - Week {{ week }} | Unassigned
+            <span class="group-count">({{ unassigned|length }} campers)</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Gender</th>
+                    <th>Medical Notes</th>
+                    <th>Siblings</th>
+                    <th>Share Group With</th>
+                    <th>AfterCare</th>
+                    <th>Carpool</th>
+                    <th class="day-cell">M</th>
+                    <th class="day-cell">T</th>
+                    <th class="day-cell">W</th>
+                    <th class="day-cell">T</th>
+                    <th class="day-cell">F</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for camper in unassigned %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="name-cell">{{ camper.first_name }}</td>
+                    <td class="name-cell">{{ camper.last_name }}</td>
+                    <td>{{ camper.gender }}</td>
+                    <td class="notes-cell">{{ camper.medical_notes }}</td>
+                    <td class="notes-cell">{{ camper.siblings }}</td>
+                    <td class="notes-cell">{{ camper.share_group_with }}</td>
+                    <td>{{ camper.aftercare }}</td>
+                    <td>{{ camper.carpool }}</td>
+                    <td class="day-cell"></td>
+                    <td class="day-cell"></td>
+                    <td class="day-cell"></td>
+                    <td class="day-cell"></td>
+                    <td class="day-cell"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</body>
+</html>

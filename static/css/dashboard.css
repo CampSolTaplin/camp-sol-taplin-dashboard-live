@@ -803,7 +803,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 }
 
 .modal-large {
-    max-width: 1100px;
+    max-width: 1250px;
 }
 
 .modal-header {
@@ -1422,4 +1422,103 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 @keyframes blink {
     0%, 50% { opacity: 1; }
     25%, 75% { opacity: 0.3; }
+}
+
+/* ==================== GROUP ASSIGNMENT ==================== */
+
+/* Actions bar above participant table */
+.participant-actions-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.participant-action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-action.btn-download {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-action.btn-download:hover {
+    background: #43A047;
+    transform: translateY(-1px);
+}
+
+.btn-action.btn-print {
+    background: #2196F3;
+    color: white;
+}
+
+.btn-action.btn-print:hover {
+    background: #1E88E5;
+    transform: translateY(-1px);
+}
+
+/* Group select dropdown in table */
+.group-cell {
+    text-align: center;
+    min-width: 60px;
+}
+
+.group-select {
+    width: 48px;
+    padding: 4px 2px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s;
+}
+
+.group-select:hover {
+    border-color: var(--teal);
+}
+
+.group-select:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 2px rgba(0, 169, 206, 0.2);
+}
+
+.group-select.saving {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.group-select.saved {
+    border-color: var(--success);
+    background: #D1FAE5;
+}
+
+.group-select.error {
+    border-color: var(--danger);
+    background: #FEE2E2;
+}
+
+/* Widen modal for extra columns */
+.modal-large {
+    max-width: 1350px;
 }

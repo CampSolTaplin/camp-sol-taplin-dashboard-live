@@ -568,6 +568,7 @@
     </div>
 
     <!-- Data for JavaScript -->
+    <script>window.userRole = '{{ user.role }}';</script>
     {% if report and report.participants %}
     <script>window.participantsData = {{ report.participants | tojson | safe }};</script>
     {% else %}

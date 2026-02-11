@@ -368,8 +368,88 @@ class CampMinderAPIClient:
                 logger.error(f"Persons batch request error: {e}")
 
         return all_results
-    
-    def get_retention_rate(self, current_season: int = 2026, previous_season: int = 2025, 
+
+    def get_custom_field_definitions(self, client_id: int = None) -> List[Dict]:
+        """Get all custom field definitions for the camp.
+        Note: This endpoint returns camelCase keys (result, name, id)."""
+        client_id = client_id or self.client_id
+        self._ensure_authenticated()
+
+        result = self._make_request('/persons/custom-fields', {
+            'clientid': client_id,
+            'pagenumber': 1,
+            'pagesize': 1000
+        })
+        if result:
+            # API returns camelCase 'result' instead of PascalCase 'Results'
+            return result.get('result', result.get('Results', []))
+        return []
+
+    def get_person_custom_fields(self, person_id: int, client_id: int = None,
+                                  season_id: int = None) -> List[Dict]:
+        """Get custom field values for a specific person.
+        Note: Returns camelCase keys (value, id, seasonId)."""
+        client_id = client_id or self.client_id
+        params = {
+            'clientid': client_id,
+            'pagenumber': 1,
+            'pagesize': 100
+        }
+        if season_id:
+            params['seasonid'] = season_id
+
+        self._ensure_authenticated()
+        result = self._make_request(f'/persons/{person_id}/custom-fields', params)
+        if result:
+            return result.get('result', result.get('Results', []))
+        return []
+
+    def get_custom_fields_for_persons(self, person_ids: List[int],
+                                       field_id: int = None,
+                                       client_id: int = None,
+                                       season_id: int = None) -> Dict[int, List[Dict]]:
+        """
+        Get custom field values for multiple persons.
+        Note: Returns camelCase keys (value, id).
+
+        Returns:
+            Dict mapping person_id -> list of custom field values
+        """
+        client_id = client_id or self.client_id
+        results = {}
+
+        for pid in person_ids:
+            try:
+                if field_id:
+                    endpoint = f'/persons/{pid}/custom-fields/{field_id}'
+                else:
+                    endpoint = f'/persons/{pid}/custom-fields'
+
+                params = {
+                    'clientid': client_id,
+                    'pagenumber': 1,
+                    'pagesize': 100
+                }
+                if season_id:
+                    params['seasonid'] = season_id
+
+                self._ensure_authenticated()
+                data = self._make_request(endpoint, params)
+                if data:
+                    if field_id:
+                        # Single field may return value directly
+                        if isinstance(data, dict) and ('value' in data or 'Value' in data):
+                            results[pid] = [data]
+                        else:
+                            results[pid] = data.get('result', data.get('Results', []))
+                    else:
+                        results[pid] = data.get('result', data.get('Results', []))
+            except Exception as e:
+                logger.error(f"Error fetching custom fields for person {pid}: {e}")
+
+        return results
+
+    def get_retention_rate(self, current_season: int = 2026, previous_season: int = 2025,
                            client_id: int = None) -> Dict:
         """
         Calculate retention rate between two seasons
