@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Program Settings - Camp Sol Taplin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .admin-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover {
+            color: var(--teal);
+        }
+        .global-settings {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .global-settings h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .global-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .global-row label {
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 120px;
+        }
+        .global-row input {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            width: 120px;
+        }
+        .global-row input:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+        .settings-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .settings-table th,
+        .settings-table td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .settings-table th {
+            background: var(--bg);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .settings-table tr:last-child td {
+            border-bottom: none;
+        }
+        .settings-table tr:hover td {
+            background: var(--teal-light);
+        }
+        .settings-table tr.inactive td {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+        .settings-table input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            width: 90px;
+        }
+        .settings-table input[type="number"]:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+        .weeks-checkboxes {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .week-box {
+            position: relative;
+            width: 28px;
+            height: 28px;
+        }
+        .week-box input {
+            display: none;
+        }
+        .week-box label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #999;
+            background: #f8f8f8;
+        }
+        .week-box input:checked + label {
+            background: var(--teal);
+            border-color: var(--teal);
+            color: white;
+        }
+        .week-box label:hover {
+            border-color: var(--teal);
+        }
+        .weeks-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: 6px;
+            min-width: 18px;
+            font-weight: 600;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            cursor: pointer;
+        }
+        .toggle-switch input {
+            display: none;
+        }
+        .toggle-slider {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #ccc;
+            border-radius: 24px;
+            transition: 0.3s;
+        }
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--teal);
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        .program-name {
+            font-weight: 600;
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        .alert-error {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+        .btn-save-all {
+            background: var(--teal);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-save-all:hover {
+            background: var(--teal-dark, #0d6e6e);
+            transform: translateY(-1px);
+        }
+        .btn-save-all:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .save-bar {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 16px 24px;
+            border-top: 2px solid var(--teal);
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            align-items: center;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+            border-radius: 0 0 12px 12px;
+            margin-top: -1px;
+        }
+        .save-status {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Camp Sol Taplin Logo" class="camp-logo" onerror="this.style.display='none'">
+            <h2>CAMP SOL TAPLIN</h2>
+            <p>Michael-Ann Russell JCC</p>
+        </div>
+        <nav class="nav-section">
+            <div class="nav-item" onclick="window.location.href='{{ url_for('dashboard') }}'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='{{ url_for('admin_users') }}'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Manage Users</span>
+            </div>
+            <div class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Settings</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='{{ url_for('logout') }}'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Logout</span>
+            </div>
+        </nav>
+        <div class="user-info">
+            <span>{{ user.id }} ({{ user.role }})</span>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="admin-container">
+            <a href="{{ url_for('dashboard') }}" class="btn-back">
+                &#8592; Back to Dashboard
+            </a>
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Program Settings</h1>
+                    <p class="page-subtitle">Edit enrollment goals, weeks offered, and activate/deactivate programs</p>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="global-settings">
+                <h3>Global Settings</h3>
+                <div class="global-row">
+                    <label>Total FTE Goal:</label>
+                    <span id="totalGoal" style="font-size:24px; font-weight:700; color:var(--teal);">{{ total_goal }}</span>
+                    <span style="font-size:13px; color:var(--text-muted);">(auto-calculated from active program goals)</span>
+                </div>
+            </div>
+
+            <table class="settings-table">
+                <thead>
+                    <tr>
+                        <th>Program</th>
+                        <th>Goal</th>
+                        <th>Weeks (W1–W9)</th>
+                        <th>Active</th>
+                    </tr>
+                </thead>
+                <tbody id="settingsBody">
+                    {% for s in settings %}
+                    {% set wa = (s.weeks_active or '1,2,3,4,5,6,7,8,9').split(',') %}
+                    {% set row_idx = loop.index %}
+                    <tr data-program="{{ s.program }}" data-weeks-active="{{ s.weeks_active or '1,2,3,4,5,6,7,8,9' }}" class="{{ '' if s.active else 'inactive' }}">
+                        <td class="program-name">{{ s.program }}</td>
+                        <td>
+                            <input type="number" class="goal-input" value="{{ s.goal }}" min="0" max="999">
+                        </td>
+                        <td>
+                            <div class="weeks-checkboxes">
+                                {% for w in range(1, 10) %}
+                                <div class="week-box">
+                                    <input type="checkbox" class="week-cb" id="w{{ row_idx }}_{{ w }}" value="{{ w }}" {{ 'checked' if w|string in wa }}>
+                                    <label for="w{{ row_idx }}_{{ w }}">{{ w }}</label>
+                                </div>
+                                {% endfor %}
+                                <span class="weeks-count">{{ wa|length }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="active-toggle" {{ 'checked' if s.active }}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="save-bar">
+                <span class="save-status" id="saveStatus"></span>
+                <button class="btn-save-all" id="saveBtn" onclick="saveAll()">Save All Changes</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function showAlert(message, type) {
+            var container = document.getElementById('alertContainer');
+            container.innerHTML = '<div class="alert alert-' + type + '">' + message + '</div>';
+            setTimeout(function() { container.innerHTML = ''; }, 5000);
+        }
+
+        function recalcTotalGoal() {
+            var total = 0;
+            document.querySelectorAll('#settingsBody tr').forEach(function(row) {
+                var active = row.querySelector('.active-toggle').checked;
+                if (active) {
+                    total += parseInt(row.querySelector('.goal-input').value) || 0;
+                }
+            });
+            document.getElementById('totalGoal').textContent = total;
+        }
+
+        function updateWeeksCount(row) {
+            var checked = row.querySelectorAll('.week-cb:checked').length;
+            var countSpan = row.querySelector('.weeks-count');
+            if (countSpan) countSpan.textContent = checked;
+        }
+
+        // Toggle row styling when active checkbox changes
+        document.querySelectorAll('.active-toggle').forEach(function(toggle) {
+            toggle.addEventListener('change', function() {
+                var row = this.closest('tr');
+                if (this.checked) {
+                    row.classList.remove('inactive');
+                } else {
+                    row.classList.add('inactive');
+                }
+                recalcTotalGoal();
+            });
+        });
+
+        // Recalculate when goal inputs change
+        document.querySelectorAll('.goal-input').forEach(function(input) {
+            input.addEventListener('input', recalcTotalGoal);
+        });
+
+        // Update weeks count when week checkboxes change
+        document.querySelectorAll('.week-cb').forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                updateWeeksCount(this.closest('tr'));
+            });
+        });
+
+        async function saveAll() {
+            var btn = document.getElementById('saveBtn');
+            var status = document.getElementById('saveStatus');
+            btn.disabled = true;
+            status.textContent = 'Saving...';
+
+            var programs = [];
+            document.querySelectorAll('#settingsBody tr').forEach(function(row) {
+                // Build weeks_active from checked checkboxes
+                var checkedWeeks = [];
+                row.querySelectorAll('.week-cb:checked').forEach(function(cb) {
+                    checkedWeeks.push(cb.value);
+                });
+                var weeksActive = checkedWeeks.join(',');
+
+                programs.push({
+                    program: row.dataset.program,
+                    goal: parseInt(row.querySelector('.goal-input').value) || 0,
+                    weeks_active: weeksActive || '1,2,3,4,5,6,7,8,9',
+                    active: row.querySelector('.active-toggle').checked
+                });
+            });
+
+            var totalGoal = parseInt(document.getElementById('totalGoal').textContent) || 750;
+
+            try {
+                var response = await fetch('/api/settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ programs: programs, total_goal: totalGoal })
+                });
+
+                var data = await response.json();
+                if (data.success) {
+                    showAlert('Settings saved successfully! Dashboard will recalculate on next load.', 'success');
+                    status.textContent = 'Saved!';
+                } else {
+                    showAlert(data.error || 'Error saving settings', 'error');
+                    status.textContent = 'Error';
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+                status.textContent = 'Error';
+            }
+
+            btn.disabled = false;
+            setTimeout(function() { status.textContent = ''; }, 3000);
+        }
+
+        // Close modals on Escape
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(function(m) { m.classList.remove('show'); });
+            }
+        });
+    </script>
+</body>
+</html>

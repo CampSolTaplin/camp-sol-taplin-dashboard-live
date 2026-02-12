@@ -876,11 +876,14 @@ class EnrollmentDataProcessor:
             'Other': '📋'
         }
     
-    def process_enrollment_data(self, raw_data: Dict) -> Dict:
+    def process_enrollment_data(self, raw_data: Dict, program_settings: Dict = None) -> Dict:
         """
         Process raw API data into dashboard-ready format
-        
+
         Args:
+            program_settings: optional dict from DB with keys:
+                'programs': {name: {'goal': int, 'weeks_offered': int, 'active': bool}}
+                'total_goal': int
             raw_data: Output from CampMinderAPIClient.get_enrollment_report()
             
         Returns:
@@ -927,13 +930,23 @@ class EnrollmentDataProcessor:
         categories_data = {}
         total_weeks = 0
         
+        # Use DB settings if provided, otherwise fall back to hardcoded
+        ext_programs = (program_settings or {}).get('programs', {})
+        ext_total_goal = (program_settings or {}).get('total_goal', self.TOTAL_GOAL)
+
         for program_name, data in programs_data.items():
+            # Check if program is inactive in settings
+            ps = ext_programs.get(program_name, {})
+            if ps and ps.get('active') is False:
+                continue  # Skip inactive programs
+
             category = self._get_category(program_name)
-            goal = self._get_goal(program_name)
-            
+            goal = ps.get('goal', self._get_goal(program_name))
+            weeks_offered = ps.get('weeks_offered', 9)
+
             week_counts = {f'week_{i}': len(data['weeks'][i]) for i in range(1, 10)}
             total = sum(week_counts.values())
-            fte = round(total / 9, 2)
+            fte = round(total / weeks_offered, 2) if weeks_offered > 0 else 0
             percent = round((fte / goal * 100) if goal > 0 else 0, 1)
             
             programs.append({
@@ -971,9 +984,9 @@ class EnrollmentDataProcessor:
                 'status': 'success' if pct >= 70 else 'warning' if pct >= 50 else 'danger'
             })
         
-        # Calculate summary
+        # Calculate summary — total FTE is sum of individual program FTEs
         total_enrollment = len(person_programs)
-        total_fte = round(total_weeks / 9, 2)
+        total_fte = round(sum(p['fte'] for p in programs), 2)
         avg_weeks = round(total_weeks / total_enrollment, 2) if total_enrollment > 0 else 0
         
         # Build date stats
@@ -992,8 +1005,8 @@ class EnrollmentDataProcessor:
                 'total_camper_weeks': total_weeks,
                 'total_fte': total_fte,
                 'avg_weeks_per_camper': avg_weeks,
-                'goal': self.TOTAL_GOAL,
-                'percent_to_goal': round((total_fte / self.TOTAL_GOAL * 100) if self.TOTAL_GOAL > 0 else 0, 1)
+                'goal': ext_total_goal,
+                'percent_to_goal': round((total_fte / ext_total_goal * 100) if ext_total_goal > 0 else 0, 1)
             },
             'programs': programs,
             'categories': sorted(categories, key=lambda x: x['category']),

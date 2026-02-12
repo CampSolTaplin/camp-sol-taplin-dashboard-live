@@ -81,6 +81,19 @@ class GroupAssignment(db.Model):
     group_number = db.Column(db.Integer, nullable=False)
     __table_args__ = (db.UniqueConstraint('program', 'week', 'person_id'),)
 
+class ProgramSetting(db.Model):
+    __tablename__ = 'program_settings'
+    program = db.Column(db.String(120), primary_key=True)
+    goal = db.Column(db.Integer, nullable=False, default=0)
+    weeks_offered = db.Column(db.Integer, nullable=False, default=9)
+    weeks_active = db.Column(db.String(50), nullable=False, default='1,2,3,4,5,6,7,8,9')
+    active = db.Column(db.Boolean, nullable=False, default=True)
+
+class GlobalSetting(db.Model):
+    __tablename__ = 'global_settings'
+    key = db.Column(db.String(50), primary_key=True)
+    value = db.Column(db.String(200), nullable=False)
+
 # ==================== INIT DB & DEFAULT USERS ====================
 
 with app.app_context():
@@ -98,6 +111,39 @@ with app.app_context():
             password_hash=generate_password_hash('M@rjcc2026'),
             role='viewer'
         ))
+    # Seed program settings from hardcoded defaults if table is empty
+    if ProgramSetting.query.count() == 0:
+        DEFAULT_GOALS = {
+            'Infants': 6, 'Toddler': 12, 'PK2': 26, 'PK3': 36, 'PK4': 40,
+            'Tsofim': 100, "Children's Trust Tsofim": 10,
+            'Yeladim': 100, "Children's Trust Yeladim": 10,
+            'Chaverim': 75, "Children's Trust Chaverim": 10,
+            'Giborim': 60, "Children's Trust Giborim": 10,
+            'Madli-Teen': 40, "Children's Trust Madli-Teen": 5,
+            'Teen Travel': 30, 'Teen Travel: Epic Trip to Orlando': 15,
+            'Basketball': 25, 'Flag Football': 20, 'Soccer': 25,
+            'Sports Academy 1': 20, 'Sports Academy 2': 20,
+            'Tennis Academy': 20, 'Tennis Academy - Half Day': 15,
+            'Swim Academy': 20,
+            'Tiny Tumblers Gymnastics': 15, 'Recreational Gymnastics': 20,
+            'Competitive Gymnastics Team': 15, 'Volleyball': 20, 'MMA Camp': 15,
+            'Teeny Tiny Tnuah': 20, 'Tiny Tnuah 1': 25, 'Tiny Tnuah 2': 25,
+            'Tnuah 1': 30, 'Tnuah 2': 30, 'Extreme Tnuah': 20,
+            'Art Exploration': 20, 'Music Camp': 20, 'Theater Camp': 25,
+            'Madatzim 9th Grade': 25, 'Madatzim 10th Grade': 20,
+            'OMETZ': 15
+        }
+        for prog, goal in DEFAULT_GOALS.items():
+            db.session.add(ProgramSetting(program=prog, goal=goal, weeks_offered=9, weeks_active='1,2,3,4,5,6,7,8,9', active=True))
+    # Migrate existing ProgramSettings: set weeks_active if missing/empty
+    for ps in ProgramSetting.query.all():
+        if not ps.weeks_active:
+            # Reconstruct weeks_active from weeks_offered (e.g. 7 → "1,2,3,4,5,6,7")
+            n = ps.weeks_offered if ps.weeks_offered and 1 <= ps.weeks_offered <= 9 else 9
+            ps.weeks_active = ','.join(str(i) for i in range(1, n + 1))
+    # Seed global settings if empty
+    if not GlobalSetting.query.filter_by(key='total_goal').first():
+        db.session.add(GlobalSetting(key='total_goal', value='750'))
     db.session.commit()
 
 class User(UserMixin):
@@ -164,6 +210,26 @@ def save_api_cache(data: dict):
     except Exception as e:
         print(f"Error saving API cache: {e}")
 
+def _load_program_settings() -> dict:
+    """Load program settings from DB for the enrollment processor"""
+    all_settings = ProgramSetting.query.all()
+    total_goal_row = GlobalSetting.query.filter_by(key='total_goal').first()
+    programs = {}
+    for s in all_settings:
+        # Compute weeks_offered from weeks_active string
+        weeks_active = s.weeks_active or '1,2,3,4,5,6,7,8,9'
+        weeks_count = len([w for w in weeks_active.split(',') if w.strip()])
+        programs[s.program] = {
+            'goal': s.goal,
+            'weeks_offered': weeks_count if weeks_count > 0 else 9,
+            'weeks_active': weeks_active,
+            'active': s.active
+        }
+    return {
+        'programs': programs,
+        'total_goal': int(total_goal_row.value) if total_goal_row else 750
+    }
+
 def fetch_live_data(force_refresh: bool = False) -> dict:
     """
     Fetch live enrollment data from CampMinder API
@@ -204,9 +270,12 @@ def fetch_live_data(force_refresh: bool = False) -> dict:
         # Fetch raw data
         raw_data = client.get_enrollment_report(CAMPMINDER_SEASON_ID)
         
+        # Load program settings from DB for processing
+        db_settings = _load_program_settings()
+
         # Process into dashboard format
         processor = EnrollmentDataProcessor()
-        processed_data = processor.process_enrollment_data(raw_data)
+        processed_data = processor.process_enrollment_data(raw_data, program_settings=db_settings)
         
         # Update cache
         fetched_at = datetime.now().isoformat()
@@ -494,6 +563,117 @@ def api_change_role(username):
         'success': True,
         'message': f'Role for "{username}" changed to {new_role}'
     })
+
+# ==================== PROGRAM SETTINGS ROUTES ====================
+
+SETTINGS_ORDER = [
+    'Infants', 'Toddler', 'PK2', 'PK3', 'PK4',
+    'Tsofim', "Children's Trust Tsofim",
+    'Yeladim', "Children's Trust Yeladim",
+    'Chaverim', "Children's Trust Chaverim",
+    'Giborim', "Children's Trust Giborim",
+    'Madli-Teen', "Children's Trust Madli-Teen",
+    'Teen Travel', 'Teen Travel: Epic Trip to Orlando',
+    'Basketball', 'Flag Football', 'Soccer',
+    'Sports Academy 1', 'Sports Academy 2',
+    'Tennis Academy', 'Tennis Academy - Half Day',
+    'Swim Academy',
+    'Tiny Tumblers Gymnastics', 'Recreational Gymnastics',
+    'Competitive Gymnastics Team', 'Volleyball', 'MMA Camp',
+    'Teeny Tiny Tnuah', 'Tiny Tnuah 1', 'Tiny Tnuah 2',
+    'Tnuah 1', 'Tnuah 2', 'Extreme Tnuah',
+    'Art Exploration', 'Music Camp', 'Theater Camp',
+    'Madatzim 9th Grade', 'Madatzim 10th Grade',
+    'OMETZ'
+]
+
+def _sort_settings(settings_list):
+    """Sort settings by SETTINGS_ORDER"""
+    order_map = {name: i for i, name in enumerate(SETTINGS_ORDER)}
+    return sorted(settings_list, key=lambda s: order_map.get(s.program, 999))
+
+@app.route('/admin/settings')
+@login_required
+def admin_settings():
+    """Program settings management page"""
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'error')
+        return redirect(url_for('dashboard'))
+    all_settings = _sort_settings(ProgramSetting.query.all())
+    total_goal = GlobalSetting.query.filter_by(key='total_goal').first()
+    return render_template('admin_settings.html',
+                         settings=all_settings,
+                         total_goal=int(total_goal.value) if total_goal else 750,
+                         user=current_user)
+
+@app.route('/api/settings', methods=['GET'])
+@login_required
+def api_get_settings():
+    """API: Get all program settings"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    all_settings = _sort_settings(ProgramSetting.query.all())
+    total_goal = GlobalSetting.query.filter_by(key='total_goal').first()
+    return jsonify({
+        'programs': [{
+            'program': s.program,
+            'goal': s.goal,
+            'weeks_offered': s.weeks_offered,
+            'weeks_active': s.weeks_active or '1,2,3,4,5,6,7,8,9',
+            'active': s.active
+        } for s in all_settings],
+        'total_goal': int(total_goal.value) if total_goal else 750
+    })
+
+@app.route('/api/settings', methods=['PUT'])
+@login_required
+def api_update_settings():
+    """API: Bulk update program settings"""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    data = request.get_json()
+    programs = data.get('programs', [])
+    total_goal = data.get('total_goal')
+
+    for p in programs:
+        weeks_active = p.get('weeks_active', '1,2,3,4,5,6,7,8,9')
+        weeks_count = len([w for w in weeks_active.split(',') if w.strip()])
+        setting = ProgramSetting.query.filter_by(program=p['program']).first()
+        if setting:
+            setting.goal = int(p.get('goal', setting.goal))
+            setting.weeks_active = weeks_active
+            setting.weeks_offered = weeks_count if weeks_count > 0 else 9
+            setting.active = bool(p.get('active', setting.active))
+        else:
+            db.session.add(ProgramSetting(
+                program=p['program'],
+                goal=int(p.get('goal', 0)),
+                weeks_active=weeks_active,
+                weeks_offered=weeks_count if weeks_count > 0 else 9,
+                active=bool(p.get('active', True))
+            ))
+
+    if total_goal is not None:
+        gs = GlobalSetting.query.filter_by(key='total_goal').first()
+        if gs:
+            gs.value = str(int(total_goal))
+        else:
+            db.session.add(GlobalSetting(key='total_goal', value=str(int(total_goal))))
+
+    db.session.commit()
+
+    # Clear both memory and file cache so dashboard recalculates with new settings
+    api_cache['data'] = None
+    api_cache['fetched_at'] = None
+    # Also clear the file cache
+    try:
+        if os.path.exists(CACHE_FILE):
+            os.remove(CACHE_FILE)
+    except Exception:
+        pass
+
+    return jsonify({'success': True, 'message': 'Settings saved successfully'})
 
 # ==================== CAMPMINDER API ROUTES ====================
 
