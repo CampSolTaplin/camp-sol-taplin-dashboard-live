@@ -984,6 +984,39 @@ class EnrollmentDataProcessor:
                 'status': 'success' if pct >= 70 else 'warning' if pct >= 50 else 'danger'
             })
         
+        # Build Children's Trust summary
+        ct_unique_campers = set()
+        ct_subprograms = []
+        for program_name, data in programs_data.items():
+            if "children's trust" in program_name.lower():
+                ps = ext_programs.get(program_name, {})
+                if ps and ps.get('active') is False:
+                    continue
+                ct_unique_campers.update(data['unique_campers'])
+                goal = ps.get('goal', self._get_goal(program_name))
+                weeks_offered = ps.get('weeks_offered', 9)
+                total = data['total']
+                fte = round(total / weeks_offered, 2) if weeks_offered > 0 else 0
+                ct_subprograms.append({
+                    'program': program_name,
+                    'unique_campers': len(data['unique_campers']),
+                    'total_weeks': total,
+                    'fte': fte,
+                    'goal': goal,
+                    'percent_to_goal': round((fte / goal * 100) if goal > 0 else 0, 1)
+                })
+        # Sort CT subprograms by PROGRAM_ORDER
+        ct_subprograms.sort(key=lambda x: self.PROGRAM_ORDER.index(x['program']) if x['program'] in self.PROGRAM_ORDER else 999)
+        ct_total_goal = sum(sp['goal'] for sp in ct_subprograms)
+        ct_total_fte = round(sum(sp['fte'] for sp in ct_subprograms), 2)
+        childrens_trust_summary = {
+            'unique_campers': len(ct_unique_campers),
+            'total_fte': ct_total_fte,
+            'total_goal': ct_total_goal,
+            'percent_to_goal': round((ct_total_fte / ct_total_goal * 100) if ct_total_goal > 0 else 0, 1),
+            'subprograms': ct_subprograms
+        }
+
         # Calculate summary — total FTE is sum of individual program FTEs
         total_enrollment = len(person_programs)
         total_fte = round(sum(p['fte'] for p in programs), 2)
@@ -1010,6 +1043,7 @@ class EnrollmentDataProcessor:
             },
             'programs': programs,
             'categories': sorted(categories, key=lambda x: x['category']),
+            'childrens_trust': childrens_trust_summary,
             'date_stats': date_stats,
             'participants': participants,
             'fetched_at': raw_data.get('fetched_at', datetime.now().isoformat())

@@ -206,6 +206,57 @@
                     {% endfor %}
                 </div>
             </div>
+
+            {% if report.childrens_trust and report.childrens_trust.subprograms %}
+            <div class="section-card" style="margin-top: 20px;">
+                <div class="section-header">
+                    <h3>🤝 Children's Trust Detail</h3>
+                    <p class="section-subtitle">Unique campers across all Children's Trust subprograms</p>
+                </div>
+                <div class="ct-summary-row">
+                    <div class="ct-kpi">
+                        <div class="ct-kpi-value">{{ report.childrens_trust.unique_campers }}</div>
+                        <div class="ct-kpi-label">Unique Campers</div>
+                    </div>
+                    <div class="ct-kpi">
+                        <div class="ct-kpi-value">{{ report.childrens_trust.total_fte }}</div>
+                        <div class="ct-kpi-label">Total FTE</div>
+                    </div>
+                    <div class="ct-kpi">
+                        <div class="ct-kpi-value">{{ report.childrens_trust.total_goal }}</div>
+                        <div class="ct-kpi-label">Goal</div>
+                    </div>
+                    <div class="ct-kpi">
+                        <div class="ct-kpi-value {{ 'success' if report.childrens_trust.percent_to_goal >= 70 else 'warning' if report.childrens_trust.percent_to_goal >= 50 else 'danger' }}">{{ '%.0f'|format(report.childrens_trust.percent_to_goal) }}%</div>
+                        <div class="ct-kpi-label">% to Goal</div>
+                    </div>
+                </div>
+                <table class="ct-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Subprogram</th>
+                            <th>Unique Campers</th>
+                            <th>Camper Weeks</th>
+                            <th>FTE</th>
+                            <th>Goal</th>
+                            <th>% to Goal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sp in report.childrens_trust.subprograms %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ sp.program }}</td>
+                            <td>{{ sp.unique_campers }}</td>
+                            <td>{{ sp.total_weeks }}</td>
+                            <td>{{ sp.fte }}</td>
+                            <td>{{ sp.goal }}</td>
+                            <td class="{{ 'success' if sp.percent_to_goal >= 70 else 'warning' if sp.percent_to_goal >= 50 else 'danger' }}">{{ '%.0f'|format(sp.percent_to_goal) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
         </div>
 
         <!-- BY DATE VIEW -->
