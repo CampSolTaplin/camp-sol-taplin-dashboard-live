@@ -63,6 +63,38 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# ==================== PERMISSION DEFINITIONS ====================
+
+ALL_PERMISSIONS = [
+    'view_dashboard', 'view_bydate', 'view_comparison',
+    'view_campcomparison', 'view_detailed', 'edit_groups',
+    'download_excel', 'upload_csv', 'manage_users', 'manage_settings',
+]
+
+PERMISSION_LABELS = {
+    'view_dashboard': 'Dashboard (Executive Summary)',
+    'view_bydate': 'By Date View',
+    'view_comparison': 'Year Comparison',
+    'view_campcomparison': 'Camp Comparison',
+    'view_detailed': 'Detailed View',
+    'edit_groups': 'Edit Groups',
+    'download_excel': 'Download Excel',
+    'upload_csv': 'Upload CSV',
+    'manage_users': 'Manage Users',
+    'manage_settings': 'Settings',
+}
+
+ROLE_DEFAULT_PERMISSIONS = {
+    'admin': list(ALL_PERMISSIONS),
+    'viewer': [
+        'view_dashboard', 'view_bydate', 'view_comparison',
+        'view_campcomparison', 'view_detailed', 'download_excel',
+    ],
+    'unit_leader': [
+        'view_campcomparison', 'view_detailed', 'edit_groups',
+    ],
+}
+
 # ==================== DATABASE MODELS ====================
 
 class UserAccount(db.Model):
@@ -70,7 +102,22 @@ class UserAccount(db.Model):
     username = db.Column(db.String(120), primary_key=True)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='viewer')
+    permissions = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def get_permissions(self):
+        """Return list of permissions. Admin always gets all."""
+        if self.role == 'admin':
+            return list(ALL_PERMISSIONS)
+        if self.permissions:
+            try:
+                return json.loads(self.permissions)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return list(ROLE_DEFAULT_PERMISSIONS.get(self.role, []))
+
+    def set_permissions(self, perms_list):
+        self.permissions = json.dumps(perms_list)
 
 class GroupAssignment(db.Model):
     __tablename__ = 'group_assignments'
@@ -98,6 +145,20 @@ class GlobalSetting(db.Model):
 
 with app.app_context():
     db.create_all()
+    # Ensure 'permissions' column exists (for existing databases)
+    from sqlalchemy import inspect as sa_inspect
+    inspector = sa_inspect(db.engine)
+    columns = [c['name'] for c in inspector.get_columns('users')]
+    if 'permissions' not in columns:
+        with db.engine.connect() as conn:
+            conn.execute(db.text("ALTER TABLE users ADD COLUMN permissions TEXT"))
+            conn.commit()
+    # Migrate existing users: backfill permissions from role if not set
+    for u in UserAccount.query.all():
+        if u.permissions is None:
+            default_perms = ROLE_DEFAULT_PERMISSIONS.get(u.role, [])
+            u.permissions = json.dumps(default_perms)
+    db.session.commit()
     # Create default users if they don't exist
     if not UserAccount.query.filter_by(username='campsoltaplin@marjcc.org').first():
         db.session.add(UserAccount(
@@ -147,15 +208,22 @@ with app.app_context():
     db.session.commit()
 
 class User(UserMixin):
-    def __init__(self, username, role):
+    def __init__(self, username, role, permissions):
         self.id = username
         self.role = role
+        self.permissions = permissions  # list of permission strings
+
+    def has_permission(self, perm):
+        """Check if user has a specific permission. Admin always has all."""
+        if self.role == 'admin':
+            return True
+        return perm in self.permissions
 
 @login_manager.user_loader
 def load_user(username):
     u = db.session.get(UserAccount, username)
     if u:
-        return User(u.username, u.role)
+        return User(u.username, u.role, u.get_permissions())
     return None
 
 def allowed_file(filename):
@@ -320,7 +388,7 @@ def login():
         u = UserAccount.query.filter(db.func.lower(UserAccount.username) == username.lower()).first()
 
         if u and check_password_hash(u.password_hash, password):
-            user = User(u.username, u.role)
+            user = User(u.username, u.role, u.get_permissions())
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
@@ -401,34 +469,43 @@ def dashboard():
 @login_required
 def admin_users():
     """User management page"""
-    if current_user.role != 'admin':
-        flash('Access denied. Admin only.', 'error')
+    if not current_user.has_permission('manage_users'):
+        flash('Access denied.', 'error')
         return redirect(url_for('dashboard'))
     
     all_users = UserAccount.query.all()
     user_list = []
     for u in all_users:
+        perms = u.get_permissions()
         user_list.append({
             'username': u.username,
             'role': u.role,
+            'permissions': perms,
+            'perm_count': len(perms),
             'created_at': u.created_at.isoformat() if u.created_at else 'Unknown'
         })
 
-    return render_template('admin_users.html', users=user_list, user=current_user)
+    return render_template('admin_users.html', users=user_list, user=current_user,
+                         all_permissions=ALL_PERMISSIONS,
+                         permission_labels=PERMISSION_LABELS,
+                         role_defaults=ROLE_DEFAULT_PERMISSIONS)
 
 @app.route('/api/users', methods=['GET'])
 @login_required
 def api_get_users():
     """API: Get all users"""
-    if current_user.role != 'admin':
+    if not current_user.has_permission('manage_users'):
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     all_users = UserAccount.query.all()
     user_list = []
     for u in all_users:
+        perms = u.get_permissions()
         user_list.append({
             'username': u.username,
             'role': u.role,
+            'permissions': perms,
+            'perm_count': len(perms),
             'created_at': u.created_at.isoformat() if u.created_at else 'Unknown'
         })
 
@@ -438,37 +515,47 @@ def api_get_users():
 @login_required
 def api_create_user():
     """API: Create new user"""
-    if current_user.role != 'admin':
+    if not current_user.has_permission('manage_users'):
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     data = request.get_json()
     username = data.get('username', '').strip().lower()
     password = data.get('password', '')
     role = data.get('role', 'viewer')
-    
+    permissions = data.get('permissions', None)
+
     # Validation
     if not username or len(username) < 3:
         return jsonify({'error': 'Username must be at least 3 characters'}), 400
-    
+
     if not password or len(password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters'}), 400
-    
+
     if role not in ['admin', 'viewer', 'unit_leader']:
         return jsonify({'error': 'Invalid role'}), 400
-    
-    # Check if username is alphanumeric
-    if not username.replace('_', '').replace('.', '').isalnum():
-        return jsonify({'error': 'Username can only contain letters, numbers, underscores and dots'}), 400
-    
+
+    # Check if username is alphanumeric (allow @ for emails)
+    clean = username.replace('_', '').replace('.', '').replace('@', '')
+    if not clean.isalnum():
+        return jsonify({'error': 'Username can only contain letters, numbers, underscores, dots and @'}), 400
+
     existing = UserAccount.query.filter_by(username=username).first()
     if existing:
         return jsonify({'error': 'Username already exists'}), 400
+
+    # Determine permissions
+    if permissions is not None:
+        valid_perms = [p for p in permissions if p in ALL_PERMISSIONS]
+        perms_json = json.dumps(valid_perms)
+    else:
+        perms_json = json.dumps(ROLE_DEFAULT_PERMISSIONS.get(role, []))
 
     # Create user
     new_user = UserAccount(
         username=username,
         password_hash=generate_password_hash(password),
-        role=role
+        role=role,
+        permissions=perms_json
     )
     db.session.add(new_user)
     db.session.commit()
@@ -486,7 +573,7 @@ def api_create_user():
 @login_required
 def api_delete_user(username):
     """API: Delete user"""
-    if current_user.role != 'admin':
+    if not current_user.has_permission('manage_users'):
         return jsonify({'error': 'Unauthorized'}), 403
     
     username = username.lower()
@@ -511,7 +598,7 @@ def api_delete_user(username):
 @login_required
 def api_change_password(username):
     """API: Change user password"""
-    if current_user.role != 'admin':
+    if not current_user.has_permission('manage_users'):
         return jsonify({'error': 'Unauthorized'}), 403
     
     username = username.lower()
@@ -536,33 +623,66 @@ def api_change_password(username):
 @app.route('/api/users/<username>/role', methods=['PUT'])
 @login_required
 def api_change_role(username):
-    """API: Change user role"""
-    if current_user.role != 'admin':
+    """API: Change user role and reset permissions to role defaults"""
+    if not current_user.has_permission('manage_users'):
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     username = username.lower()
-    
+
     # Cannot change your own role
     if username == current_user.id:
         return jsonify({'error': 'Cannot change your own role'}), 400
-    
+
     data = request.get_json()
     new_role = data.get('role', '')
-    
-    if new_role not in ['admin', 'viewer']:
+
+    if new_role not in ['admin', 'viewer', 'unit_leader']:
         return jsonify({'error': 'Invalid role'}), 400
-    
+
     u = UserAccount.query.filter_by(username=username).first()
     if not u:
         return jsonify({'error': 'User not found'}), 404
 
     u.role = new_role
+    u.set_permissions(ROLE_DEFAULT_PERMISSIONS.get(new_role, []))
     db.session.commit()
 
     return jsonify({
         'success': True,
         'message': f'Role for "{username}" changed to {new_role}'
     })
+
+@app.route('/api/users/<username>/permissions', methods=['GET'])
+@login_required
+def api_get_user_permissions(username):
+    """API: Get permissions for a user"""
+    if not current_user.has_permission('manage_users'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    u = UserAccount.query.filter_by(username=username.lower()).first()
+    if not u:
+        return jsonify({'error': 'User not found'}), 404
+    return jsonify({
+        'username': u.username,
+        'role': u.role,
+        'permissions': u.get_permissions()
+    })
+
+@app.route('/api/users/<username>/permissions', methods=['PUT'])
+@login_required
+def api_update_user_permissions(username):
+    """API: Update permissions for a user"""
+    if not current_user.has_permission('manage_users'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    username = username.lower()
+    data = request.get_json()
+    permissions = data.get('permissions', [])
+    valid = [p for p in permissions if p in ALL_PERMISSIONS]
+    u = UserAccount.query.filter_by(username=username).first()
+    if not u:
+        return jsonify({'error': 'User not found'}), 404
+    u.set_permissions(valid)
+    db.session.commit()
+    return jsonify({'success': True, 'message': f'Permissions updated for "{username}"'})
 
 # ==================== PROGRAM SETTINGS ROUTES ====================
 
@@ -596,8 +716,8 @@ def _sort_settings(settings_list):
 @login_required
 def admin_settings():
     """Program settings management page"""
-    if current_user.role != 'admin':
-        flash('Access denied. Admin only.', 'error')
+    if not current_user.has_permission('manage_settings'):
+        flash('Access denied.', 'error')
         return redirect(url_for('dashboard'))
     all_settings = _sort_settings(ProgramSetting.query.all())
     total_goal = GlobalSetting.query.filter_by(key='total_goal').first()
@@ -610,7 +730,7 @@ def admin_settings():
 @login_required
 def api_get_settings():
     """API: Get all program settings"""
-    if current_user.role != 'admin':
+    if not current_user.has_permission('manage_settings'):
         return jsonify({'error': 'Unauthorized'}), 403
     all_settings = _sort_settings(ProgramSetting.query.all())
     total_goal = GlobalSetting.query.filter_by(key='total_goal').first()
@@ -629,7 +749,7 @@ def api_get_settings():
 @login_required
 def api_update_settings():
     """API: Bulk update program settings"""
-    if current_user.role != 'admin':
+    if not current_user.has_permission('manage_settings'):
         return jsonify({'error': 'Unauthorized'}), 403
 
     data = request.get_json()
@@ -917,7 +1037,7 @@ def api_participants(program, week):
 @login_required
 def api_save_group_assignment(program, week):
     """Save a group assignment for a single camper"""
-    if current_user.role not in ['admin', 'unit_leader']:
+    if not current_user.has_permission('edit_groups'):
         return jsonify({'error': 'Unauthorized'}), 403
 
     data = request.get_json()
@@ -1306,9 +1426,9 @@ def upload_file():
     print("=" * 50)
     
     try:
-        if current_user.role != 'admin':
-            print("ERROR: User not admin")
-            return jsonify({'success': False, 'error': 'Unauthorized - admin access required'}), 403
+        if not current_user.has_permission('upload_csv'):
+            print("ERROR: User lacks upload_csv permission")
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
         
         if 'file' not in request.files:
             print("ERROR: No file in request")
@@ -1442,6 +1562,9 @@ def get_program_comparison(program_name):
 @login_required
 def download_excel():
     """Generate and download Excel report"""
+    if not current_user.has_permission('download_excel'):
+        flash('Access denied.', 'error')
+        return redirect(url_for('dashboard'))
     if current_report['data'] is None:
         flash('No report data available', 'error')
         return redirect(url_for('dashboard'))

@@ -8,28 +8,28 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <style>
         .admin-container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
         }
-        
+
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
         }
-        
+
         .page-title {
             font-family: 'Outfit', sans-serif;
             font-size: 28px;
             font-weight: 700;
         }
-        
+
         .page-subtitle {
             color: var(--text-muted);
             font-size: 14px;
         }
-        
+
         .users-table {
             width: 100%;
             border-collapse: collapse;
@@ -38,14 +38,14 @@
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        
+
         .users-table th,
         .users-table td {
             padding: 16px 20px;
             text-align: left;
             border-bottom: 1px solid var(--border);
         }
-        
+
         .users-table th {
             background: var(--bg);
             font-weight: 600;
@@ -53,15 +53,15 @@
             text-transform: uppercase;
             color: var(--text-muted);
         }
-        
+
         .users-table tr:last-child td {
             border-bottom: none;
         }
-        
+
         .users-table tr:hover td {
             background: var(--teal-light);
         }
-        
+
         .role-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -69,22 +69,38 @@
             font-size: 12px;
             font-weight: 600;
         }
-        
+
         .role-badge.admin {
             background: #FFEDD5;
             color: #C2410C;
         }
-        
+
         .role-badge.viewer {
             background: #DBEAFE;
             color: #1D4ED8;
         }
-        
+
+        .role-badge.unit_leader {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .perm-count {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #F3F4F6;
+            color: #6B7280;
+        }
+
         .action-btns {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
-        
+
         .btn-small {
             padding: 6px 12px;
             font-size: 12px;
@@ -94,26 +110,35 @@
             font-weight: 500;
             transition: all 0.2s;
         }
-        
+
         .btn-edit {
             background: var(--bg);
             color: var(--text);
         }
-        
+
         .btn-edit:hover {
             background: var(--teal-light);
             color: var(--teal);
         }
-        
+
+        .btn-perms {
+            background: #EDE9FE;
+            color: #7C3AED;
+        }
+
+        .btn-perms:hover {
+            background: #DDD6FE;
+        }
+
         .btn-delete {
             background: #FEE2E2;
             color: #DC2626;
         }
-        
+
         .btn-delete:hover {
             background: #FECACA;
         }
-        
+
         .btn-back {
             display: inline-flex;
             align-items: center;
@@ -123,11 +148,11 @@
             font-size: 14px;
             margin-bottom: 20px;
         }
-        
+
         .btn-back:hover {
             color: var(--teal);
         }
-        
+
         /* Modal Styles */
         .modal {
             display: none;
@@ -141,20 +166,20 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .modal.show {
             display: flex;
         }
-        
+
         .modal-content {
             background: white;
             border-radius: 16px;
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
             max-height: 90vh;
-            overflow: hidden;
+            overflow-y: auto;
         }
-        
+
         .modal-header {
             padding: 20px 24px;
             border-bottom: 1px solid var(--border);
@@ -162,13 +187,13 @@
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .modal-header h3 {
             font-family: 'Outfit', sans-serif;
             font-size: 18px;
             font-weight: 600;
         }
-        
+
         .modal-close {
             background: none;
             border: none;
@@ -176,15 +201,15 @@
             cursor: pointer;
             color: var(--text-muted);
         }
-        
+
         .modal-body {
             padding: 24px;
         }
-        
+
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         .form-group label {
             display: block;
             font-size: 13px;
@@ -192,7 +217,7 @@
             color: var(--text);
             margin-bottom: 8px;
         }
-        
+
         .form-group input,
         .form-group select {
             width: 100%;
@@ -202,51 +227,118 @@
             font-size: 14px;
             transition: border-color 0.2s;
         }
-        
+
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
             border-color: var(--teal);
         }
-        
+
         .form-actions {
             display: flex;
             gap: 12px;
             justify-content: flex-end;
             margin-top: 24px;
         }
-        
+
         .alert {
             padding: 12px 16px;
             border-radius: 8px;
             margin-bottom: 20px;
             font-size: 14px;
         }
-        
+
         .alert-success {
             background: #D1FAE5;
             color: #065F46;
         }
-        
+
         .alert-error {
             background: #FEE2E2;
             color: #DC2626;
         }
-        
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: var(--text-muted);
         }
-        
+
         .username-cell {
             font-weight: 600;
         }
-        
+
         .current-user {
             font-size: 11px;
             color: var(--teal);
             margin-left: 8px;
+        }
+
+        /* Permissions Checkboxes */
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .perm-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .perm-checkbox:hover {
+            background: var(--teal-light);
+            border-color: var(--teal);
+        }
+
+        .perm-checkbox input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .perm-checkbox input[type="checkbox"]:checked + span {
+            color: var(--teal);
+            font-weight: 600;
+        }
+
+        .perm-checkbox.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .perms-section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .perms-section-label .perm-hint {
+            font-weight: 400;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .admin-note {
+            background: #FFFBEB;
+            border: 1px solid #FCD34D;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12px;
+            color: #92400E;
+            margin-top: 8px;
         }
     </style>
 </head>
@@ -285,7 +377,7 @@
             <a href="{{ url_for('dashboard') }}" class="btn-back">
                 ← Back to Dashboard
             </a>
-            
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">👥 User Management</h1>
@@ -295,14 +387,15 @@
                     + Add User
                 </button>
             </div>
-            
+
             <div id="alertContainer"></div>
-            
+
             <table class="users-table">
                 <thead>
                     <tr>
                         <th>Username</th>
                         <th>Role</th>
+                        <th>Permissions</th>
                         <th>Created</th>
                         <th>Actions</th>
                     </tr>
@@ -319,6 +412,13 @@
                         <td>
                             <span class="role-badge {{ u.role }}">{{ u.role }}</span>
                         </td>
+                        <td>
+                            {% if u.role == 'admin' %}
+                            <span class="perm-count" style="background: #FFEDD5; color: #C2410C;">All Access</span>
+                            {% else %}
+                            <span class="perm-count">{{ u.perm_count }}/{{ all_permissions|length }}</span>
+                            {% endif %}
+                        </td>
                         <td>{{ u.created_at[:10] if u.created_at != 'Unknown' else 'Unknown' }}</td>
                         <td>
                             <div class="action-btns">
@@ -329,6 +429,11 @@
                                 <button class="btn-small btn-edit" onclick="openRoleModal('{{ u.username }}', '{{ u.role }}')">
                                     👤 Role
                                 </button>
+                                {% if u.role != 'admin' %}
+                                <button class="btn-small btn-perms" onclick="openPermsModal('{{ u.username }}', {{ u.permissions | tojson | safe }})">
+                                    🔧 Permissions
+                                </button>
+                                {% endif %}
                                 <button class="btn-small btn-delete" onclick="confirmDelete('{{ u.username }}')">
                                     🗑️ Delete
                                 </button>
@@ -361,10 +466,29 @@
                     </div>
                     <div class="form-group">
                         <label>Role</label>
-                        <select id="newRole">
-                            <option value="viewer">Viewer (can only view)</option>
+                        <select id="newRole" onchange="onCreateRoleChange()">
+                            <option value="viewer">Viewer</option>
+                            <option value="unit_leader">Unit Leader</option>
                             <option value="admin">Admin (full access)</option>
                         </select>
+                    </div>
+                    <div class="form-group" id="createPermsGroup">
+                        <div class="perms-section-label">
+                            <span>Permissions</span>
+                            <span class="perm-hint">Select which features this user can access</span>
+                        </div>
+                        <div class="permissions-grid" id="createPermsGrid">
+                            {% for perm in all_permissions %}
+                            <label class="perm-checkbox">
+                                <input type="checkbox" name="create_perm" value="{{ perm }}"
+                                    {% if perm in role_defaults.get('viewer', []) %}checked{% endif %}>
+                                <span>{{ permission_labels[perm] }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div id="createAdminNote" class="admin-note" style="display: none;">
+                        ⚠️ Admin users automatically have full access to all features. Permissions cannot be customized for admins.
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
@@ -417,10 +541,14 @@
                     <div class="form-group">
                         <label>New Role</label>
                         <select id="newUserRole">
-                            <option value="viewer">Viewer (can only view)</option>
+                            <option value="viewer">Viewer</option>
+                            <option value="unit_leader">Unit Leader</option>
                             <option value="admin">Admin (full access)</option>
                         </select>
                     </div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                        Changing the role will reset this user's permissions to the role defaults.
+                    </p>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" onclick="closeRoleModal()">Cancel</button>
                         <button type="submit" class="btn btn-primary">Change Role</button>
@@ -430,48 +558,113 @@
         </div>
     </div>
 
+    <!-- Edit Permissions Modal -->
+    <div id="permsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔧 Edit Permissions</h3>
+                <button class="modal-close" onclick="closePermsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="permsUsername">
+                <div class="form-group">
+                    <label>User: <strong id="permsUserDisplay"></strong></label>
+                </div>
+                <div class="form-group">
+                    <div class="perms-section-label">
+                        <span>Permissions</span>
+                        <span class="perm-hint">Toggle features for this user</span>
+                    </div>
+                    <div class="permissions-grid" id="editPermsGrid">
+                        {% for perm in all_permissions %}
+                        <label class="perm-checkbox">
+                            <input type="checkbox" name="edit_perm" value="{{ perm }}">
+                            <span>{{ permission_labels[perm] }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePermsModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="savePermissions()">Save Permissions</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Role default permissions from server
+        var ROLE_DEFAULTS = {{ role_defaults | tojson | safe }};
+
         // Alert functions
         function showAlert(message, type) {
             const container = document.getElementById('alertContainer');
-            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-            setTimeout(() => {
+            container.innerHTML = '<div class="alert alert-' + type + '">' + message + '</div>';
+            setTimeout(function() {
                 container.innerHTML = '';
             }, 5000);
         }
 
-        // Create User Modal
+        // ========== CREATE USER ==========
         function openCreateModal() {
             document.getElementById('createModal').classList.add('show');
             document.getElementById('newUsername').value = '';
             document.getElementById('newPassword').value = '';
             document.getElementById('newRole').value = 'viewer';
+            onCreateRoleChange();
         }
 
         function closeCreateModal() {
             document.getElementById('createModal').classList.remove('show');
         }
 
+        function onCreateRoleChange() {
+            var role = document.getElementById('newRole').value;
+            var permsGroup = document.getElementById('createPermsGroup');
+            var adminNote = document.getElementById('createAdminNote');
+
+            if (role === 'admin') {
+                permsGroup.style.display = 'none';
+                adminNote.style.display = 'block';
+            } else {
+                permsGroup.style.display = 'block';
+                adminNote.style.display = 'none';
+                // Set checkboxes to role defaults
+                var defaults = ROLE_DEFAULTS[role] || [];
+                document.querySelectorAll('#createPermsGrid input[type="checkbox"]').forEach(function(cb) {
+                    cb.checked = defaults.indexOf(cb.value) !== -1;
+                });
+            }
+        }
+
         async function createUser(e) {
             e.preventDefault();
-            
-            const username = document.getElementById('newUsername').value.trim();
-            const password = document.getElementById('newPassword').value;
-            const role = document.getElementById('newRole').value;
-            
+
+            var username = document.getElementById('newUsername').value.trim();
+            var password = document.getElementById('newPassword').value;
+            var role = document.getElementById('newRole').value;
+
+            // Collect permissions
+            var permissions = [];
+            if (role !== 'admin') {
+                document.querySelectorAll('#createPermsGrid input[type="checkbox"]:checked').forEach(function(cb) {
+                    permissions.push(cb.value);
+                });
+            }
+
             try {
-                const response = await fetch('/api/users', {
+                var response = await fetch('/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password, role })
+                    body: JSON.stringify({ username: username, password: password, role: role, permissions: permissions })
                 });
-                
-                const data = await response.json();
-                
+
+                var data = await response.json();
+
                 if (data.success) {
                     showAlert(data.message, 'success');
                     closeCreateModal();
-                    setTimeout(() => location.reload(), 1000);
+                    setTimeout(function() { location.reload(); }, 1000);
                 } else {
                     showAlert(data.error, 'error');
                 }
@@ -480,7 +673,7 @@
             }
         }
 
-        // Password Modal
+        // ========== PASSWORD MODAL ==========
         function openPasswordModal(username) {
             document.getElementById('passwordModal').classList.add('show');
             document.getElementById('passwordUsername').value = username;
@@ -494,19 +687,19 @@
 
         async function changePassword(e) {
             e.preventDefault();
-            
-            const username = document.getElementById('passwordUsername').value;
-            const password = document.getElementById('newUserPassword').value;
-            
+
+            var username = document.getElementById('passwordUsername').value;
+            var password = document.getElementById('newUserPassword').value;
+
             try {
-                const response = await fetch(`/api/users/${username}/password`, {
+                var response = await fetch('/api/users/' + username + '/password', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password })
+                    body: JSON.stringify({ password: password })
                 });
-                
-                const data = await response.json();
-                
+
+                var data = await response.json();
+
                 if (data.success) {
                     showAlert(data.message, 'success');
                     closePasswordModal();
@@ -518,7 +711,7 @@
             }
         }
 
-        // Role Modal
+        // ========== ROLE MODAL ==========
         function openRoleModal(username, currentRole) {
             document.getElementById('roleModal').classList.add('show');
             document.getElementById('roleUsername').value = username;
@@ -532,23 +725,23 @@
 
         async function changeRole(e) {
             e.preventDefault();
-            
-            const username = document.getElementById('roleUsername').value;
-            const role = document.getElementById('newUserRole').value;
-            
+
+            var username = document.getElementById('roleUsername').value;
+            var role = document.getElementById('newUserRole').value;
+
             try {
-                const response = await fetch(`/api/users/${username}/role`, {
+                var response = await fetch('/api/users/' + username + '/role', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ role })
+                    body: JSON.stringify({ role: role })
                 });
-                
-                const data = await response.json();
-                
+
+                var data = await response.json();
+
                 if (data.success) {
                     showAlert(data.message, 'success');
                     closeRoleModal();
-                    setTimeout(() => location.reload(), 1000);
+                    setTimeout(function() { location.reload(); }, 1000);
                 } else {
                     showAlert(data.error, 'error');
                 }
@@ -557,22 +750,66 @@
             }
         }
 
-        // Delete User
+        // ========== PERMISSIONS MODAL ==========
+        function openPermsModal(username, currentPerms) {
+            document.getElementById('permsModal').classList.add('show');
+            document.getElementById('permsUsername').value = username;
+            document.getElementById('permsUserDisplay').textContent = username;
+
+            // Set checkboxes based on current permissions
+            document.querySelectorAll('#editPermsGrid input[type="checkbox"]').forEach(function(cb) {
+                cb.checked = currentPerms.indexOf(cb.value) !== -1;
+            });
+        }
+
+        function closePermsModal() {
+            document.getElementById('permsModal').classList.remove('show');
+        }
+
+        async function savePermissions() {
+            var username = document.getElementById('permsUsername').value;
+            var permissions = [];
+            document.querySelectorAll('#editPermsGrid input[type="checkbox"]:checked').forEach(function(cb) {
+                permissions.push(cb.value);
+            });
+
+            try {
+                var response = await fetch('/api/users/' + username + '/permissions', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ permissions: permissions })
+                });
+
+                var data = await response.json();
+
+                if (data.success) {
+                    showAlert('Permissions updated for ' + username, 'success');
+                    closePermsModal();
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    showAlert(data.error || 'Error updating permissions', 'error');
+                }
+            } catch (error) {
+                showAlert('Error updating permissions: ' + error.message, 'error');
+            }
+        }
+
+        // ========== DELETE USER ==========
         async function confirmDelete(username) {
-            if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+            if (!confirm('Are you sure you want to delete user "' + username + '"? This action cannot be undone.')) {
                 return;
             }
-            
+
             try {
-                const response = await fetch(`/api/users/${username}`, {
+                var response = await fetch('/api/users/' + username, {
                     method: 'DELETE'
                 });
-                
-                const data = await response.json();
-                
+
+                var data = await response.json();
+
                 if (data.success) {
                     showAlert(data.message, 'success');
-                    setTimeout(() => location.reload(), 1000);
+                    setTimeout(function() { location.reload(); }, 1000);
                 } else {
                     showAlert(data.error, 'error');
                 }
@@ -582,16 +819,16 @@
         }
 
         // Close modals on outside click
-        window.addEventListener('click', (e) => {
+        window.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal')) {
                 e.target.classList.remove('show');
             }
         });
 
         // Close modals on Escape
-        window.addEventListener('keydown', (e) => {
+        window.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+                document.querySelectorAll('.modal').forEach(function(m) { m.classList.remove('show'); });
             }
         });
     </script>

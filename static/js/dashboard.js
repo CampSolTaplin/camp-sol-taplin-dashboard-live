@@ -64,7 +64,7 @@ function renderParticipantsTable(participants, list, program, week) {
         return;
     }
 
-    var isAdmin = (window.userRole === 'admin' || window.userRole === 'unit_leader');
+    var isAdmin = (window.userPermissions && window.userPermissions.indexOf('edit_groups') !== -1);
 
     // Collect all emails for copy button
     var allEmails = [];
