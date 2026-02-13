@@ -836,6 +836,187 @@ def api_refresh_data():
             'error': str(e)
         }), 500
 
+def _load_persons_cache():
+    """Load the persons cache from disk."""
+    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
+    persons_cache = {}
+    try:
+        if os.path.exists(persons_cache_file):
+            with open(persons_cache_file, 'r') as f:
+                persons_cache = json.load(f)
+    except Exception:
+        pass
+    return persons_cache
+
+def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
+    """Fetch person details from CampMinder API and update the persons cache.
+
+    Fetches camper data, guardian data (emails, names, phones),
+    custom fields (Share Group With), and sibling info.
+
+    Args:
+        pids_to_fetch: List of person IDs not yet in cache
+        persons_cache: Current cache dict (modified in-place)
+
+    Returns:
+        Updated persons_cache dict
+    """
+    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
+    try:
+        client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
+        if not client.authenticate():
+            print("Failed to authenticate with CampMinder API for persons lookup")
+            raise Exception("Authentication failed")
+
+        # Step 1: Batch fetch all campers (with relatives info)
+        print(f"Fetching {len(pids_to_fetch)} persons via batch API...")
+        camper_results = client.get_persons_batch(
+            pids_to_fetch,
+            include_contact_details=True,
+            include_relatives=True
+        )
+        print(f"Got {len(camper_results)} camper results from API")
+
+        # Build a map of camper ID -> camper data
+        camper_map = {}
+        guardian_ids_needed = set()
+        for person in camper_results:
+            pid = person.get('ID')
+            if pid:
+                camper_map[pid] = person
+                # Collect guardian IDs we need to fetch for emails
+                for rel in person.get('Relatives', []):
+                    if rel.get('IsGuardian'):
+                        guardian_ids_needed.add(rel['ID'])
+
+        # Step 2: Batch fetch all guardians (with contact details for emails/phones)
+        guardian_map = {}
+        if guardian_ids_needed:
+            guardian_ids_list = list(guardian_ids_needed)
+            print(f"Fetching {len(guardian_ids_list)} guardians via batch API...")
+            guardian_results = client.get_persons_batch(
+                guardian_ids_list,
+                include_contact_details=True,
+                include_relatives=False
+            )
+            for g in guardian_results:
+                gid = g.get('ID')
+                if gid:
+                    guardian_map[gid] = g
+            print(f"Got {len(guardian_map)} guardian results from API")
+
+        # Step 3: Get "Share Group With" custom field
+        share_group_map = {}  # pid -> value
+        try:
+            # Find the custom field definition for "Share Group With"
+            # Note: custom fields API returns camelCase keys (name, id)
+            cf_defs = client.get_custom_field_definitions()
+            share_group_field_id = None
+            print(f"Found {len(cf_defs)} custom field definitions")
+            for cf in cf_defs:
+                # Handle both camelCase and PascalCase
+                cf_name = cf.get('name', cf.get('Name', ''))
+                cf_id = cf.get('id', cf.get('Id'))
+                if 'share' in cf_name.lower() and 'group' in cf_name.lower():
+                    share_group_field_id = cf_id
+                    print(f"Found 'Share Group With' custom field: ID={share_group_field_id}, Name={cf_name}")
+                    break
+
+            if share_group_field_id:
+                cf_data = client.get_custom_fields_for_persons(
+                    pids_to_fetch, field_id=share_group_field_id,
+                    season_id=CAMPMINDER_SEASON_ID
+                )
+                for pid, fields in cf_data.items():
+                    for f in fields:
+                        # Handle both camelCase and PascalCase
+                        val = f.get('value', f.get('Value', ''))
+                        if val:
+                            share_group_map[pid] = val
+            else:
+                print("Custom field 'Share Group With' not found in definitions")
+        except Exception as e:
+            print(f"Error fetching custom fields: {e}")
+
+        # Step 4: Build person_info for each camper
+        for pid in pids_to_fetch:
+            camper = camper_map.get(pid)
+            if camper:
+                person_info = {
+                    'first_name': camper.get('Name', {}).get('First', ''),
+                    'last_name': camper.get('Name', {}).get('Last', ''),
+                    'f1p1_email': '', 'f1p1_email2': '',
+                    'f1p2_email': '', 'f1p2_email2': '',
+                    'guardian1_name': '', 'guardian1_phones': '',
+                    'guardian2_name': '', 'guardian2_phones': '',
+                    'share_group_with': share_group_map.get(pid, ''),
+                    'gender': camper.get('GenderName', ''),
+                    'medical_notes': '',
+                    'siblings': [],
+                    'aftercare': '',
+                    'carpool': ''
+                }
+
+                # Get guardians and siblings from relatives
+                relatives = camper.get('Relatives', [])
+                guardians = [r for r in relatives if r.get('IsGuardian')]
+                guardians.sort(key=lambda r: (not r.get('IsPrimary', False)))
+
+                for g_idx, guardian in enumerate(guardians[:2]):
+                    g_id = guardian.get('ID')
+                    g_person = guardian_map.get(g_id)
+                    if g_person:
+                        # Guardian emails
+                        emails = g_person.get('ContactDetails', {}).get('Emails', [])
+                        prefix = 'f1p1' if g_idx == 0 else 'f1p2'
+                        if len(emails) > 0:
+                            person_info[f'{prefix}_email'] = emails[0].get('Address', '')
+                        if len(emails) > 1:
+                            person_info[f'{prefix}_email2'] = emails[1].get('Address', '')
+
+                        # Guardian name
+                        g_first = g_person.get('Name', {}).get('First', '')
+                        g_last = g_person.get('Name', {}).get('Last', '')
+                        guardian_name = f"{g_first} {g_last}".strip()
+
+                        # Guardian phone numbers
+                        phones = g_person.get('ContactDetails', {}).get('PhoneNumbers', [])
+                        phone_numbers = ', '.join(
+                            ph.get('Number', '') for ph in phones if ph.get('Number')
+                        )
+
+                        g_prefix = 'guardian1' if g_idx == 0 else 'guardian2'
+                        person_info[f'{g_prefix}_name'] = guardian_name
+                        person_info[f'{g_prefix}_phones'] = phone_numbers
+
+                persons_cache[str(pid)] = person_info
+            else:
+                persons_cache[str(pid)] = {
+                    'first_name': 'Camper', 'last_name': str(pid),
+                    'f1p1_email': '', 'f1p1_email2': '',
+                    'f1p2_email': '', 'f1p2_email2': '',
+                    'guardian1_name': '', 'guardian1_phones': '',
+                    'guardian2_name': '', 'guardian2_phones': '',
+                    'share_group_with': '',
+                    'gender': '',
+                    'medical_notes': '',
+                    'siblings': [],
+                    'aftercare': '',
+                    'carpool': ''
+                }
+
+        # Save updated cache
+        try:
+            with open(persons_cache_file, 'w') as f:
+                json.dump(persons_cache, f)
+        except Exception:
+            pass
+    except Exception as e:
+        print(f"Error fetching persons batch: {e}")
+        traceback.print_exc()
+
+    return persons_cache
+
 @app.route('/api/participants/<program>/<int:week>')
 @login_required
 def api_participants(program, week):
@@ -855,151 +1036,13 @@ def api_participants(program, week):
     person_ids = [p['person_id'] for p in participants]
 
     # Load persons cache from file
-    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
-    persons_cache = {}
-    try:
-        if os.path.exists(persons_cache_file):
-            with open(persons_cache_file, 'r') as f:
-                persons_cache = json.load(f)
-    except Exception:
-        pass
+    persons_cache = _load_persons_cache()
 
     # Fetch any missing persons using batch endpoint
     pids_to_fetch = [pid for pid in person_ids if str(pid) not in persons_cache]
 
     if pids_to_fetch and is_api_configured():
-        try:
-            client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
-            if not client.authenticate():
-                print("Failed to authenticate with CampMinder API for persons lookup")
-                raise Exception("Authentication failed")
-
-            # Step 1: Batch fetch all campers (with relatives info)
-            print(f"Fetching {len(pids_to_fetch)} persons via batch API...")
-            camper_results = client.get_persons_batch(
-                pids_to_fetch,
-                include_contact_details=True,
-                include_relatives=True
-            )
-            print(f"Got {len(camper_results)} camper results from API")
-
-            # Build a map of camper ID -> camper data
-            camper_map = {}
-            guardian_ids_needed = set()
-            for person in camper_results:
-                pid = person.get('ID')
-                if pid:
-                    camper_map[pid] = person
-                    # Collect guardian IDs we need to fetch for emails
-                    for rel in person.get('Relatives', []):
-                        if rel.get('IsGuardian'):
-                            guardian_ids_needed.add(rel['ID'])
-
-            # Step 2: Batch fetch all guardians (with contact details for emails)
-            guardian_map = {}
-            if guardian_ids_needed:
-                guardian_ids_list = list(guardian_ids_needed)
-                print(f"Fetching {len(guardian_ids_list)} guardians via batch API...")
-                guardian_results = client.get_persons_batch(
-                    guardian_ids_list,
-                    include_contact_details=True,
-                    include_relatives=False
-                )
-                for g in guardian_results:
-                    gid = g.get('ID')
-                    if gid:
-                        guardian_map[gid] = g
-                print(f"Got {len(guardian_map)} guardian results from API")
-
-            # Step 3: Get "Share Group With" custom field
-            share_group_map = {}  # pid -> value
-            try:
-                # Find the custom field definition for "Share Group With"
-                # Note: custom fields API returns camelCase keys (name, id)
-                cf_defs = client.get_custom_field_definitions()
-                share_group_field_id = None
-                print(f"Found {len(cf_defs)} custom field definitions")
-                for cf in cf_defs:
-                    # Handle both camelCase and PascalCase
-                    cf_name = cf.get('name', cf.get('Name', ''))
-                    cf_id = cf.get('id', cf.get('Id'))
-                    if 'share' in cf_name.lower() and 'group' in cf_name.lower():
-                        share_group_field_id = cf_id
-                        print(f"Found 'Share Group With' custom field: ID={share_group_field_id}, Name={cf_name}")
-                        break
-
-                if share_group_field_id:
-                    cf_data = client.get_custom_fields_for_persons(
-                        pids_to_fetch, field_id=share_group_field_id,
-                        season_id=CAMPMINDER_SEASON_ID
-                    )
-                    for pid, fields in cf_data.items():
-                        for f in fields:
-                            # Handle both camelCase and PascalCase
-                            val = f.get('value', f.get('Value', ''))
-                            if val:
-                                share_group_map[pid] = val
-                else:
-                    print("Custom field 'Share Group With' not found in definitions")
-            except Exception as e:
-                print(f"Error fetching custom fields: {e}")
-
-            # Step 4: Build person_info for each camper
-            for pid in pids_to_fetch:
-                camper = camper_map.get(pid)
-                if camper:
-                    person_info = {
-                        'first_name': camper.get('Name', {}).get('First', ''),
-                        'last_name': camper.get('Name', {}).get('Last', ''),
-                        'f1p1_email': '', 'f1p1_email2': '',
-                        'f1p2_email': '', 'f1p2_email2': '',
-                        'share_group_with': share_group_map.get(pid, ''),
-                        'gender': camper.get('GenderName', ''),
-                        'medical_notes': '',
-                        'siblings': [],
-                        'aftercare': '',
-                        'carpool': ''
-                    }
-
-                    # Get guardians and siblings from relatives
-                    relatives = camper.get('Relatives', [])
-                    guardians = [r for r in relatives if r.get('IsGuardian')]
-                    guardians.sort(key=lambda r: (not r.get('IsPrimary', False)))
-
-                    for g_idx, guardian in enumerate(guardians[:2]):
-                        g_id = guardian.get('ID')
-                        g_person = guardian_map.get(g_id)
-                        if g_person:
-                            emails = g_person.get('ContactDetails', {}).get('Emails', [])
-                            prefix = 'f1p1' if g_idx == 0 else 'f1p2'
-                            if len(emails) > 0:
-                                person_info[f'{prefix}_email'] = emails[0].get('Address', '')
-                            if len(emails) > 1:
-                                person_info[f'{prefix}_email2'] = emails[1].get('Address', '')
-
-                    persons_cache[str(pid)] = person_info
-                else:
-                    persons_cache[str(pid)] = {
-                        'first_name': 'Camper', 'last_name': str(pid),
-                        'f1p1_email': '', 'f1p1_email2': '',
-                        'f1p2_email': '', 'f1p2_email2': '',
-                        'share_group_with': '',
-                        'gender': '',
-                        'medical_notes': '',
-                        'siblings': [],
-                        'aftercare': '',
-                        'carpool': ''
-                    }
-
-            # Save updated cache
-            try:
-                with open(persons_cache_file, 'w') as f:
-                    json.dump(persons_cache, f)
-            except Exception:
-                pass
-        except Exception as e:
-            print(f"Error fetching persons batch: {e}")
-            traceback.print_exc()
+        persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
 
     # Load group assignments for this program/week from DB
     ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
@@ -1194,6 +1237,187 @@ def download_by_groups(program, week):
     output.seek(0)
 
     filename = f"{program}_Week{week}_ByGroups.xlsx"
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
+
+@app.route('/api/download-multi-program-enrollment', methods=['POST'])
+@login_required
+def download_multi_program_enrollment():
+    """Generate Excel with one sheet per week for selected programs combined.
+    Includes: name, emails, guardian names, phones, siblings.
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+
+    if not current_user.has_permission('download_excel'):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    req_data = request.get_json()
+    programs = req_data.get('programs', [])
+    if not programs:
+        return jsonify({'error': 'No programs selected'}), 400
+
+    # Get participants data from cache
+    data = api_cache.get('data')
+    if not data or 'participants' not in data:
+        return jsonify({'error': 'No data available'}), 404
+
+    # Collect participants per week across all selected programs
+    # week_num -> list of person_ids (may have duplicates across programs)
+    week_participants = {}
+    for program in programs:
+        program_data = data['participants'].get(program, {})
+        for week_str, participants in program_data.items():
+            week_num = int(week_str)
+            if week_num not in week_participants:
+                week_participants[week_num] = []
+            for p in participants:
+                week_participants[week_num].append(p['person_id'])
+
+    if not week_participants:
+        return jsonify({'error': 'No enrollment data found for selected programs'}), 404
+
+    # Load persons cache and fetch any missing persons
+    persons_cache = _load_persons_cache()
+
+    all_pids = set()
+    for pids in week_participants.values():
+        all_pids.update(pids)
+
+    # Fetch PIDs not in cache or missing guardian fields
+    pids_to_fetch = [
+        pid for pid in all_pids
+        if str(pid) not in persons_cache or 'guardian1_name' not in persons_cache.get(str(pid), {})
+    ]
+
+    if pids_to_fetch and is_api_configured():
+        persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
+
+    # Create workbook
+    wb = Workbook()
+    wb.remove(wb.active)
+
+    title_font = Font(bold=True, size=14)
+    header_font = Font(bold=True, size=11)
+    header_fill = PatternFill(start_color='CCE5FF', end_color='CCE5FF', fill_type='solid')
+    thin_border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+
+    for week_num in sorted(week_participants.keys()):
+        person_ids = week_participants[week_num]
+        if not person_ids:
+            continue
+
+        # Deduplicate by person_id
+        seen = set()
+        campers = []
+        for pid in person_ids:
+            if pid in seen:
+                continue
+            seen.add(pid)
+            info = persons_cache.get(str(pid), {})
+            campers.append({
+                'first_name': info.get('first_name', 'Camper'),
+                'last_name': info.get('last_name', ''),
+                'f1p1_email': info.get('f1p1_email', ''),
+                'f1p1_email2': info.get('f1p1_email2', ''),
+                'f1p2_email': info.get('f1p2_email', ''),
+                'f1p2_email2': info.get('f1p2_email2', ''),
+                'guardian1_name': info.get('guardian1_name', ''),
+                'guardian1_phones': info.get('guardian1_phones', ''),
+                'guardian2_name': info.get('guardian2_name', ''),
+                'guardian2_phones': info.get('guardian2_phones', ''),
+                'siblings': (', '.join(info.get('siblings', []))
+                            if isinstance(info.get('siblings'), list)
+                            else str(info.get('siblings', ''))),
+            })
+
+        # Sort by last name, then first name
+        campers.sort(key=lambda c: (c['last_name'].lower(), c['first_name'].lower()))
+
+        # Create sheet for this week
+        ws = wb.create_sheet(title=f'W{week_num}')
+
+        # Title row with program names
+        program_list = ', '.join(programs)
+        ws.merge_cells('A1:L1')
+        ws['A1'] = f'Week {week_num} — {program_list}'
+        ws['A1'].font = title_font
+
+        ws['A2'] = f'Total: {len(campers)} campers'
+        ws['A2'].font = Font(italic=True, size=10, color='666666')
+
+        # Headers
+        headers = ['#', 'Last Name', 'First Name',
+                   'Email 1', 'Email 2', 'Email 3', 'Email 4',
+                   'Guardian 1', 'Guardian 1 Phone',
+                   'Guardian 2', 'Guardian 2 Phone',
+                   'Siblings Registered']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=4, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal='center', wrap_text=True)
+
+        # Data rows
+        for idx, camper in enumerate(campers, 1):
+            row = idx + 4
+            values = [
+                idx,
+                camper['last_name'],
+                camper['first_name'],
+                camper['f1p1_email'],
+                camper['f1p1_email2'],
+                camper['f1p2_email'],
+                camper['f1p2_email2'],
+                camper['guardian1_name'],
+                camper['guardian1_phones'],
+                camper['guardian2_name'],
+                camper['guardian2_phones'],
+                camper['siblings'],
+            ]
+            for col, val in enumerate(values, 1):
+                cell = ws.cell(row=row, column=col, value=val)
+                cell.border = thin_border
+
+        # Column widths
+        ws.column_dimensions['A'].width = 4
+        ws.column_dimensions['B'].width = 16
+        ws.column_dimensions['C'].width = 16
+        ws.column_dimensions['D'].width = 26
+        ws.column_dimensions['E'].width = 26
+        ws.column_dimensions['F'].width = 26
+        ws.column_dimensions['G'].width = 26
+        ws.column_dimensions['H'].width = 22
+        ws.column_dimensions['I'].width = 18
+        ws.column_dimensions['J'].width = 22
+        ws.column_dimensions['K'].width = 18
+        ws.column_dimensions['L'].width = 24
+
+        ws.page_setup.orientation = 'landscape'
+        ws.page_setup.fitToWidth = 1
+
+    if not wb.sheetnames:
+        ws = wb.create_sheet(title='No Data')
+        ws['A1'] = 'No enrollment data found for the selected programs.'
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    # Build a clean filename
+    safe_names = '_'.join(p.replace(' ', '')[:15] for p in programs[:3])
+    if len(programs) > 3:
+        safe_names += f'_and_{len(programs)-3}_more'
+    filename = f"Enrollment_{safe_names}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+
     return send_file(
         output,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

@@ -182,6 +182,82 @@ function printByGroups() {
     window.open('/print-by-groups/' + encodeURIComponent(currentModalProgram) + '/' + currentModalWeek, '_blank');
 }
 
+// ==================== Multi-Program Enrollment Download ====================
+
+function clearEnrollmentProgramSelection() {
+    document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]').forEach(function(cb) {
+        cb.checked = false;
+    });
+    updateEnrollmentDownloadButton();
+}
+
+function updateEnrollmentDownloadButton() {
+    var checked = document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]:checked');
+    var btn = document.getElementById('downloadEnrollmentBtn');
+    if (btn) {
+        btn.disabled = (checked.length === 0);
+        btn.textContent = checked.length > 0
+            ? '📥 Download Enrollment List (' + checked.length + ' programs)'
+            : '📥 Download Enrollment List';
+    }
+}
+
+function downloadMultiProgramEnrollment() {
+    var selected = [];
+    document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]:checked').forEach(function(cb) {
+        selected.push(cb.value);
+    });
+
+    if (selected.length === 0) {
+        alert('Please select at least one program.');
+        return;
+    }
+
+    var statusEl = document.getElementById('enrollmentDownloadStatus');
+    var btn = document.getElementById('downloadEnrollmentBtn');
+    if (statusEl) statusEl.textContent = 'Generating...';
+    if (btn) btn.disabled = true;
+
+    fetch('/api/download-multi-program-enrollment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ programs: selected })
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            return response.json().then(function(err) { throw new Error(err.error || 'Download failed'); });
+        }
+        return response.blob();
+    })
+    .then(function(blob) {
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'Enrollment_' + selected.length + '_programs.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        if (statusEl) statusEl.textContent = 'Downloaded!';
+        setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 3000);
+    })
+    .catch(function(err) {
+        if (statusEl) statusEl.textContent = 'Error: ' + err.message;
+        setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 5000);
+    })
+    .finally(function() {
+        updateEnrollmentDownloadButton();
+    });
+}
+
+// Wire up enrollment program checkboxes
+(function() {
+    var checkboxContainer = document.getElementById('enrollmentProgramCheckboxes');
+    if (checkboxContainer) {
+        checkboxContainer.addEventListener('change', updateEnrollmentDownloadButton);
+    }
+})();
+
 // Show participants modal - fetches details on demand
 function showParticipants(program, week) {
     const modal = document.getElementById('participantsModal');

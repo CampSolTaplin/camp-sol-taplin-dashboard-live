@@ -512,7 +512,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="detailed-table-container">
                     <table class="enrollment-matrix" id="enrollmentMatrix">
                         <thead>
@@ -558,6 +558,28 @@
                         </tbody>
                     </table>
                 </div>
+
+                {% if user.has_permission('download_excel') %}
+                <div class="enrollment-download-bar">
+                    <label>Select Programs to Download Enrollment List:</label>
+                    <div class="camp-checkboxes" id="enrollmentProgramCheckboxes">
+                        {% for prog in report.programs %}
+                        <label class="camp-checkbox enrollment-prog-checkbox" data-category="{{ prog.category }}">
+                            <input type="checkbox" value="{{ prog.program }}">
+                            <span>{{ prog.program }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="enrollment-download-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="clearEnrollmentProgramSelection()">Clear All</button>
+                        <button class="btn btn-primary btn-sm" id="downloadEnrollmentBtn" onclick="downloadMultiProgramEnrollment()" disabled>
+                            📥 Download Enrollment List
+                        </button>
+                        <span id="enrollmentDownloadStatus" class="download-status"></span>
+                    </div>
+                </div>
+                {% endif %}
+
             </div>
         </div>
 

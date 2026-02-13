@@ -744,6 +744,41 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     cursor: pointer;
 }
 
+/* Enrollment Download Bar */
+.enrollment-download-bar {
+    margin-bottom: 16px;
+    padding: 15px 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+}
+
+.enrollment-download-bar > label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.enrollment-download-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.download-status {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+#downloadEnrollmentBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Enrollment Matrix */
 .detailed-table-container {
     overflow-x: auto;
