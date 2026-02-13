@@ -891,7 +891,8 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     if rel.get('IsGuardian'):
                         guardian_ids_needed.add(rel['ID'])
 
-        # Step 2: Batch fetch all guardians (with contact details for emails/phones)
+        # Step 2: Batch fetch all guardians (with contact details for emails/phones,
+        #          and relatives to find ward/sibling relationships)
         guardian_map = {}
         if guardian_ids_needed:
             guardian_ids_list = list(guardian_ids_needed)
@@ -899,7 +900,7 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
             guardian_results = client.get_persons_batch(
                 guardian_ids_list,
                 include_contact_details=True,
-                include_relatives=False
+                include_relatives=True
             )
             for g in guardian_results:
                 gid = g.get('ID')
@@ -940,6 +941,53 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
         except Exception as e:
             print(f"Error fetching custom fields: {e}")
 
+        # Step 3.5: Build sibling map from guardian wards
+        # Each guardian's Relatives with IsWard=True are their children
+        # Siblings of camper X = all wards of X's guardians, minus X itself
+        ward_ids_all = set()  # all child IDs found across all guardians
+        guardian_wards = {}  # guardian_id -> list of ward PIDs
+        for gid, g_person in guardian_map.items():
+            wards = [r['ID'] for r in g_person.get('Relatives', []) if r.get('IsWard')]
+            guardian_wards[gid] = wards
+            ward_ids_all.update(wards)
+
+        # Fetch ward info (name + DOB) for all wards
+        # ward_info: pid -> {'first_name': ..., 'dob': ...}
+        ward_info = {}
+        # First populate from camper_map (already fetched campers)
+        for wid in ward_ids_all:
+            if wid in camper_map:
+                n = camper_map[wid].get('Name', {})
+                ward_info[wid] = {
+                    'first_name': n.get('First', ''),
+                    'dob': camper_map[wid].get('DateOfBirth', '')
+                }
+            elif str(wid) in persons_cache:
+                info = persons_cache[str(wid)]
+                ward_info[wid] = {
+                    'first_name': info.get('first_name', ''),
+                    'dob': info.get('date_of_birth', '')
+                }
+
+        # Fetch remaining wards that we don't have yet (with camper details for DOB)
+        unknown_wards = [wid for wid in ward_ids_all if wid not in ward_info]
+        if unknown_wards:
+            print(f"Fetching info for {len(unknown_wards)} sibling persons...")
+            ward_results = client.get_persons_batch(
+                unknown_wards,
+                include_contact_details=False,
+                include_relatives=False,
+                include_camper_details=True
+            )
+            for wp in ward_results:
+                wid = wp.get('ID')
+                if wid:
+                    n = wp.get('Name', {})
+                    ward_info[wid] = {
+                        'first_name': n.get('First', ''),
+                        'dob': wp.get('DateOfBirth', '')
+                    }
+
         # Step 4: Build person_info for each camper
         for pid in pids_to_fetch:
             camper = camper_map.get(pid)
@@ -947,6 +995,30 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                 # Get grade from CampMinder's CamperDetails
                 camper_details = camper.get('CamperDetails', {}) or {}
                 grade = camper_details.get('CampGradeName', '') or camper_details.get('SchoolGradeName', '')
+
+                # Get guardians from relatives
+                relatives = camper.get('Relatives', [])
+                guardians = [r for r in relatives if r.get('IsGuardian')]
+                guardians.sort(key=lambda r: (not r.get('IsPrimary', False)))
+
+                # Find siblings: collect all wards from this camper's guardians, exclude self
+                sibling_list = []  # [{id, first_name, dob}, ...]
+                seen_sibling_ids = set()
+                for g in guardians:
+                    g_id = g.get('ID')
+                    for ward_id in guardian_wards.get(g_id, []):
+                        if ward_id != pid and ward_id not in seen_sibling_ids:
+                            seen_sibling_ids.add(ward_id)
+                            wi = ward_info.get(ward_id, {})
+                            if wi.get('first_name'):
+                                sibling_list.append({
+                                    'id': ward_id,
+                                    'first_name': wi['first_name'],
+                                    'dob': wi.get('dob', '')
+                                })
+
+                # Sort siblings by name for display
+                sibling_list.sort(key=lambda s: s['first_name'].lower())
 
                 person_info = {
                     'first_name': camper.get('Name', {}).get('First', ''),
@@ -956,18 +1028,16 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     'guardian1_name': '', 'guardian1_phones': '',
                     'guardian2_name': '', 'guardian2_phones': '',
                     'grade': grade,
+                    'date_of_birth': camper.get('DateOfBirth', ''),
+                    'guardian_ids': [g.get('ID') for g in guardians if g.get('ID')],
                     'share_group_with': share_group_map.get(pid, ''),
                     'gender': camper.get('GenderName', ''),
                     'medical_notes': '',
-                    'siblings': [],
+                    'siblings': [s['first_name'] for s in sibling_list],
+                    'sibling_details': sibling_list,
                     'aftercare': '',
                     'carpool': ''
                 }
-
-                # Get guardians and siblings from relatives
-                relatives = camper.get('Relatives', [])
-                guardians = [r for r in relatives if r.get('IsGuardian')]
-                guardians.sort(key=lambda r: (not r.get('IsPrimary', False)))
 
                 for g_idx, guardian in enumerate(guardians[:2]):
                     g_id = guardian.get('ID')
@@ -1005,10 +1075,13 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     'guardian1_name': '', 'guardian1_phones': '',
                     'guardian2_name': '', 'guardian2_phones': '',
                     'grade': '',
+                    'date_of_birth': '',
+                    'guardian_ids': [],
                     'share_group_with': '',
                     'gender': '',
                     'medical_notes': '',
                     'siblings': [],
+                    'sibling_details': [],
                     'aftercare': '',
                     'carpool': ''
                 }
@@ -1305,6 +1378,21 @@ def download_multi_program_enrollment():
     if pids_to_fetch and is_api_configured():
         persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
 
+    # Build per-week program lookup for ALL enrolled campers
+    # pid_programs_by_week[week_num][person_id] = [program1, program2, ...]
+    all_participants = data.get('participants', {})
+    pid_programs_by_week = {}
+    for prog_name, prog_weeks in all_participants.items():
+        for week_str, plist in prog_weeks.items():
+            wk = int(week_str)
+            if wk not in pid_programs_by_week:
+                pid_programs_by_week[wk] = {}
+            for p in plist:
+                pid = p['person_id']
+                if pid not in pid_programs_by_week[wk]:
+                    pid_programs_by_week[wk][pid] = []
+                pid_programs_by_week[wk][pid].append(prog_name)
+
     # Create workbook
     wb = Workbook()
     wb.remove(wb.active)
@@ -1322,6 +1410,8 @@ def download_multi_program_enrollment():
         if not person_ids:
             continue
 
+        week_prog_map = pid_programs_by_week.get(week_num, {})
+
         # Deduplicate by person_id
         seen = set()
         campers = []
@@ -1330,7 +1420,47 @@ def download_multi_program_enrollment():
                 continue
             seen.add(pid)
             info = persons_cache.get(str(pid), {})
+
+            # --- Siblings: first names only ---
+            sibling_details = info.get('sibling_details', [])
+            siblings_raw = info.get('siblings', [])
+            if isinstance(siblings_raw, list):
+                sibling_first_names = list(siblings_raw)  # already first names
+            else:
+                sibling_first_names = [s.strip() for s in str(siblings_raw).split(',') if s.strip()]
+
+            # --- Find youngest sibling ---
+            # Include this camper + all siblings to find the true youngest
+            camper_dob = info.get('date_of_birth', '')
+            family_members = [{'id': pid, 'first_name': info.get('first_name', ''), 'dob': camper_dob}]
+            family_members.extend(sibling_details)
+
+            youngest_id = None
+            youngest_name = ''
+            youngest_dob = ''
+            for member in family_members:
+                m_dob = member.get('dob', '')
+                if m_dob and (not youngest_dob or m_dob > youngest_dob):
+                    youngest_dob = m_dob
+                    youngest_id = member.get('id')
+                    youngest_name = member.get('first_name', '')
+
+            # Mark youngest in siblings display (with * prefix)
+            display_siblings = []
+            for sname in sibling_first_names:
+                if sname == youngest_name and youngest_id != pid:
+                    display_siblings.append(f'*{sname}')
+                else:
+                    display_siblings.append(sname)
+
+            # Youngest sibling's program for this week (only if youngest is NOT this camper)
+            youngest_program = ''
+            if youngest_id and youngest_id != pid:
+                progs = week_prog_map.get(youngest_id, [])
+                youngest_program = ', '.join(progs) if progs else ''
+
             campers.append({
+                'pid': pid,
                 'first_name': info.get('first_name', 'Camper'),
                 'last_name': info.get('last_name', ''),
                 'grade': info.get('grade', ''),
@@ -1342,9 +1472,8 @@ def download_multi_program_enrollment():
                 'guardian1_phones': info.get('guardian1_phones', ''),
                 'guardian2_name': info.get('guardian2_name', ''),
                 'guardian2_phones': info.get('guardian2_phones', ''),
-                'siblings': (', '.join(info.get('siblings', []))
-                            if isinstance(info.get('siblings'), list)
-                            else str(info.get('siblings', ''))),
+                'siblings': ', '.join(display_siblings),
+                'youngest_program': youngest_program,
             })
 
         # Sort by last name, then first name
@@ -1355,7 +1484,7 @@ def download_multi_program_enrollment():
 
         # Title row with program names
         program_list = ', '.join(programs)
-        ws.merge_cells('A1:M1')
+        ws.merge_cells('A1:N1')
         ws['A1'] = f'Week {week_num} — {program_list}'
         ws['A1'].font = title_font
 
@@ -1367,7 +1496,7 @@ def download_multi_program_enrollment():
                    'Email 1', 'Email 2', 'Email 3', 'Email 4',
                    'Guardian 1', 'Guardian 1 Phone',
                    'Guardian 2', 'Guardian 2 Phone',
-                   'Siblings Registered']
+                   'Siblings', 'Youngest Sibling Program']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=4, column=col, value=header)
             cell.font = header_font
@@ -1392,6 +1521,7 @@ def download_multi_program_enrollment():
                 camper['guardian2_name'],
                 camper['guardian2_phones'],
                 camper['siblings'],
+                camper['youngest_program'],
             ]
             for col, val in enumerate(values, 1):
                 cell = ws.cell(row=row, column=col, value=val)
@@ -1411,6 +1541,7 @@ def download_multi_program_enrollment():
         ws.column_dimensions['K'].width = 22   # Guardian 2
         ws.column_dimensions['L'].width = 18   # Guardian 2 Phone
         ws.column_dimensions['M'].width = 24   # Siblings
+        ws.column_dimensions['N'].width = 28   # Youngest Sibling Program
 
         ws.page_setup.orientation = 'landscape'
         ws.page_setup.fitToWidth = 1
