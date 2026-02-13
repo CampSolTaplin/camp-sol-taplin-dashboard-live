@@ -779,6 +779,21 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     cursor: not-allowed;
 }
 
+.share-group-upload {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.share-group-upload label {
+    font-weight: 500;
+    font-size: 13px;
+}
+
 /* Enrollment Matrix */
 .detailed-table-container {
     overflow-x: auto;

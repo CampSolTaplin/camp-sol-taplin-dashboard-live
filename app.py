@@ -908,38 +908,19 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     guardian_map[gid] = g
             print(f"Got {len(guardian_map)} guardian results from API")
 
-        # Step 3: Get "Share Group With" custom field
+        # Step 3: Load "Share Group With" from uploaded CSV data
         share_group_map = {}  # pid -> value
+        sgw_file = os.path.join(DATA_FOLDER, 'share_group.json')
         try:
-            # Find the custom field definition for "Share Group With"
-            # Note: custom fields API returns camelCase keys (name, id)
-            cf_defs = client.get_custom_field_definitions()
-            share_group_field_id = None
-            print(f"Found {len(cf_defs)} custom field definitions")
-            for cf in cf_defs:
-                # Handle both camelCase and PascalCase
-                cf_name = cf.get('name', cf.get('Name', ''))
-                cf_id = cf.get('id', cf.get('Id'))
-                if 'share' in cf_name.lower() and 'group' in cf_name.lower():
-                    share_group_field_id = cf_id
-                    print(f"Found 'Share Group With' custom field: ID={share_group_field_id}, Name={cf_name}")
-                    break
-
-            if share_group_field_id:
-                cf_data = client.get_custom_fields_for_persons(
-                    pids_to_fetch, field_id=share_group_field_id,
-                    season_id=CAMPMINDER_SEASON_ID
-                )
-                for pid, fields in cf_data.items():
-                    for f in fields:
-                        # Handle both camelCase and PascalCase
-                        val = f.get('value', f.get('Value', ''))
-                        if val:
-                            share_group_map[pid] = val
+            if os.path.exists(sgw_file):
+                with open(sgw_file, 'r') as f:
+                    share_group_map = json.load(f)
+                print(f"Loaded {sum(1 for v in share_group_map.values() if v)} "
+                      f"Share Group With entries from file")
             else:
-                print("Custom field 'Share Group With' not found in definitions")
+                print("No share_group.json file found (upload CSV from CampMinder)")
         except Exception as e:
-            print(f"Error fetching custom fields: {e}")
+            print(f"Error loading share_group.json: {e}")
 
         # Step 3.5: Build sibling map from guardian wards
         # Each guardian's Relatives with IsWard=True are their children
@@ -1030,7 +1011,7 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     'grade': grade,
                     'date_of_birth': camper.get('DateOfBirth', ''),
                     'guardian_ids': [g.get('ID') for g in guardians if g.get('ID')],
-                    'share_group_with': share_group_map.get(pid, ''),
+                    'share_group_with': share_group_map.get(str(pid), ''),
                     'gender': camper.get('GenderName', ''),
                     'medical_notes': '',
                     'siblings': [s['first_name'] for s in sibling_list],
@@ -1393,6 +1374,16 @@ def download_multi_program_enrollment():
                     pid_programs_by_week[wk][pid] = []
                 pid_programs_by_week[wk][pid].append(prog_name)
 
+    # Load Share Group With data (from uploaded CSV)
+    share_group_data = {}
+    sgw_file = os.path.join(DATA_FOLDER, 'share_group.json')
+    if os.path.exists(sgw_file):
+        try:
+            with open(sgw_file, 'r') as f:
+                share_group_data = json.load(f)
+        except Exception:
+            pass
+
     # Create workbook
     wb = Workbook()
     wb.remove(wb.active)
@@ -1474,6 +1465,8 @@ def download_multi_program_enrollment():
                 'guardian2_phones': info.get('guardian2_phones', ''),
                 'siblings': ', '.join(display_siblings),
                 'youngest_program': youngest_program,
+                'share_group_with': (share_group_data.get(str(pid), '')
+                                     or info.get('share_group_with', '')),
             })
 
         # Sort by last name, then first name
@@ -1484,7 +1477,7 @@ def download_multi_program_enrollment():
 
         # Title row with program names
         program_list = ', '.join(programs)
-        ws.merge_cells('A1:N1')
+        ws.merge_cells('A1:O1')
         ws['A1'] = f'Week {week_num} — {program_list}'
         ws['A1'].font = title_font
 
@@ -1496,7 +1489,8 @@ def download_multi_program_enrollment():
                    'Email 1', 'Email 2', 'Email 3', 'Email 4',
                    'Guardian 1', 'Guardian 1 Phone',
                    'Guardian 2', 'Guardian 2 Phone',
-                   'Siblings', 'Youngest Sibling Program']
+                   'Siblings', 'Youngest Sibling Program',
+                   'Share Group With']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=4, column=col, value=header)
             cell.font = header_font
@@ -1522,6 +1516,7 @@ def download_multi_program_enrollment():
                 camper['guardian2_phones'],
                 camper['siblings'],
                 camper['youngest_program'],
+                camper['share_group_with'],
             ]
             for col, val in enumerate(values, 1):
                 cell = ws.cell(row=row, column=col, value=val)
@@ -1542,6 +1537,7 @@ def download_multi_program_enrollment():
         ws.column_dimensions['L'].width = 18   # Guardian 2 Phone
         ws.column_dimensions['M'].width = 24   # Siblings
         ws.column_dimensions['N'].width = 28   # Youngest Sibling Program
+        ws.column_dimensions['O'].width = 30   # Share Group With
 
         ws.page_setup.orientation = 'landscape'
         ws.page_setup.fitToWidth = 1
@@ -1782,6 +1778,98 @@ def api_debug_data():
         })
 
 # ==================== UPLOAD & DATA ROUTES ====================
+
+@app.route('/api/upload-share-group', methods=['POST'])
+@login_required
+def upload_share_group():
+    """Upload CampMinder 'Share Group With' CSV export.
+    Expected columns: PersonID, Full Name, Share Group With
+    Saves to data/share_group.json and updates persons_cache.
+    """
+    import csv
+    import io
+
+    if not current_user.has_permission('upload_csv'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+    try:
+        # Read CSV content (handle BOM and multiline fields)
+        raw = file.read().decode('utf-8-sig')
+        reader = csv.reader(io.StringIO(raw))
+        header = next(reader)
+
+        # Find column indices
+        header_lower = [h.strip().lower() for h in header]
+        pid_col = None
+        sgw_col = None
+        for i, h in enumerate(header_lower):
+            if h == 'personid':
+                pid_col = i
+            elif 'share group' in h:
+                sgw_col = i
+
+        if pid_col is None or sgw_col is None:
+            return jsonify({
+                'success': False,
+                'error': 'CSV must have "PersonID" and "Share Group With" columns'
+            }), 400
+
+        # Parse rows
+        share_group_data = {}
+        count = 0
+        for row in reader:
+            if len(row) <= max(pid_col, sgw_col):
+                continue
+            pid = row[pid_col].strip().strip('"')
+            sgw = row[sgw_col].strip().strip('"')
+            if pid and pid.isdigit():
+                # Normalize: replace newlines with comma-space
+                sgw_clean = ', '.join(
+                    line.strip() for line in sgw.split('\n') if line.strip()
+                )
+                share_group_data[pid] = sgw_clean
+                if sgw_clean:
+                    count += 1
+
+        # Save to JSON file
+        sgw_file = os.path.join(DATA_FOLDER, 'share_group.json')
+        with open(sgw_file, 'w') as f:
+            json.dump(share_group_data, f)
+
+        # Also update persons_cache if it exists
+        persons_cache = _load_persons_cache()
+        updated = 0
+        for pid_str, sgw_val in share_group_data.items():
+            if pid_str in persons_cache:
+                persons_cache[pid_str]['share_group_with'] = sgw_val
+                updated += 1
+
+        if updated > 0:
+            persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
+            with open(persons_cache_file, 'w') as f:
+                json.dump(persons_cache, f)
+
+        print(f"Share Group With: loaded {count} entries with data, "
+              f"updated {updated} cached persons")
+
+        return jsonify({
+            'success': True,
+            'message': f'Imported {count} Share Group With entries. '
+                       f'Updated {updated} cached campers.'
+        })
+
+    except Exception as e:
+        print(f"Error processing Share Group CSV: {e}")
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/upload', methods=['POST'])
 @login_required

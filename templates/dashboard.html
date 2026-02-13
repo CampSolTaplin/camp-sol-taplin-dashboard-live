@@ -571,6 +571,12 @@
                         </button>
                         <span id="enrollmentDownloadStatus" class="download-status"></span>
                     </div>
+                    <div class="share-group-upload">
+                        <label>Upload "Share Group With" CSV from CampMinder:</label>
+                        <input type="file" id="shareGroupFile" accept=".csv" style="display:inline-block; margin: 0 8px;">
+                        <button class="btn btn-secondary btn-sm" onclick="uploadShareGroup()">📤 Upload</button>
+                        <span id="shareGroupStatus" class="download-status"></span>
+                    </div>
                 </div>
                 {% endif %}
 

@@ -261,6 +261,37 @@ function downloadMultiProgramEnrollment() {
     }
 })();
 
+// Upload Share Group With CSV
+function uploadShareGroup() {
+    var fileInput = document.getElementById('shareGroupFile');
+    var status = document.getElementById('shareGroupStatus');
+    if (!fileInput || !fileInput.files.length) {
+        if (status) status.textContent = 'Please select a CSV file first.';
+        return;
+    }
+    var formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    if (status) status.textContent = 'Uploading...';
+
+    fetch('/api/upload-share-group', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        if (data.success) {
+            if (status) status.textContent = '✅ ' + data.message;
+            fileInput.value = '';
+        } else {
+            if (status) status.textContent = '❌ ' + (data.error || 'Upload failed');
+        }
+    })
+    .catch(function(err) {
+        if (status) status.textContent = '❌ Error: ' + err.message;
+    });
+}
+
 // Show participants modal - fetches details on demand
 function showParticipants(program, week) {
     const modal = document.getElementById('participantsModal');
