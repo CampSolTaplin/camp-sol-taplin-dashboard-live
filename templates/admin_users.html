@@ -394,7 +394,6 @@
                 <thead>
                     <tr>
                         <th>Username</th>
-                        <th>Role</th>
                         <th>Permissions</th>
                         <th>Created</th>
                         <th>Actions</th>
@@ -410,14 +409,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <span class="role-badge {{ u.role }}">{{ u.role }}</span>
-                        </td>
-                        <td>
-                            {% if u.role == 'admin' %}
-                            <span class="perm-count" style="background: #FFEDD5; color: #C2410C;">All Access</span>
-                            {% else %}
                             <span class="perm-count">{{ u.perm_count }}/{{ all_permissions|length }}</span>
-                            {% endif %}
                         </td>
                         <td>{{ u.created_at[:10] if u.created_at != 'Unknown' else 'Unknown' }}</td>
                         <td>
@@ -426,14 +418,9 @@
                                     🔑 Password
                                 </button>
                                 {% if u.username != user.id %}
-                                <button class="btn-small btn-edit" onclick="openRoleModal('{{ u.username }}', '{{ u.role }}')">
-                                    👤 Role
-                                </button>
-                                {% if u.role != 'admin' %}
-                                <button class="btn-small btn-perms" onclick="openPermsModal('{{ u.username }}', {{ u.permissions | tojson | safe }})">
+                                <button class="btn-small btn-perms" data-username="{{ u.username }}" data-permissions='{{ u.permissions | tojson }}' onclick="openPermsFromButton(this)">
                                     🔧 Permissions
                                 </button>
-                                {% endif %}
                                 <button class="btn-small btn-delete" onclick="confirmDelete('{{ u.username }}')">
                                     🗑️ Delete
                                 </button>
@@ -465,14 +452,6 @@
                         <input type="password" id="newPassword" placeholder="Enter password" required minlength="6">
                     </div>
                     <div class="form-group">
-                        <label>Role</label>
-                        <select id="newRole" onchange="onCreateRoleChange()">
-                            <option value="viewer">Viewer</option>
-                            <option value="unit_leader">Unit Leader</option>
-                            <option value="admin">Admin (full access)</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="createPermsGroup">
                         <div class="perms-section-label">
                             <span>Permissions</span>
                             <span class="perm-hint">Select which features this user can access</span>
@@ -486,9 +465,6 @@
                             </label>
                             {% endfor %}
                         </div>
-                    </div>
-                    <div id="createAdminNote" class="admin-note" style="display: none;">
-                        ⚠️ Admin users automatically have full access to all features. Permissions cannot be customized for admins.
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
@@ -519,39 +495,6 @@
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
                         <button type="submit" class="btn btn-primary">Change Password</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Change Role Modal -->
-    <div id="roleModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>👤 Change Role</h3>
-                <button class="modal-close" onclick="closeRoleModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="roleForm" onsubmit="changeRole(event)">
-                    <input type="hidden" id="roleUsername">
-                    <div class="form-group">
-                        <label>User: <strong id="roleUserDisplay"></strong></label>
-                    </div>
-                    <div class="form-group">
-                        <label>New Role</label>
-                        <select id="newUserRole">
-                            <option value="viewer">Viewer</option>
-                            <option value="unit_leader">Unit Leader</option>
-                            <option value="admin">Admin (full access)</option>
-                        </select>
-                    </div>
-                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-                        Changing the role will reset this user's permissions to the role defaults.
-                    </p>
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeRoleModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Change Role</button>
                     </div>
                 </form>
             </div>
@@ -610,31 +553,15 @@
             document.getElementById('createModal').classList.add('show');
             document.getElementById('newUsername').value = '';
             document.getElementById('newPassword').value = '';
-            document.getElementById('newRole').value = 'viewer';
-            onCreateRoleChange();
+            // Set default permissions for viewer
+            var defaults = ROLE_DEFAULTS['viewer'] || [];
+            document.querySelectorAll('#createPermsGrid input[type="checkbox"]').forEach(function(cb) {
+                cb.checked = defaults.indexOf(cb.value) !== -1;
+            });
         }
 
         function closeCreateModal() {
             document.getElementById('createModal').classList.remove('show');
-        }
-
-        function onCreateRoleChange() {
-            var role = document.getElementById('newRole').value;
-            var permsGroup = document.getElementById('createPermsGroup');
-            var adminNote = document.getElementById('createAdminNote');
-
-            if (role === 'admin') {
-                permsGroup.style.display = 'none';
-                adminNote.style.display = 'block';
-            } else {
-                permsGroup.style.display = 'block';
-                adminNote.style.display = 'none';
-                // Set checkboxes to role defaults
-                var defaults = ROLE_DEFAULTS[role] || [];
-                document.querySelectorAll('#createPermsGrid input[type="checkbox"]').forEach(function(cb) {
-                    cb.checked = defaults.indexOf(cb.value) !== -1;
-                });
-            }
         }
 
         async function createUser(e) {
@@ -642,15 +569,13 @@
 
             var username = document.getElementById('newUsername').value.trim();
             var password = document.getElementById('newPassword').value;
-            var role = document.getElementById('newRole').value;
+            var role = 'viewer';
 
             // Collect permissions
             var permissions = [];
-            if (role !== 'admin') {
-                document.querySelectorAll('#createPermsGrid input[type="checkbox"]:checked').forEach(function(cb) {
-                    permissions.push(cb.value);
-                });
-            }
+            document.querySelectorAll('#createPermsGrid input[type="checkbox"]:checked').forEach(function(cb) {
+                permissions.push(cb.value);
+            });
 
             try {
                 var response = await fetch('/api/users', {
@@ -711,46 +636,13 @@
             }
         }
 
-        // ========== ROLE MODAL ==========
-        function openRoleModal(username, currentRole) {
-            document.getElementById('roleModal').classList.add('show');
-            document.getElementById('roleUsername').value = username;
-            document.getElementById('roleUserDisplay').textContent = username;
-            document.getElementById('newUserRole').value = currentRole;
-        }
-
-        function closeRoleModal() {
-            document.getElementById('roleModal').classList.remove('show');
-        }
-
-        async function changeRole(e) {
-            e.preventDefault();
-
-            var username = document.getElementById('roleUsername').value;
-            var role = document.getElementById('newUserRole').value;
-
-            try {
-                var response = await fetch('/api/users/' + username + '/role', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ role: role })
-                });
-
-                var data = await response.json();
-
-                if (data.success) {
-                    showAlert(data.message, 'success');
-                    closeRoleModal();
-                    setTimeout(function() { location.reload(); }, 1000);
-                } else {
-                    showAlert(data.error, 'error');
-                }
-            } catch (error) {
-                showAlert('Error changing role: ' + error.message, 'error');
-            }
-        }
-
         // ========== PERMISSIONS MODAL ==========
+        function openPermsFromButton(btn) {
+            var username = btn.getAttribute('data-username');
+            var currentPerms = JSON.parse(btn.getAttribute('data-permissions'));
+            openPermsModal(username, currentPerms);
+        }
+
         function openPermsModal(username, currentPerms) {
             document.getElementById('permsModal').classList.add('show');
             document.getElementById('permsUsername').value = username;

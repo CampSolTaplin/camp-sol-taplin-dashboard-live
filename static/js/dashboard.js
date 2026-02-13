@@ -233,7 +233,10 @@ function downloadMultiProgramEnrollment() {
         var url = window.URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'Enrollment_' + selected.length + '_programs.xlsx';
+        // Build filename from selected program names
+        var namesPart = selected.map(function(s) { return s.replace(/\s+/g, ''); }).join('_');
+        if (namesPart.length > 80) namesPart = namesPart.substring(0, 80);
+        a.download = 'Enrollment_' + namesPart + '.xlsx';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

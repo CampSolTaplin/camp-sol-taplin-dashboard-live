@@ -106,15 +106,17 @@ class UserAccount(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def get_permissions(self):
-        """Return list of permissions. Admin always gets all."""
-        if self.role == 'admin':
-            return list(ALL_PERMISSIONS)
+        """Return list of permissions from DB, or role defaults if not set."""
         if self.permissions:
             try:
                 return json.loads(self.permissions)
             except (json.JSONDecodeError, TypeError):
                 pass
         return list(ROLE_DEFAULT_PERMISSIONS.get(self.role, []))
+
+    def has_permission(self, perm):
+        """Check if user has a specific permission."""
+        return perm in self.get_permissions()
 
     def set_permissions(self, perms_list):
         self.permissions = json.dumps(perms_list)
@@ -942,6 +944,10 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
         for pid in pids_to_fetch:
             camper = camper_map.get(pid)
             if camper:
+                # Get grade from CampMinder's CamperDetails
+                camper_details = camper.get('CamperDetails', {}) or {}
+                grade = camper_details.get('CampGradeName', '') or camper_details.get('SchoolGradeName', '')
+
                 person_info = {
                     'first_name': camper.get('Name', {}).get('First', ''),
                     'last_name': camper.get('Name', {}).get('Last', ''),
@@ -949,6 +955,7 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     'f1p2_email': '', 'f1p2_email2': '',
                     'guardian1_name': '', 'guardian1_phones': '',
                     'guardian2_name': '', 'guardian2_phones': '',
+                    'grade': grade,
                     'share_group_with': share_group_map.get(pid, ''),
                     'gender': camper.get('GenderName', ''),
                     'medical_notes': '',
@@ -997,6 +1004,7 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     'f1p2_email': '', 'f1p2_email2': '',
                     'guardian1_name': '', 'guardian1_phones': '',
                     'guardian2_name': '', 'guardian2_phones': '',
+                    'grade': '',
                     'share_group_with': '',
                     'gender': '',
                     'medical_notes': '',
@@ -1325,6 +1333,7 @@ def download_multi_program_enrollment():
             campers.append({
                 'first_name': info.get('first_name', 'Camper'),
                 'last_name': info.get('last_name', ''),
+                'grade': info.get('grade', ''),
                 'f1p1_email': info.get('f1p1_email', ''),
                 'f1p1_email2': info.get('f1p1_email2', ''),
                 'f1p2_email': info.get('f1p2_email', ''),
@@ -1346,7 +1355,7 @@ def download_multi_program_enrollment():
 
         # Title row with program names
         program_list = ', '.join(programs)
-        ws.merge_cells('A1:L1')
+        ws.merge_cells('A1:M1')
         ws['A1'] = f'Week {week_num} — {program_list}'
         ws['A1'].font = title_font
 
@@ -1354,7 +1363,7 @@ def download_multi_program_enrollment():
         ws['A2'].font = Font(italic=True, size=10, color='666666')
 
         # Headers
-        headers = ['#', 'Last Name', 'First Name',
+        headers = ['#', 'Last Name', 'First Name', 'Grade',
                    'Email 1', 'Email 2', 'Email 3', 'Email 4',
                    'Guardian 1', 'Guardian 1 Phone',
                    'Guardian 2', 'Guardian 2 Phone',
@@ -1373,6 +1382,7 @@ def download_multi_program_enrollment():
                 idx,
                 camper['last_name'],
                 camper['first_name'],
+                camper['grade'],
                 camper['f1p1_email'],
                 camper['f1p1_email2'],
                 camper['f1p2_email'],
@@ -1388,18 +1398,19 @@ def download_multi_program_enrollment():
                 cell.border = thin_border
 
         # Column widths
-        ws.column_dimensions['A'].width = 4
-        ws.column_dimensions['B'].width = 16
-        ws.column_dimensions['C'].width = 16
-        ws.column_dimensions['D'].width = 26
-        ws.column_dimensions['E'].width = 26
-        ws.column_dimensions['F'].width = 26
-        ws.column_dimensions['G'].width = 26
-        ws.column_dimensions['H'].width = 22
-        ws.column_dimensions['I'].width = 18
-        ws.column_dimensions['J'].width = 22
-        ws.column_dimensions['K'].width = 18
-        ws.column_dimensions['L'].width = 24
+        ws.column_dimensions['A'].width = 4    # #
+        ws.column_dimensions['B'].width = 16   # Last Name
+        ws.column_dimensions['C'].width = 16   # First Name
+        ws.column_dimensions['D'].width = 10   # Grade
+        ws.column_dimensions['E'].width = 26   # Email 1
+        ws.column_dimensions['F'].width = 26   # Email 2
+        ws.column_dimensions['G'].width = 26   # Email 3
+        ws.column_dimensions['H'].width = 26   # Email 4
+        ws.column_dimensions['I'].width = 22   # Guardian 1
+        ws.column_dimensions['J'].width = 18   # Guardian 1 Phone
+        ws.column_dimensions['K'].width = 22   # Guardian 2
+        ws.column_dimensions['L'].width = 18   # Guardian 2 Phone
+        ws.column_dimensions['M'].width = 24   # Siblings
 
         ws.page_setup.orientation = 'landscape'
         ws.page_setup.fitToWidth = 1
