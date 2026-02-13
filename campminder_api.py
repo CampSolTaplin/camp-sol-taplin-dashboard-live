@@ -312,7 +312,8 @@ class CampMinderAPIClient:
     
     def get_persons_batch(self, person_ids: List[int], client_id: int = None,
                           include_contact_details: bool = True,
-                          include_relatives: bool = True) -> List[Dict]:
+                          include_relatives: bool = True,
+                          include_camper_details: bool = True) -> List[Dict]:
         """
         Get multiple persons using the List endpoint with id filter.
         Much more efficient than individual get_person calls.
@@ -322,6 +323,7 @@ class CampMinderAPIClient:
             client_id: Client ID
             include_contact_details: Include email/phone data
             include_relatives: Include guardian/relative data
+            include_camper_details: Include CamperDetails (grade, school, etc.)
 
         Returns:
             List of person objects from API
@@ -345,7 +347,8 @@ class CampMinderAPIClient:
                 'pagenumber': 1,
                 'pagesize': 1000,
                 'includecontactdetails': str(include_contact_details).lower(),
-                'includerelatives': str(include_relatives).lower()
+                'includerelatives': str(include_relatives).lower(),
+                'includecamperdetails': str(include_camper_details).lower()
             }
 
             # Build query string manually for repeated 'id' params
