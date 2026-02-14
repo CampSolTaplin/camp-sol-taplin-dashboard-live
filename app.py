@@ -451,7 +451,21 @@ def dashboard():
     
     # Get comparison chart data
     comparison_chart_data = historical_manager.get_weekly_comparison_chart_data()
-    
+
+    # Get Children's Trust stats for historical years
+    ct_stats_2024 = historical_manager.get_childrens_trust_stats(2024)
+    ct_stats_2025 = historical_manager.get_childrens_trust_stats(2025)
+
+    # Get 2025 program-level data for OLD VIEW STATS comparison
+    year_2025_data = historical_manager.get_year_data(2025)
+    programs_2025 = year_2025_data.get('programs', []) if year_2025_data else []
+    # Build a dict for quick lookup by program name
+    programs_2025_map = {}
+    if isinstance(programs_2025, list):
+        for p in programs_2025:
+            if isinstance(p, dict):
+                programs_2025_map[p.get('program', '')] = p
+
     return render_template('dashboard.html',
                          report=report_data,
                          generated_at=generated_at,
@@ -464,6 +478,9 @@ def dashboard():
                          historical_data_2025=historical_data_2025,
                          historical_data_2024=historical_data_2024,
                          comparison_chart_data=comparison_chart_data,
+                         ct_stats_2024=ct_stats_2024,
+                         ct_stats_2025=ct_stats_2025,
+                         programs_2025_map=programs_2025_map,
                          user=current_user)
 
 # ==================== USER MANAGEMENT ROUTES ====================

@@ -403,32 +403,58 @@ function buildMultiYearData() {
     }
 }
 
+// Convert month/day to day-of-year (using 2024 as reference for leap year safety)
+function monthDayToDayOfYear(month, day) {
+    const ref = new Date(2024, month - 1, day);
+    const yearStart = new Date(2024, 0, 1);
+    return Math.floor((ref - yearStart) / (1000 * 60 * 60 * 24));
+}
+
+// Populate day dropdown (1-31) for a given month
+function populateDays(monthSelectId, daySelectId) {
+    const monthVal = parseInt(document.getElementById(monthSelectId).value);
+    const daySelect = document.getElementById(daySelectId);
+    const currentDay = daySelect.value;
+
+    daySelect.innerHTML = '<option value="">Day</option>';
+    if (!monthVal) return;
+
+    const daysInMonth = new Date(2024, monthVal, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        if (parseInt(currentDay) === d) opt.selected = true;
+        daySelect.appendChild(opt);
+    }
+}
+
 function getFilteredIndices() {
-    const startDateEl = document.getElementById('startDate');
-    const endDateEl = document.getElementById('endDate');
-    const startDate = startDateEl ? startDateEl.value : '';
-    const endDate = endDateEl ? endDateEl.value : '';
+    const startMonth = document.getElementById('startMonth');
+    const startDayEl = document.getElementById('startDay');
+    const endMonth = document.getElementById('endMonth');
+    const endDayEl = document.getElementById('endDay');
 
-    if (!startDate && !endDate) return null; // No filter
+    const sm = startMonth ? parseInt(startMonth.value) : 0;
+    const sd = startDayEl ? parseInt(startDayEl.value) : 0;
+    const em = endMonth ? parseInt(endMonth.value) : 0;
+    const ed = endDayEl ? parseInt(endDayEl.value) : 0;
 
-    // Convert date inputs to day-of-year offsets
-    let startDay = 0;
-    let endDay = 366;
+    // Need at least a complete from or to (month+day)
+    const hasStart = sm > 0 && sd > 0;
+    const hasEnd = em > 0 && ed > 0;
 
-    if (startDate) {
-        const sd = new Date(startDate);
-        const yearStart = new Date(sd.getFullYear(), 0, 1);
-        startDay = Math.floor((sd - yearStart) / (1000 * 60 * 60 * 24));
-    }
-    if (endDate) {
-        const ed = new Date(endDate);
-        const yearStart = new Date(ed.getFullYear(), 0, 1);
-        endDay = Math.floor((ed - yearStart) / (1000 * 60 * 60 * 24));
-    }
+    if (!hasStart && !hasEnd) return null; // No filter
+
+    let startDayOfYear = 0;
+    let endDayOfYear = 366;
+
+    if (hasStart) startDayOfYear = monthDayToDayOfYear(sm, sd);
+    if (hasEnd) endDayOfYear = monthDayToDayOfYear(em, ed);
 
     const indices = [];
     for (let i = 0; i < fullChartDays.length; i++) {
-        if (fullChartDays[i] >= startDay && fullChartDays[i] <= endDay) {
+        if (fullChartDays[i] >= startDayOfYear && fullChartDays[i] <= endDayOfYear) {
             indices.push(i);
         }
     }
@@ -436,6 +462,13 @@ function getFilteredIndices() {
 }
 
 function updateDateChart() {
+    // Populate day dropdowns when month changes
+    populateDays('startMonth', 'startDay');
+    populateDays('endMonth', 'endDay');
+
+    // Always update the summary table based on the "To" date filter
+    updateSummaryTable();
+
     if (!cumulativeChartInstance) return;
 
     const indices = getFilteredIndices();
@@ -461,11 +494,91 @@ function updateDateChart() {
     cumulativeChartInstance.update();
 }
 
+// Look up cumulative stats at a given day-of-year from daily data
+function getCumulativeAtDayOfYear(dailyData, targetDayOfYear) {
+    if (!dailyData || dailyData.length === 0) return null;
+    let result = null;
+    for (const day of dailyData) {
+        // Parse date string as local (avoid UTC timezone shift with new Date("YYYY-MM-DD"))
+        const parts = day.date.split('-');
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const d = parseInt(parts[2]);
+        const dayDate = new Date(year, month, d);
+        const yearStart = new Date(year, 0, 1);
+        const dayOfYear = Math.floor((dayDate - yearStart) / (1000 * 60 * 60 * 24));
+        if (dayOfYear <= targetDayOfYear) {
+            result = {
+                campers: day.cumulative_campers,
+                weeks: day.cumulative_weeks
+            };
+        } else {
+            break;
+        }
+    }
+    return result;
+}
+
+// Update the Year-over-Year Enrollment Summary table based on date filter
+function updateSummaryTable() {
+    const em = parseInt(document.getElementById('endMonth')?.value) || 0;
+    const ed = parseInt(document.getElementById('endDay')?.value) || 0;
+    const hasEndDate = em > 0 && ed > 0;
+
+    const labelEl = document.getElementById('summaryDateLabel');
+    const fullStats = window.fullSeasonStats || {};
+
+    if (!hasEndDate) {
+        // No filter - show full season totals
+        if (labelEl) labelEl.textContent = '(Full Season)';
+        for (const year of ['2024', '2025', '2026']) {
+            const stats = fullStats[year] || {};
+            setCell('stats-' + year + '-campers', stats.campers || 0);
+            setCell('stats-' + year + '-weeks', stats.weeks || 0);
+            setCell('stats-' + year + '-ct', stats.ct || 0);
+        }
+        return;
+    }
+
+    // Filter active - compute day-of-year for the end date
+    const endDayOfYear = monthDayToDayOfYear(em, ed);
+    const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    if (labelEl) labelEl.textContent = '(as of ' + monthNames[em] + ' ' + ed + ')';
+
+    // Update each year's stats using daily data
+    const yearDailyMap = {
+        '2024': window.dateStats2024 || [],
+        '2025': window.dateStats2025 || [],
+        '2026': window.dateStats2026 || []
+    };
+
+    for (const year of ['2024', '2025', '2026']) {
+        const cumulative = getCumulativeAtDayOfYear(yearDailyMap[year], endDayOfYear);
+        if (cumulative) {
+            setCell('stats-' + year + '-campers', cumulative.campers);
+            setCell('stats-' + year + '-weeks', cumulative.weeks);
+        } else {
+            setCell('stats-' + year + '-campers', '-');
+            setCell('stats-' + year + '-weeks', '-');
+        }
+        // CT: no daily breakdown available, show full season value with note or dash if filtered
+        setCell('stats-' + year + '-ct', (fullStats[year] || {}).ct || '-');
+    }
+}
+
+function setCell(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+
 function resetDateFilters() {
-    const startDate = document.getElementById('startDate');
-    const endDate = document.getElementById('endDate');
-    if (startDate) startDate.value = '';
-    if (endDate) endDate.value = '';
+    ['startMonth', 'startDay', 'endMonth', 'endDay'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    // Reset day dropdowns
+    populateDays('startMonth', 'startDay');
+    populateDays('endMonth', 'endDay');
     updateDateChart();
 }
 

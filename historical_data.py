@@ -256,6 +256,47 @@ class HistoricalDataManager:
         
         return chart_data
     
+    def get_childrens_trust_stats(self, year: int) -> Dict:
+        """
+        Calculate Children's Trust statistics for a given historical year.
+        Returns total camper-weeks and estimated unique campers from CT programs.
+        """
+        year_data = self.get_year_data(year)
+        if not year_data or 'programs' not in year_data:
+            return {'camper_weeks': 0, 'unique_campers': 0}
+
+        programs = year_data['programs']
+        ct_total_weeks = 0
+        ct_unique_campers = 0
+
+        # CT program name patterns
+        ct_keywords = ["children's trust", "childrens trust"]
+
+        if isinstance(programs, list):
+            # 2024 format: list of dicts with 'program' key
+            for prog in programs:
+                if not isinstance(prog, dict):
+                    continue
+                prog_name = (prog.get('program') or prog.get('name', '')).lower()
+                if any(kw in prog_name for kw in ct_keywords):
+                    ct_total_weeks += prog.get('total', 0)
+                    # Estimate unique campers: max weekly enrollment
+                    max_weekly = max(prog.get(f'week_{w}', 0) for w in range(1, 10))
+                    ct_unique_campers += max_weekly
+        elif isinstance(programs, dict):
+            # 2025 format: dict with program name as key
+            for prog_name, prog_data in programs.items():
+                if any(kw in prog_name.lower() for kw in ct_keywords):
+                    if isinstance(prog_data, dict):
+                        ct_total_weeks += prog_data.get('total', 0)
+                        max_weekly = max(prog_data.get(f'week_{w}', 0) for w in range(1, 10))
+                        ct_unique_campers += max_weekly
+
+        return {
+            'camper_weeks': ct_total_weeks,
+            'unique_campers': ct_unique_campers
+        }
+
     def get_program_data(self, year: int, program_name: str) -> Optional[Dict]:
         """
         Get enrollment data for a specific program in a specific year
