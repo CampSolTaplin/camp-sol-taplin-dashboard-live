@@ -480,13 +480,18 @@
                                 <td class="sticky-col program-name" style="background-color: {{ prog.category_color_light }};">
                                     {{ prog.program }}
                                 </td>
+                                {% set active_weeks = prog.get('weeks_active', '1,2,3,4,5,6,7,8,9').split(',') %}
                                 {% for w in range(1, 10) %}
-                                <td class="week-cell clickable" 
-                                    data-program="{{ prog.program }}" 
+                                {% if w|string in active_weeks %}
+                                <td class="week-cell clickable"
+                                    data-program="{{ prog.program }}"
                                     data-week="{{ w }}"
                                     onclick="showParticipants('{{ prog.program }}', {{ w }})">
                                     {{ prog['week_' ~ w] or 0 }}
                                 </td>
+                                {% else %}
+                                <td class="week-cell week-inactive">-</td>
+                                {% endif %}
                                 {% endfor %}
                                 <td class="total-cell">{{ prog.total }}</td>
                                 <td class="fte-cell">{{ prog.fte }}</td>
@@ -497,6 +502,30 @@
                             </tr>
                             {% endfor %}
                         </tbody>
+                        <tfoot>
+                            <tr class="totals-row">
+                                <td class="sticky-col program-name" style="background: #2d3748; color: white; font-weight: 700;">TOTALS</td>
+                                {% for w in range(1, 10) %}
+                                <td class="week-cell" style="background: #2d3748; color: white; font-weight: 700;">
+                                    {{ report.programs | sum(attribute='week_' ~ w) }}
+                                </td>
+                                {% endfor %}
+                                <td class="total-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                                    {{ report.programs | sum(attribute='total') }}
+                                </td>
+                                <td class="fte-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                                    {{ report.programs | sum(attribute='fte') }}
+                                </td>
+                                <td class="goal-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                                    {{ report.programs | sum(attribute='goal') }}
+                                </td>
+                                <td class="percent-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                                    {% set total_fte = report.programs | sum(attribute='fte') %}
+                                    {% set total_goal = report.programs | sum(attribute='goal') %}
+                                    {{ '%.0f' | format((total_fte / total_goal * 100) if total_goal > 0 else 0) }}%
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
@@ -587,21 +616,21 @@
                                 <th>2026 FTE</th>
                                 <th>Goal</th>
                                 <th class="sticky-col">Program</th>
-                                <th colspan="9" style="text-align:center; background:#e0f0ff;">2026</th>
-                                <th style="background:#e0f0ff;">Total</th>
-                                <th colspan="9" style="text-align:center; background:#fff3d0;">2025</th>
-                                <th style="background:#fff3d0;">Total</th>
+                                <th colspan="9" class="oldview-header-2026">2026</th>
+                                <th class="oldview-header-2026">Total</th>
+                                <th colspan="9" class="oldview-header-2025">2025</th>
+                                <th class="oldview-header-2025">Total</th>
                             </tr>
                             <tr>
                                 <th></th><th></th><th></th><th class="sticky-col"></th>
                                 {% for w in range(1, 10) %}
-                                <th style="background:#e0f0ff;">W{{ w }}</th>
+                                <th class="oldview-subheader-2026">W{{ w }}</th>
                                 {% endfor %}
-                                <th style="background:#e0f0ff;"></th>
+                                <th class="oldview-subheader-2026"></th>
                                 {% for w in range(1, 10) %}
-                                <th style="background:#fff3d0;">W{{ w }}</th>
+                                <th class="oldview-subheader-2025">W{{ w }}</th>
                                 {% endfor %}
-                                <th style="background:#fff3d0;"></th>
+                                <th class="oldview-subheader-2025"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -628,18 +657,84 @@
                                     {{ prog.program }}
                                 </td>
                                 {# 2026 weeks #}
+                                {% set active_weeks_ov = prog.get('weeks_active', '1,2,3,4,5,6,7,8,9').split(',') %}
                                 {% for w in range(1, 10) %}
-                                <td style="background:#f0f7ff; text-align:center;">{{ prog['week_' ~ w] or 0 }}</td>
+                                {% if w|string in active_weeks_ov %}
+                                <td class="oldview-cell-2026">{{ prog['week_' ~ w] or 0 }}</td>
+                                {% else %}
+                                <td class="oldview-cell-inactive">-</td>
+                                {% endif %}
                                 {% endfor %}
-                                <td style="background:#d6eaff; text-align:center; font-weight:600;">{{ prog.total }}</td>
+                                <td class="oldview-total-2026">{{ prog.total }}</td>
                                 {# 2025 weeks #}
                                 {% for w in range(1, 10) %}
-                                <td style="background:#fffbe6; text-align:center;">{{ p25.get('week_' ~ w, '') if p25 else '' }}</td>
+                                {% if w|string in active_weeks_ov %}
+                                <td class="oldview-cell-2025">{{ p25.get('week_' ~ w, '') if p25 else '' }}</td>
+                                {% else %}
+                                <td class="oldview-cell-inactive">-</td>
+                                {% endif %}
                                 {% endfor %}
-                                <td style="background:#fff0b3; text-align:center; font-weight:600;">{{ p25.total if p25.total is defined else '' }}</td>
+                                <td class="oldview-total-2025">{{ p25.total if p25.total is defined else '' }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
+                        <tfoot>
+                            <tr class="totals-row">
+                                <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                                    {% set total_2025_fte = [] %}
+                                    {% for prog in report.programs %}
+                                        {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                        {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                        {% if p25.fte is defined %}
+                                            {% set _ = total_2025_fte.append(p25.fte) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ '%.1f' | format(total_2025_fte | sum) }}
+                                </td>
+                                <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                                    {{ report.programs | sum(attribute='fte') }}
+                                </td>
+                                <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                                    {{ report.programs | sum(attribute='goal') }}
+                                </td>
+                                <td class="sticky-col program-name" style="background: #2d3748; color: white; font-weight: 700;">TOTALS</td>
+                                {# 2026 week totals #}
+                                {% for w in range(1, 10) %}
+                                <td style="background: #1e3a5f; color: white; font-weight: 700; text-align: center;">
+                                    {{ report.programs | sum(attribute='week_' ~ w) }}
+                                </td>
+                                {% endfor %}
+                                <td style="background: #142d4c; color: white; font-weight: 700; text-align: center;">
+                                    {{ report.programs | sum(attribute='total') }}
+                                </td>
+                                {# 2025 week totals #}
+                                {% for w in range(1, 10) %}
+                                <td style="background: #5c3d00; color: white; font-weight: 700; text-align: center;">
+                                    {% set week_sum = [] %}
+                                    {% for prog in report.programs %}
+                                        {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                        {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                        {% if p25 %}
+                                            {% set val = p25.get('week_' ~ w, 0) %}
+                                            {% if val %}{% set _ = week_sum.append(val) %}{% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ week_sum | sum }}
+                                </td>
+                                {% endfor %}
+                                <td style="background: #4a3200; color: white; font-weight: 700; text-align: center;">
+                                    {% set total_2025 = [] %}
+                                    {% for prog in report.programs %}
+                                        {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                        {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                        {% if p25.total is defined %}
+                                            {% set _ = total_2025.append(p25.total) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ total_2025 | sum }}
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>

@@ -961,7 +961,8 @@ class EnrollmentDataProcessor:
                 'goal': goal,
                 'percent_to_goal': percent,
                 'category_color': self.category_colors.get(category, '#999'),
-                'category_color_light': self._lighten_color(self.category_colors.get(category, '#999'))
+                'category_color_light': self._lighten_color(self.category_colors.get(category, '#999')),
+                'weeks_active': ps.get('weeks_active', '1,2,3,4,5,6,7,8,9')
             })
             
             # Aggregate by category

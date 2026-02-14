@@ -1618,6 +1618,91 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     background: #FEE2E2;
 }
 
+/* ==================== WEEK INACTIVE (GREYED OUT) ==================== */
+
+.week-inactive {
+    background: #e8e8e8 !important;
+    color: #aaa !important;
+    cursor: default !important;
+    font-style: italic;
+}
+
+.week-inactive:hover {
+    background: #e8e8e8 !important;
+    transform: none !important;
+    font-weight: normal !important;
+}
+
+/* ==================== OLD VIEW STATS HEADER COLORS ==================== */
+
+.oldview-header-2026 {
+    background: #2563EB !important;
+    color: white !important;
+    text-align: center;
+}
+
+.oldview-subheader-2026 {
+    background: #3B82F6 !important;
+    color: white !important;
+    text-align: center;
+}
+
+.oldview-header-2025 {
+    background: #D97706 !important;
+    color: #1a1a1a !important;
+    text-align: center;
+}
+
+.oldview-subheader-2025 {
+    background: #F59E0B !important;
+    color: #1a1a1a !important;
+    text-align: center;
+}
+
+.oldview-cell-2026 {
+    background: #f0f7ff;
+    text-align: center;
+}
+
+.oldview-total-2026 {
+    background: #d6eaff;
+    text-align: center;
+    font-weight: 600;
+}
+
+.oldview-cell-2025 {
+    background: #fffbe6;
+    text-align: center;
+}
+
+.oldview-total-2025 {
+    background: #fff0b3;
+    text-align: center;
+    font-weight: 600;
+}
+
+.oldview-cell-inactive {
+    background: #e8e8e8 !important;
+    color: #aaa !important;
+    font-style: italic;
+    text-align: center;
+}
+
+/* ==================== TOTALS ROW ==================== */
+
+.totals-row td {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    border-top: 3px solid #1a202c;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+}
+
+.totals-row .sticky-col {
+    z-index: 3;
+}
+
 /* Widen modal for extra columns */
 .modal-large {
     max-width: 1350px;
