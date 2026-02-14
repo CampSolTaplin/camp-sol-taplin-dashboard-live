@@ -2,7 +2,6 @@
 
 // Global chart instances
 let cumulativeChartInstance = null;
-let comparisonChartInstance = null;
 
 // View Switching
 function switchView(viewName) {
@@ -23,8 +22,6 @@ function switchView(viewName) {
     // Initialize charts when switching views
     if (viewName === 'bydate') {
         setTimeout(initCumulativeChart, 100);
-    } else if (viewName === 'comparison') {
-        setTimeout(initComparisonChart, 100);
     }
 }
 
@@ -360,234 +357,172 @@ function closeParticipantsModal() {
     if (modal) modal.classList.remove('show');
 }
 
-// Date Chart Functions
-function getDateStatsForYear(year) {
-    if (year === '2026' || year === 2026) return window.dateStats2026 || [];
-    if (year === '2025' || year === 2025) return window.dateStats2025 || [];
-    if (year === '2024' || year === 2024) return window.dateStats2024 || [];
-    return [];
-}
+// Date Chart Functions - Multi-year overlay
 
-function filterDateStats(data, startDate, endDate) {
-    if (!data) return [];
-    let filtered = data;
-    if (startDate) {
-        filtered = filtered.filter(d => d.date >= startDate);
-    }
-    if (endDate) {
-        filtered = filtered.filter(d => d.date <= endDate);
-    }
-    return filtered;
-}
+// Store full datasets for filtering
+let fullChartLabels = [];
+let fullChartDays = [];
+let fullDatasets = {};
 
-function updateDateChart() {
-    const yearSelect = document.getElementById('yearSelect');
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    
-    const year = yearSelect ? yearSelect.value : '2026';
-    let data = getDateStatsForYear(year);
-    data = filterDateStats(data, startDate, endDate);
-    
-    // Update chart
-    if (cumulativeChartInstance) {
-        cumulativeChartInstance.data.labels = data.map(d => d.date);
-        cumulativeChartInstance.data.datasets[0].data = data.map(d => d.cumulative_weeks);
-        cumulativeChartInstance.data.datasets[0].label = 'Cumulative Weeks ' + year;
-        cumulativeChartInstance.update();
-    }
-    
-    // Update summary
-    if (data.length > 0) {
-        const last = data[data.length - 1];
-        const totalCampers = document.getElementById('totalCampersDisplay');
-        const totalWeeks = document.getElementById('totalWeeksDisplay');
-        const daysCount = document.getElementById('daysCountDisplay');
-        
-        if (totalCampers) totalCampers.textContent = last.cumulative_campers;
-        if (totalWeeks) totalWeeks.textContent = last.cumulative_weeks;
-        if (daysCount) daysCount.textContent = data.length;
-    }
-    
-    // Update table
-    updateDailyTable(data);
-    
-    // Update date range label
-    const label = document.getElementById('dateRangeLabel');
-    if (label && startDate && endDate) {
-        label.textContent = '(' + startDate + ' to ' + endDate + ')';
-    } else if (label) {
-        label.textContent = '';
-    }
-}
-
-function updateDailyTable(data) {
-    const tbody = document.getElementById('dailyTableBody');
-    if (!tbody) return;
-    
-    let html = '';
-    const reversedData = [...data].reverse().slice(0, 50);
-    
-    reversedData.forEach(day => {
-        html += '<tr>';
-        html += '<td>' + day.date + '</td>';
-        html += '<td>' + day.new_registrations + '</td>';
-        html += '<td>' + day.camper_weeks_added + '</td>';
-        html += '<td>' + day.cumulative_campers + '</td>';
-        html += '<td>' + day.cumulative_weeks + '</td>';
-        html += '</tr>';
-    });
-    
-    tbody.innerHTML = html;
-}
-
-function resetDateFilters() {
-    document.getElementById('yearSelect').value = '2026';
-    document.getElementById('startDate').value = '';
-    document.getElementById('endDate').value = '';
-    updateDateChart();
-}
-
-function initCumulativeChart() {
-    const canvas = document.getElementById('cumulativeChart');
-    if (!canvas) return;
-    
-    const data = window.dateStats2026 || [];
-    if (data.length === 0) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    if (cumulativeChartInstance) {
-        cumulativeChartInstance.destroy();
-    }
-    
-    cumulativeChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.map(d => d.date),
-            datasets: [{
-                label: 'Cumulative Weeks 2026',
-                data: data.map(d => d.cumulative_weeks),
-                borderColor: '#00A9CE',
-                backgroundColor: 'rgba(0, 169, 206, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.3,
-                pointRadius: 3,
-                pointBackgroundColor: '#00A9CE'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: true, position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        title: ctx => 'Date: ' + ctx[0].label,
-                        label: ctx => 'Cumulative Weeks: ' + ctx.parsed.y.toLocaleString()
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Registration Date', font: { weight: 'bold' } },
-                    ticks: { maxRotation: 45, maxTicksLimit: 15 }
-                },
-                y: {
-                    title: { display: true, text: 'Cumulative Camper Weeks', font: { weight: 'bold' } },
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-function initComparisonChart() {
-    const canvas = document.getElementById('comparisonChart');
-    if (!canvas || !window.comparisonChartData) return;
-    
-    const ctx = canvas.getContext('2d');
+function buildMultiYearData() {
     const data = window.comparisonChartData;
-    
-    if (comparisonChartInstance) {
-        comparisonChartInstance.destroy();
-    }
-    
-    const datasets = [];
+    if (!data) return;
+
+    fullChartLabels = data.labels || [];
+    fullChartDays = data.days || [];
     const todayDayOfYear = data.today_day_of_year || 365;
-    
-    if (data['2024'] && data['2024'].length > 0) {
-        datasets.push({
-            label: '2024',
-            data: data['2024'],
-            borderColor: '#9E9E9E',
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            borderDash: [5, 5],
-            tension: 0.3,
-            pointRadius: 0
-        });
-    }
-    
-    if (data['2025'] && data['2025'].length > 0) {
-        datasets.push({
-            label: '2025',
-            data: data['2025'],
-            borderColor: '#7CB342',
-            backgroundColor: 'transparent',
-            borderWidth: 3,
-            tension: 0.3,
-            pointRadius: 0
-        });
-    }
-    
-    // Add 2026 if we have current data - cut at today's date
+
+    // 2024 dataset
+    fullDatasets['2024'] = data['2024'] || [];
+
+    // 2025 dataset
+    fullDatasets['2025'] = data['2025'] || [];
+
+    // 2026 dataset - build from current dateStats, cut at today
+    fullDatasets['2026'] = [];
     if (window.dateStats2026 && window.dateStats2026.length > 0) {
-        const data2026 = [];
-        const days = data.days || [];
-        
-        for (let i = 0; i < days.length; i++) {
-            const daysOffset = days[i];
-            
-            // Only show data up to today
+        for (let i = 0; i < fullChartDays.length; i++) {
+            const daysOffset = fullChartDays[i];
             if (daysOffset > todayDayOfYear) {
-                data2026.push(null);
+                fullDatasets['2026'].push(null);
                 continue;
             }
-            
             let cumulative = 0;
-            
             for (const day of window.dateStats2026) {
                 const dayDate = new Date(day.date);
                 const yearStart = new Date(dayDate.getFullYear(), 0, 1);
                 const daysDiff = Math.floor((dayDate - yearStart) / (1000 * 60 * 60 * 24));
-                
                 if (daysDiff <= daysOffset) {
                     cumulative = day.cumulative_weeks;
                 } else {
                     break;
                 }
             }
-            data2026.push(cumulative || null);
+            fullDatasets['2026'].push(cumulative || null);
         }
-        
-        datasets.push({
-            label: '2026 (Current)',
-            data: data2026,
-            borderColor: '#00A9CE',
-            backgroundColor: 'rgba(0, 169, 206, 0.1)',
-            borderWidth: 4,
-            fill: true,
-            tension: 0.3,
-            pointRadius: 0
-        });
     }
-    
-    comparisonChartInstance = new Chart(ctx, {
+}
+
+function getFilteredIndices() {
+    const startDateEl = document.getElementById('startDate');
+    const endDateEl = document.getElementById('endDate');
+    const startDate = startDateEl ? startDateEl.value : '';
+    const endDate = endDateEl ? endDateEl.value : '';
+
+    if (!startDate && !endDate) return null; // No filter
+
+    // Convert date inputs to day-of-year offsets
+    let startDay = 0;
+    let endDay = 366;
+
+    if (startDate) {
+        const sd = new Date(startDate);
+        const yearStart = new Date(sd.getFullYear(), 0, 1);
+        startDay = Math.floor((sd - yearStart) / (1000 * 60 * 60 * 24));
+    }
+    if (endDate) {
+        const ed = new Date(endDate);
+        const yearStart = new Date(ed.getFullYear(), 0, 1);
+        endDay = Math.floor((ed - yearStart) / (1000 * 60 * 60 * 24));
+    }
+
+    const indices = [];
+    for (let i = 0; i < fullChartDays.length; i++) {
+        if (fullChartDays[i] >= startDay && fullChartDays[i] <= endDay) {
+            indices.push(i);
+        }
+    }
+    return indices;
+}
+
+function updateDateChart() {
+    if (!cumulativeChartInstance) return;
+
+    const indices = getFilteredIndices();
+
+    let labels, data2024, data2025, data2026;
+
+    if (indices) {
+        labels = indices.map(i => fullChartLabels[i]);
+        data2024 = indices.map(i => fullDatasets['2024'][i]);
+        data2025 = indices.map(i => fullDatasets['2025'][i]);
+        data2026 = indices.map(i => fullDatasets['2026'][i]);
+    } else {
+        labels = fullChartLabels;
+        data2024 = fullDatasets['2024'];
+        data2025 = fullDatasets['2025'];
+        data2026 = fullDatasets['2026'];
+    }
+
+    cumulativeChartInstance.data.labels = labels;
+    cumulativeChartInstance.data.datasets[0].data = data2024;
+    cumulativeChartInstance.data.datasets[1].data = data2025;
+    cumulativeChartInstance.data.datasets[2].data = data2026;
+    cumulativeChartInstance.update();
+}
+
+function resetDateFilters() {
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    if (startDate) startDate.value = '';
+    if (endDate) endDate.value = '';
+    updateDateChart();
+}
+
+function initCumulativeChart() {
+    const canvas = document.getElementById('cumulativeChart');
+    if (!canvas || !window.comparisonChartData) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (cumulativeChartInstance) {
+        cumulativeChartInstance.destroy();
+    }
+
+    // Build full data arrays
+    buildMultiYearData();
+
+    const datasets = [];
+
+    // 2024 - gray dashed
+    datasets.push({
+        label: '2024',
+        data: fullDatasets['2024'],
+        borderColor: '#9E9E9E',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        borderDash: [5, 5],
+        tension: 0.3,
+        pointRadius: 0
+    });
+
+    // 2025 - green solid
+    datasets.push({
+        label: '2025',
+        data: fullDatasets['2025'],
+        borderColor: '#7CB342',
+        backgroundColor: 'transparent',
+        borderWidth: 3,
+        tension: 0.3,
+        pointRadius: 0
+    });
+
+    // 2026 - blue filled
+    datasets.push({
+        label: '2026 (Current)',
+        data: fullDatasets['2026'],
+        borderColor: '#00A9CE',
+        backgroundColor: 'rgba(0, 169, 206, 0.1)',
+        borderWidth: 4,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0
+    });
+
+    cumulativeChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.labels || [],
+            labels: fullChartLabels,
             datasets: datasets
         },
         options: {

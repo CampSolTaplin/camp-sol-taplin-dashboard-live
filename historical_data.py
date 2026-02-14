@@ -69,16 +69,16 @@ class HistoricalDataManager:
         
         return daily
     
-    def get_comparison_data(self, current_year: int = 2026) -> Dict:
+    def get_comparison_data(self, current_year: int = 2026, current_daily: List = None) -> Dict:
         """Generate comprehensive comparison data between years"""
-        
+
         years_to_compare = [2024, 2025]
         comparison = {
             'years': {},
             'milestones': [],
             'growth_rates': {}
         }
-        
+
         for year in years_to_compare:
             year_data = self.get_year_data(year)
             if year_data:
@@ -86,32 +86,32 @@ class HistoricalDataManager:
                     'summary': year_data.get('summary', {}),
                     'daily': year_data.get('daily', [])
                 }
-        
+
         # Calculate growth rate 2024 -> 2025
         if '2024' in self.data and '2025' in self.data:
             campers_2024 = self.data['2024']['summary']['total_campers']
             campers_2025 = self.data['2025']['summary']['total_campers']
             weeks_2024 = self.data['2024']['summary']['total_camper_weeks']
             weeks_2025 = self.data['2025']['summary']['total_camper_weeks']
-            
+
             comparison['growth_rates'] = {
                 'campers_growth': round((campers_2025 - campers_2024) / campers_2024 * 100, 1),
                 'weeks_growth': round((weeks_2025 - weeks_2024) / weeks_2024 * 100, 1)
             }
-            
-            # Key milestones
-            comparison['milestones'] = self._calculate_milestones()
-        
+
+            # Key milestones (including 2026 if data available)
+            comparison['milestones'] = self._calculate_milestones(current_daily)
+
         return comparison
-    
-    def _calculate_milestones(self) -> List[Dict]:
+
+    def _calculate_milestones(self, current_daily: List = None) -> List[Dict]:
         """Calculate when each year hit certain enrollment milestones"""
         milestones_to_track = [100, 250, 500, 750, 1000]
         results = []
-        
+
         for milestone in milestones_to_track:
             milestone_data = {'milestone': milestone}
-            
+
             for year in ['2024', '2025']:
                 if year in self.data and 'daily' in self.data[year]:
                     for day in self.data[year]['daily']:
@@ -121,10 +121,20 @@ class HistoricalDataManager:
                                 'days_from_start': self._days_from_year_start(day['date'])
                             }
                             break
-            
+
+            # Check 2026 current data
+            if current_daily:
+                for day in current_daily:
+                    if day.get('cumulative_campers', 0) >= milestone:
+                        milestone_data['year_2026'] = {
+                            'date': day['date'],
+                            'days_from_start': self._days_from_year_start(day['date'])
+                        }
+                        break
+
             if len(milestone_data) > 1:  # Has at least one year's data
                 results.append(milestone_data)
-        
+
         return results
     
     def _days_from_year_start(self, date_str: str) -> int:

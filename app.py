@@ -441,8 +441,9 @@ def dashboard():
     if report_data:
         pace_comparison = historical_manager.get_pace_comparison(report_data)
     
-    # Get historical comparison data
-    historical_comparison = historical_manager.get_comparison_data()
+    # Get historical comparison data (pass 2026 daily for milestones)
+    current_daily = report_data.get('date_stats', {}).get('daily', []) if report_data else []
+    historical_comparison = historical_manager.get_comparison_data(current_daily=current_daily)
     
     # Get daily data for charts
     historical_data_2025 = historical_manager.get_daily_data(2025)
