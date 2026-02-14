@@ -636,15 +636,14 @@
                         <tbody>
                             {# Name mapping: 2026 name -> 2025 name for programs that changed names #}
                             {% set name_map = {
-                                'MMA Camp': 'Karate',
-                                'Madatzim 9th Grade': 'Madatzim CIT',
-                                'Madatzim 10th Grade': 'Madatzim CIT',
+                                'Madatzim 10th Grade': 'LIT Volunteer Staff',
+                                'Sports Academy 1': 'Sports Academy',
+                                'Sports Academy 2': 'Sports Academy',
                                 "Children's Trust Tsofim": "Tsofim Children's Trust",
                                 "Children's Trust Yeladim": "Yeladim Children's Trust",
                                 "Children's Trust Chaverim": "Chaverim Children's Trust",
                                 "Children's Trust Giborim": "Giborim Children's Trust",
-                                "Children's Trust Madli-Teen": "Madli-Teen Children's Trust",
-                                'Madli-Teen Children\'s Trust': 'Madli-Teen Children\'s Trust'
+                                "Children's Trust Madli-Teen": "Madli-Teen Children's Trust"
                             } %}
                             {% for prog in report.programs %}
                             {% set p25_name = name_map.get(prog.program, prog.program) %}

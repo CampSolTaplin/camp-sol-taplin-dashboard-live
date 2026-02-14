@@ -2,9 +2,9 @@
   "2025": {
     "summary": {
       "year": 2025,
-      "total_campers": 1237,
-      "total_camper_weeks": 6174,
-      "total_programs": 47
+      "total_campers": 1259,
+      "total_camper_weeks": 6234,
+      "total_programs": 42
     },
     "daily": [
       {
@@ -17,1379 +17,1393 @@
       {
         "date": "2025-01-06",
         "new_registrations": 78,
-        "camper_weeks_added": 478,
+        "camper_weeks_added": 477,
         "cumulative_campers": 99,
-        "cumulative_weeks": 613
+        "cumulative_weeks": 612
       },
       {
         "date": "2025-01-07",
         "new_registrations": 26,
         "camper_weeks_added": 163,
         "cumulative_campers": 125,
-        "cumulative_weeks": 776
+        "cumulative_weeks": 775
       },
       {
         "date": "2025-01-08",
         "new_registrations": 8,
         "camper_weeks_added": 41,
         "cumulative_campers": 133,
-        "cumulative_weeks": 817
+        "cumulative_weeks": 816
       },
       {
         "date": "2025-01-09",
         "new_registrations": 2,
         "camper_weeks_added": 12,
         "cumulative_campers": 135,
-        "cumulative_weeks": 829
+        "cumulative_weeks": 828
       },
       {
         "date": "2025-01-10",
         "new_registrations": 3,
         "camper_weeks_added": 11,
         "cumulative_campers": 138,
-        "cumulative_weeks": 840
+        "cumulative_weeks": 839
       },
       {
         "date": "2025-01-11",
         "new_registrations": 1,
         "camper_weeks_added": 4,
         "cumulative_campers": 139,
-        "cumulative_weeks": 844
+        "cumulative_weeks": 843
       },
       {
         "date": "2025-01-12",
         "new_registrations": 3,
         "camper_weeks_added": 16,
         "cumulative_campers": 142,
-        "cumulative_weeks": 860
+        "cumulative_weeks": 859
       },
       {
         "date": "2025-01-13",
         "new_registrations": 3,
         "camper_weeks_added": 8,
         "cumulative_campers": 145,
-        "cumulative_weeks": 868
+        "cumulative_weeks": 867
       },
       {
         "date": "2025-01-14",
         "new_registrations": 4,
         "camper_weeks_added": 12,
         "cumulative_campers": 149,
-        "cumulative_weeks": 880
+        "cumulative_weeks": 879
       },
       {
         "date": "2025-01-15",
         "new_registrations": 8,
         "camper_weeks_added": 54,
         "cumulative_campers": 157,
-        "cumulative_weeks": 934
+        "cumulative_weeks": 933
       },
       {
         "date": "2025-01-16",
         "new_registrations": 4,
         "camper_weeks_added": 21,
         "cumulative_campers": 161,
-        "cumulative_weeks": 955
+        "cumulative_weeks": 954
       },
       {
         "date": "2025-01-17",
         "new_registrations": 2,
         "camper_weeks_added": 10,
         "cumulative_campers": 163,
-        "cumulative_weeks": 965
+        "cumulative_weeks": 964
       },
       {
         "date": "2025-01-20",
         "new_registrations": 3,
         "camper_weeks_added": 13,
         "cumulative_campers": 166,
-        "cumulative_weeks": 978
+        "cumulative_weeks": 977
       },
       {
         "date": "2025-01-21",
         "new_registrations": 2,
         "camper_weeks_added": 16,
         "cumulative_campers": 168,
-        "cumulative_weeks": 994
+        "cumulative_weeks": 993
       },
       {
         "date": "2025-01-22",
         "new_registrations": 4,
         "camper_weeks_added": 26,
         "cumulative_campers": 172,
-        "cumulative_weeks": 1020
+        "cumulative_weeks": 1019
       },
       {
         "date": "2025-01-23",
         "new_registrations": 3,
         "camper_weeks_added": 14,
         "cumulative_campers": 175,
-        "cumulative_weeks": 1034
+        "cumulative_weeks": 1033
       },
       {
         "date": "2025-01-24",
         "new_registrations": 7,
         "camper_weeks_added": 46,
         "cumulative_campers": 182,
-        "cumulative_weeks": 1080
+        "cumulative_weeks": 1079
       },
       {
         "date": "2025-01-25",
         "new_registrations": 7,
         "camper_weeks_added": 27,
         "cumulative_campers": 189,
-        "cumulative_weeks": 1107
+        "cumulative_weeks": 1106
       },
       {
         "date": "2025-01-26",
         "new_registrations": 2,
         "camper_weeks_added": 8,
         "cumulative_campers": 191,
-        "cumulative_weeks": 1115
+        "cumulative_weeks": 1114
       },
       {
         "date": "2025-01-27",
         "new_registrations": 2,
         "camper_weeks_added": 13,
         "cumulative_campers": 193,
-        "cumulative_weeks": 1128
+        "cumulative_weeks": 1127
       },
       {
         "date": "2025-01-28",
         "new_registrations": 8,
         "camper_weeks_added": 51,
         "cumulative_campers": 201,
-        "cumulative_weeks": 1179
+        "cumulative_weeks": 1178
       },
       {
         "date": "2025-01-29",
         "new_registrations": 9,
         "camper_weeks_added": 43,
         "cumulative_campers": 210,
-        "cumulative_weeks": 1222
+        "cumulative_weeks": 1221
       },
       {
         "date": "2025-01-30",
         "new_registrations": 5,
         "camper_weeks_added": 32,
         "cumulative_campers": 215,
-        "cumulative_weeks": 1254
+        "cumulative_weeks": 1253
       },
       {
         "date": "2025-01-31",
         "new_registrations": 6,
         "camper_weeks_added": 41,
         "cumulative_campers": 221,
-        "cumulative_weeks": 1295
+        "cumulative_weeks": 1294
       },
       {
         "date": "2025-02-01",
         "new_registrations": 2,
         "camper_weeks_added": 17,
         "cumulative_campers": 223,
-        "cumulative_weeks": 1312
+        "cumulative_weeks": 1311
       },
       {
         "date": "2025-02-02",
         "new_registrations": 4,
         "camper_weeks_added": 25,
         "cumulative_campers": 227,
-        "cumulative_weeks": 1337
+        "cumulative_weeks": 1336
       },
       {
         "date": "2025-02-03",
         "new_registrations": 11,
         "camper_weeks_added": 60,
         "cumulative_campers": 238,
-        "cumulative_weeks": 1397
+        "cumulative_weeks": 1396
       },
       {
         "date": "2025-02-04",
         "new_registrations": 11,
         "camper_weeks_added": 50,
         "cumulative_campers": 249,
-        "cumulative_weeks": 1447
+        "cumulative_weeks": 1446
       },
       {
         "date": "2025-02-05",
         "new_registrations": 21,
         "camper_weeks_added": 120,
         "cumulative_campers": 270,
-        "cumulative_weeks": 1567
+        "cumulative_weeks": 1566
       },
       {
         "date": "2025-02-06",
         "new_registrations": 7,
         "camper_weeks_added": 29,
         "cumulative_campers": 277,
-        "cumulative_weeks": 1596
+        "cumulative_weeks": 1595
       },
       {
         "date": "2025-02-07",
         "new_registrations": 14,
         "camper_weeks_added": 88,
         "cumulative_campers": 291,
-        "cumulative_weeks": 1684
+        "cumulative_weeks": 1683
       },
       {
         "date": "2025-02-08",
         "new_registrations": 4,
         "camper_weeks_added": 32,
         "cumulative_campers": 295,
-        "cumulative_weeks": 1716
+        "cumulative_weeks": 1715
       },
       {
         "date": "2025-02-09",
         "new_registrations": 7,
         "camper_weeks_added": 48,
         "cumulative_campers": 302,
-        "cumulative_weeks": 1764
+        "cumulative_weeks": 1763
       },
       {
         "date": "2025-02-10",
         "new_registrations": 27,
         "camper_weeks_added": 126,
         "cumulative_campers": 329,
-        "cumulative_weeks": 1890
+        "cumulative_weeks": 1889
       },
       {
         "date": "2025-02-11",
         "new_registrations": 29,
         "camper_weeks_added": 134,
         "cumulative_campers": 358,
-        "cumulative_weeks": 2024
+        "cumulative_weeks": 2023
       },
       {
         "date": "2025-02-12",
         "new_registrations": 33,
         "camper_weeks_added": 169,
         "cumulative_campers": 391,
-        "cumulative_weeks": 2193
+        "cumulative_weeks": 2192
       },
       {
         "date": "2025-02-13",
         "new_registrations": 45,
         "camper_weeks_added": 225,
         "cumulative_campers": 436,
-        "cumulative_weeks": 2418
+        "cumulative_weeks": 2417
       },
       {
         "date": "2025-02-14",
-        "new_registrations": 80,
-        "camper_weeks_added": 467,
-        "cumulative_campers": 516,
-        "cumulative_weeks": 2885
+        "new_registrations": 78,
+        "camper_weeks_added": 464,
+        "cumulative_campers": 514,
+        "cumulative_weeks": 2881
       },
       {
         "date": "2025-02-15",
         "new_registrations": 79,
-        "camper_weeks_added": 355,
-        "cumulative_campers": 595,
-        "cumulative_weeks": 3240
+        "camper_weeks_added": 354,
+        "cumulative_campers": 593,
+        "cumulative_weeks": 3235
       },
       {
         "date": "2025-02-16",
         "new_registrations": 1,
         "camper_weeks_added": 1,
-        "cumulative_campers": 596,
-        "cumulative_weeks": 3241
+        "cumulative_campers": 594,
+        "cumulative_weeks": 3236
       },
       {
         "date": "2025-02-17",
         "new_registrations": 2,
         "camper_weeks_added": 6,
-        "cumulative_campers": 598,
-        "cumulative_weeks": 3247
+        "cumulative_campers": 596,
+        "cumulative_weeks": 3242
       },
       {
         "date": "2025-02-18",
         "new_registrations": 5,
         "camper_weeks_added": 21,
-        "cumulative_campers": 603,
-        "cumulative_weeks": 3268
+        "cumulative_campers": 601,
+        "cumulative_weeks": 3263
       },
       {
         "date": "2025-02-19",
         "new_registrations": 7,
         "camper_weeks_added": 31,
-        "cumulative_campers": 610,
-        "cumulative_weeks": 3299
+        "cumulative_campers": 608,
+        "cumulative_weeks": 3294
       },
       {
         "date": "2025-02-20",
         "new_registrations": 4,
         "camper_weeks_added": 24,
-        "cumulative_campers": 614,
-        "cumulative_weeks": 3323
+        "cumulative_campers": 612,
+        "cumulative_weeks": 3318
       },
       {
         "date": "2025-02-21",
         "new_registrations": 4,
         "camper_weeks_added": 18,
-        "cumulative_campers": 618,
-        "cumulative_weeks": 3341
+        "cumulative_campers": 616,
+        "cumulative_weeks": 3336
       },
       {
         "date": "2025-02-23",
         "new_registrations": 1,
         "camper_weeks_added": 8,
-        "cumulative_campers": 619,
-        "cumulative_weeks": 3349
+        "cumulative_campers": 617,
+        "cumulative_weeks": 3344
       },
       {
         "date": "2025-02-24",
         "new_registrations": 4,
         "camper_weeks_added": 8,
-        "cumulative_campers": 623,
-        "cumulative_weeks": 3357
+        "cumulative_campers": 621,
+        "cumulative_weeks": 3352
       },
       {
         "date": "2025-02-25",
         "new_registrations": 10,
         "camper_weeks_added": 74,
-        "cumulative_campers": 633,
-        "cumulative_weeks": 3431
+        "cumulative_campers": 631,
+        "cumulative_weeks": 3426
       },
       {
         "date": "2025-02-26",
         "new_registrations": 1,
         "camper_weeks_added": 9,
-        "cumulative_campers": 634,
-        "cumulative_weeks": 3440
+        "cumulative_campers": 632,
+        "cumulative_weeks": 3435
       },
       {
         "date": "2025-02-27",
         "new_registrations": 3,
         "camper_weeks_added": 9,
-        "cumulative_campers": 637,
-        "cumulative_weeks": 3449
+        "cumulative_campers": 635,
+        "cumulative_weeks": 3444
       },
       {
         "date": "2025-02-28",
         "new_registrations": 8,
         "camper_weeks_added": 57,
-        "cumulative_campers": 645,
-        "cumulative_weeks": 3506
+        "cumulative_campers": 643,
+        "cumulative_weeks": 3501
       },
       {
         "date": "2025-03-03",
         "new_registrations": 3,
         "camper_weeks_added": 25,
-        "cumulative_campers": 648,
-        "cumulative_weeks": 3531
+        "cumulative_campers": 646,
+        "cumulative_weeks": 3526
       },
       {
         "date": "2025-03-04",
         "new_registrations": 5,
         "camper_weeks_added": 28,
-        "cumulative_campers": 653,
-        "cumulative_weeks": 3559
+        "cumulative_campers": 651,
+        "cumulative_weeks": 3554
       },
       {
         "date": "2025-03-05",
         "new_registrations": 4,
         "camper_weeks_added": 23,
-        "cumulative_campers": 657,
-        "cumulative_weeks": 3582
+        "cumulative_campers": 655,
+        "cumulative_weeks": 3577
       },
       {
         "date": "2025-03-07",
         "new_registrations": 2,
         "camper_weeks_added": 12,
-        "cumulative_campers": 659,
-        "cumulative_weeks": 3594
+        "cumulative_campers": 657,
+        "cumulative_weeks": 3589
       },
       {
         "date": "2025-03-10",
         "new_registrations": 4,
         "camper_weeks_added": 24,
-        "cumulative_campers": 663,
-        "cumulative_weeks": 3618
+        "cumulative_campers": 661,
+        "cumulative_weeks": 3613
       },
       {
         "date": "2025-03-11",
         "new_registrations": 7,
         "camper_weeks_added": 34,
-        "cumulative_campers": 670,
-        "cumulative_weeks": 3652
+        "cumulative_campers": 668,
+        "cumulative_weeks": 3647
       },
       {
         "date": "2025-03-12",
         "new_registrations": 2,
         "camper_weeks_added": 16,
-        "cumulative_campers": 672,
-        "cumulative_weeks": 3668
+        "cumulative_campers": 670,
+        "cumulative_weeks": 3663
       },
       {
         "date": "2025-03-13",
         "new_registrations": 2,
         "camper_weeks_added": 10,
-        "cumulative_campers": 674,
-        "cumulative_weeks": 3678
+        "cumulative_campers": 672,
+        "cumulative_weeks": 3673
       },
       {
         "date": "2025-03-14",
         "new_registrations": 2,
         "camper_weeks_added": 16,
-        "cumulative_campers": 676,
-        "cumulative_weeks": 3694
+        "cumulative_campers": 674,
+        "cumulative_weeks": 3689
       },
       {
         "date": "2025-03-15",
         "new_registrations": 3,
         "camper_weeks_added": 20,
-        "cumulative_campers": 679,
-        "cumulative_weeks": 3714
+        "cumulative_campers": 677,
+        "cumulative_weeks": 3709
       },
       {
         "date": "2025-03-16",
         "new_registrations": 1,
         "camper_weeks_added": 4,
-        "cumulative_campers": 680,
-        "cumulative_weeks": 3718
+        "cumulative_campers": 678,
+        "cumulative_weeks": 3713
       },
       {
         "date": "2025-03-18",
         "new_registrations": 1,
         "camper_weeks_added": 8,
-        "cumulative_campers": 681,
-        "cumulative_weeks": 3726
+        "cumulative_campers": 679,
+        "cumulative_weeks": 3721
       },
       {
         "date": "2025-03-19",
         "new_registrations": 5,
         "camper_weeks_added": 40,
-        "cumulative_campers": 686,
-        "cumulative_weeks": 3766
+        "cumulative_campers": 684,
+        "cumulative_weeks": 3761
       },
       {
         "date": "2025-03-20",
         "new_registrations": 2,
         "camper_weeks_added": 11,
-        "cumulative_campers": 688,
-        "cumulative_weeks": 3777
+        "cumulative_campers": 686,
+        "cumulative_weeks": 3772
       },
       {
         "date": "2025-03-21",
         "new_registrations": 4,
         "camper_weeks_added": 33,
-        "cumulative_campers": 692,
-        "cumulative_weeks": 3810
+        "cumulative_campers": 690,
+        "cumulative_weeks": 3805
       },
       {
         "date": "2025-03-24",
         "new_registrations": 2,
         "camper_weeks_added": 6,
-        "cumulative_campers": 694,
-        "cumulative_weeks": 3816
+        "cumulative_campers": 692,
+        "cumulative_weeks": 3811
       },
       {
         "date": "2025-03-25",
         "new_registrations": 5,
         "camper_weeks_added": 43,
-        "cumulative_campers": 699,
-        "cumulative_weeks": 3859
+        "cumulative_campers": 697,
+        "cumulative_weeks": 3854
       },
       {
         "date": "2025-03-27",
         "new_registrations": 1,
         "camper_weeks_added": 3,
-        "cumulative_campers": 700,
-        "cumulative_weeks": 3862
+        "cumulative_campers": 698,
+        "cumulative_weeks": 3857
       },
       {
         "date": "2025-03-28",
         "new_registrations": 4,
         "camper_weeks_added": 27,
-        "cumulative_campers": 704,
-        "cumulative_weeks": 3889
+        "cumulative_campers": 702,
+        "cumulative_weeks": 3884
       },
       {
         "date": "2025-03-29",
         "new_registrations": 1,
         "camper_weeks_added": 3,
-        "cumulative_campers": 705,
-        "cumulative_weeks": 3892
+        "cumulative_campers": 703,
+        "cumulative_weeks": 3887
       },
       {
         "date": "2025-03-30",
         "new_registrations": 2,
         "camper_weeks_added": 16,
-        "cumulative_campers": 707,
-        "cumulative_weeks": 3908
+        "cumulative_campers": 705,
+        "cumulative_weeks": 3903
       },
       {
         "date": "2025-03-31",
         "new_registrations": 3,
         "camper_weeks_added": 26,
-        "cumulative_campers": 710,
-        "cumulative_weeks": 3934
+        "cumulative_campers": 708,
+        "cumulative_weeks": 3929
       },
       {
         "date": "2025-04-01",
         "new_registrations": 7,
         "camper_weeks_added": 56,
-        "cumulative_campers": 717,
-        "cumulative_weeks": 3990
+        "cumulative_campers": 715,
+        "cumulative_weeks": 3985
       },
       {
         "date": "2025-04-02",
         "new_registrations": 3,
         "camper_weeks_added": 13,
-        "cumulative_campers": 720,
-        "cumulative_weeks": 4003
+        "cumulative_campers": 718,
+        "cumulative_weeks": 3998
       },
       {
         "date": "2025-04-03",
         "new_registrations": 5,
         "camper_weeks_added": 14,
-        "cumulative_campers": 725,
-        "cumulative_weeks": 4017
+        "cumulative_campers": 723,
+        "cumulative_weeks": 4012
       },
       {
         "date": "2025-04-04",
         "new_registrations": 1,
         "camper_weeks_added": 8,
-        "cumulative_campers": 726,
-        "cumulative_weeks": 4025
+        "cumulative_campers": 724,
+        "cumulative_weeks": 4020
       },
       {
         "date": "2025-04-05",
         "new_registrations": 1,
         "camper_weeks_added": 8,
-        "cumulative_campers": 727,
-        "cumulative_weeks": 4033
+        "cumulative_campers": 725,
+        "cumulative_weeks": 4028
       },
       {
         "date": "2025-04-06",
         "new_registrations": 1,
         "camper_weeks_added": 4,
-        "cumulative_campers": 728,
-        "cumulative_weeks": 4037
+        "cumulative_campers": 726,
+        "cumulative_weeks": 4032
       },
       {
         "date": "2025-04-07",
         "new_registrations": 1,
         "camper_weeks_added": 9,
-        "cumulative_campers": 729,
-        "cumulative_weeks": 4046
+        "cumulative_campers": 727,
+        "cumulative_weeks": 4041
       },
       {
         "date": "2025-04-08",
         "new_registrations": 4,
         "camper_weeks_added": 22,
-        "cumulative_campers": 733,
-        "cumulative_weeks": 4068
+        "cumulative_campers": 731,
+        "cumulative_weeks": 4063
       },
       {
         "date": "2025-04-09",
         "new_registrations": 5,
         "camper_weeks_added": 17,
-        "cumulative_campers": 738,
-        "cumulative_weeks": 4085
+        "cumulative_campers": 736,
+        "cumulative_weeks": 4080
       },
       {
         "date": "2025-04-10",
         "new_registrations": 6,
         "camper_weeks_added": 24,
-        "cumulative_campers": 744,
-        "cumulative_weeks": 4109
+        "cumulative_campers": 742,
+        "cumulative_weeks": 4104
       },
       {
         "date": "2025-04-11",
         "new_registrations": 2,
         "camper_weeks_added": 4,
-        "cumulative_campers": 746,
-        "cumulative_weeks": 4113
+        "cumulative_campers": 744,
+        "cumulative_weeks": 4108
       },
       {
         "date": "2025-04-13",
         "new_registrations": 1,
         "camper_weeks_added": 4,
-        "cumulative_campers": 747,
-        "cumulative_weeks": 4117
+        "cumulative_campers": 745,
+        "cumulative_weeks": 4112
       },
       {
         "date": "2025-04-14",
         "new_registrations": 2,
         "camper_weeks_added": 10,
-        "cumulative_campers": 749,
-        "cumulative_weeks": 4127
+        "cumulative_campers": 747,
+        "cumulative_weeks": 4122
       },
       {
         "date": "2025-04-16",
         "new_registrations": 3,
         "camper_weeks_added": 22,
-        "cumulative_campers": 752,
-        "cumulative_weeks": 4149
+        "cumulative_campers": 750,
+        "cumulative_weeks": 4144
       },
       {
         "date": "2025-04-17",
         "new_registrations": 5,
         "camper_weeks_added": 17,
-        "cumulative_campers": 757,
-        "cumulative_weeks": 4166
+        "cumulative_campers": 755,
+        "cumulative_weeks": 4161
       },
       {
         "date": "2025-04-21",
         "new_registrations": 5,
         "camper_weeks_added": 21,
-        "cumulative_campers": 762,
-        "cumulative_weeks": 4187
+        "cumulative_campers": 760,
+        "cumulative_weeks": 4182
       },
       {
         "date": "2025-04-22",
         "new_registrations": 5,
         "camper_weeks_added": 34,
-        "cumulative_campers": 767,
-        "cumulative_weeks": 4221
+        "cumulative_campers": 765,
+        "cumulative_weeks": 4216
       },
       {
         "date": "2025-04-23",
         "new_registrations": 8,
         "camper_weeks_added": 61,
-        "cumulative_campers": 775,
-        "cumulative_weeks": 4282
+        "cumulative_campers": 773,
+        "cumulative_weeks": 4277
       },
       {
         "date": "2025-04-24",
         "new_registrations": 4,
         "camper_weeks_added": 19,
-        "cumulative_campers": 779,
-        "cumulative_weeks": 4301
+        "cumulative_campers": 777,
+        "cumulative_weeks": 4296
       },
       {
         "date": "2025-04-25",
         "new_registrations": 3,
         "camper_weeks_added": 16,
-        "cumulative_campers": 782,
-        "cumulative_weeks": 4317
+        "cumulative_campers": 780,
+        "cumulative_weeks": 4312
       },
       {
         "date": "2025-04-26",
         "new_registrations": 5,
         "camper_weeks_added": 16,
-        "cumulative_campers": 787,
-        "cumulative_weeks": 4333
+        "cumulative_campers": 785,
+        "cumulative_weeks": 4328
       },
       {
         "date": "2025-04-27",
         "new_registrations": 3,
         "camper_weeks_added": 22,
-        "cumulative_campers": 790,
-        "cumulative_weeks": 4355
+        "cumulative_campers": 788,
+        "cumulative_weeks": 4350
       },
       {
         "date": "2025-04-28",
         "new_registrations": 3,
         "camper_weeks_added": 20,
-        "cumulative_campers": 793,
-        "cumulative_weeks": 4375
+        "cumulative_campers": 791,
+        "cumulative_weeks": 4370
       },
       {
         "date": "2025-04-29",
         "new_registrations": 7,
         "camper_weeks_added": 30,
-        "cumulative_campers": 800,
-        "cumulative_weeks": 4405
+        "cumulative_campers": 798,
+        "cumulative_weeks": 4400
       },
       {
         "date": "2025-04-30",
         "new_registrations": 11,
         "camper_weeks_added": 53,
-        "cumulative_campers": 811,
-        "cumulative_weeks": 4458
+        "cumulative_campers": 809,
+        "cumulative_weeks": 4453
       },
       {
         "date": "2025-05-01",
         "new_registrations": 8,
         "camper_weeks_added": 46,
-        "cumulative_campers": 819,
-        "cumulative_weeks": 4504
+        "cumulative_campers": 817,
+        "cumulative_weeks": 4499
       },
       {
         "date": "2025-05-02",
         "new_registrations": 5,
         "camper_weeks_added": 26,
-        "cumulative_campers": 824,
-        "cumulative_weeks": 4530
+        "cumulative_campers": 822,
+        "cumulative_weeks": 4525
       },
       {
         "date": "2025-05-03",
         "new_registrations": 2,
         "camper_weeks_added": 16,
-        "cumulative_campers": 826,
-        "cumulative_weeks": 4546
+        "cumulative_campers": 824,
+        "cumulative_weeks": 4541
       },
       {
         "date": "2025-05-04",
         "new_registrations": 2,
         "camper_weeks_added": 4,
-        "cumulative_campers": 828,
-        "cumulative_weeks": 4550
+        "cumulative_campers": 826,
+        "cumulative_weeks": 4545
       },
       {
         "date": "2025-05-05",
         "new_registrations": 11,
         "camper_weeks_added": 59,
-        "cumulative_campers": 839,
-        "cumulative_weeks": 4609
+        "cumulative_campers": 837,
+        "cumulative_weeks": 4604
       },
       {
         "date": "2025-05-06",
         "new_registrations": 10,
         "camper_weeks_added": 54,
-        "cumulative_campers": 849,
-        "cumulative_weeks": 4663
+        "cumulative_campers": 847,
+        "cumulative_weeks": 4658
       },
       {
         "date": "2025-05-07",
         "new_registrations": 9,
         "camper_weeks_added": 42,
-        "cumulative_campers": 858,
-        "cumulative_weeks": 4705
+        "cumulative_campers": 856,
+        "cumulative_weeks": 4700
       },
       {
         "date": "2025-05-08",
         "new_registrations": 6,
         "camper_weeks_added": 23,
-        "cumulative_campers": 864,
-        "cumulative_weeks": 4728
+        "cumulative_campers": 862,
+        "cumulative_weeks": 4723
       },
       {
         "date": "2025-05-09",
         "new_registrations": 5,
         "camper_weeks_added": 40,
-        "cumulative_campers": 869,
-        "cumulative_weeks": 4768
+        "cumulative_campers": 867,
+        "cumulative_weeks": 4763
       },
       {
         "date": "2025-05-10",
         "new_registrations": 2,
         "camper_weeks_added": 11,
-        "cumulative_campers": 871,
-        "cumulative_weeks": 4779
+        "cumulative_campers": 869,
+        "cumulative_weeks": 4774
       },
       {
         "date": "2025-05-11",
         "new_registrations": 2,
         "camper_weeks_added": 4,
-        "cumulative_campers": 873,
-        "cumulative_weeks": 4783
+        "cumulative_campers": 871,
+        "cumulative_weeks": 4778
       },
       {
         "date": "2025-05-12",
         "new_registrations": 4,
-        "camper_weeks_added": 27,
-        "cumulative_campers": 877,
-        "cumulative_weeks": 4810
+        "camper_weeks_added": 28,
+        "cumulative_campers": 875,
+        "cumulative_weeks": 4806
       },
       {
         "date": "2025-05-13",
         "new_registrations": 6,
-        "camper_weeks_added": 15,
-        "cumulative_campers": 883,
-        "cumulative_weeks": 4825
+        "camper_weeks_added": 17,
+        "cumulative_campers": 881,
+        "cumulative_weeks": 4823
       },
       {
         "date": "2025-05-14",
         "new_registrations": 8,
         "camper_weeks_added": 24,
-        "cumulative_campers": 891,
-        "cumulative_weeks": 4849
+        "cumulative_campers": 889,
+        "cumulative_weeks": 4847
       },
       {
         "date": "2025-05-15",
         "new_registrations": 11,
         "camper_weeks_added": 26,
-        "cumulative_campers": 902,
-        "cumulative_weeks": 4875
+        "cumulative_campers": 900,
+        "cumulative_weeks": 4873
       },
       {
         "date": "2025-05-16",
         "new_registrations": 3,
         "camper_weeks_added": 9,
-        "cumulative_campers": 905,
-        "cumulative_weeks": 4884
+        "cumulative_campers": 903,
+        "cumulative_weeks": 4882
       },
       {
         "date": "2025-05-17",
         "new_registrations": 2,
         "camper_weeks_added": 6,
-        "cumulative_campers": 907,
-        "cumulative_weeks": 4890
+        "cumulative_campers": 905,
+        "cumulative_weeks": 4888
       },
       {
         "date": "2025-05-18",
         "new_registrations": 2,
         "camper_weeks_added": 6,
-        "cumulative_campers": 909,
-        "cumulative_weeks": 4896
+        "cumulative_campers": 907,
+        "cumulative_weeks": 4894
       },
       {
         "date": "2025-05-19",
         "new_registrations": 1,
         "camper_weeks_added": 5,
-        "cumulative_campers": 910,
-        "cumulative_weeks": 4901
+        "cumulative_campers": 908,
+        "cumulative_weeks": 4899
       },
       {
         "date": "2025-05-20",
         "new_registrations": 17,
         "camper_weeks_added": 93,
-        "cumulative_campers": 927,
-        "cumulative_weeks": 4994
+        "cumulative_campers": 925,
+        "cumulative_weeks": 4992
       },
       {
         "date": "2025-05-21",
         "new_registrations": 20,
         "camper_weeks_added": 68,
-        "cumulative_campers": 947,
-        "cumulative_weeks": 5062
+        "cumulative_campers": 945,
+        "cumulative_weeks": 5060
       },
       {
         "date": "2025-05-22",
         "new_registrations": 9,
         "camper_weeks_added": 50,
-        "cumulative_campers": 956,
-        "cumulative_weeks": 5112
+        "cumulative_campers": 954,
+        "cumulative_weeks": 5110
       },
       {
         "date": "2025-05-23",
         "new_registrations": 5,
         "camper_weeks_added": 22,
-        "cumulative_campers": 961,
-        "cumulative_weeks": 5134
+        "cumulative_campers": 959,
+        "cumulative_weeks": 5132
       },
       {
         "date": "2025-05-24",
         "new_registrations": 1,
         "camper_weeks_added": 8,
-        "cumulative_campers": 962,
-        "cumulative_weeks": 5142
+        "cumulative_campers": 960,
+        "cumulative_weeks": 5140
       },
       {
         "date": "2025-05-25",
         "new_registrations": 6,
         "camper_weeks_added": 20,
-        "cumulative_campers": 968,
-        "cumulative_weeks": 5162
+        "cumulative_campers": 966,
+        "cumulative_weeks": 5160
       },
       {
         "date": "2025-05-26",
         "new_registrations": 6,
         "camper_weeks_added": 36,
-        "cumulative_campers": 974,
-        "cumulative_weeks": 5198
+        "cumulative_campers": 972,
+        "cumulative_weeks": 5196
       },
       {
         "date": "2025-05-27",
         "new_registrations": 19,
         "camper_weeks_added": 111,
-        "cumulative_campers": 993,
-        "cumulative_weeks": 5309
+        "cumulative_campers": 991,
+        "cumulative_weeks": 5307
       },
       {
         "date": "2025-05-28",
-        "new_registrations": 8,
+        "new_registrations": 9,
         "camper_weeks_added": 65,
-        "cumulative_campers": 1001,
-        "cumulative_weeks": 5374
+        "cumulative_campers": 1000,
+        "cumulative_weeks": 5372
       },
       {
         "date": "2025-05-29",
         "new_registrations": 3,
         "camper_weeks_added": 19,
-        "cumulative_campers": 1004,
-        "cumulative_weeks": 5393
+        "cumulative_campers": 1003,
+        "cumulative_weeks": 5391
       },
       {
         "date": "2025-05-30",
         "new_registrations": 13,
         "camper_weeks_added": 43,
-        "cumulative_campers": 1017,
-        "cumulative_weeks": 5436
+        "cumulative_campers": 1016,
+        "cumulative_weeks": 5434
       },
       {
         "date": "2025-05-31",
         "new_registrations": 3,
         "camper_weeks_added": 14,
-        "cumulative_campers": 1020,
-        "cumulative_weeks": 5450
+        "cumulative_campers": 1019,
+        "cumulative_weeks": 5448
       },
       {
         "date": "2025-06-01",
         "new_registrations": 9,
         "camper_weeks_added": 38,
-        "cumulative_campers": 1029,
-        "cumulative_weeks": 5488
+        "cumulative_campers": 1028,
+        "cumulative_weeks": 5486
       },
       {
         "date": "2025-06-02",
         "new_registrations": 3,
         "camper_weeks_added": 8,
-        "cumulative_campers": 1032,
-        "cumulative_weeks": 5496
+        "cumulative_campers": 1031,
+        "cumulative_weeks": 5494
       },
       {
         "date": "2025-06-03",
         "new_registrations": 4,
         "camper_weeks_added": 11,
-        "cumulative_campers": 1036,
-        "cumulative_weeks": 5507
+        "cumulative_campers": 1035,
+        "cumulative_weeks": 5505
       },
       {
         "date": "2025-06-04",
-        "new_registrations": 15,
-        "camper_weeks_added": 74,
+        "new_registrations": 16,
+        "camper_weeks_added": 82,
         "cumulative_campers": 1051,
-        "cumulative_weeks": 5581
+        "cumulative_weeks": 5587
       },
       {
         "date": "2025-06-05",
-        "new_registrations": 7,
-        "camper_weeks_added": 34,
-        "cumulative_campers": 1058,
-        "cumulative_weeks": 5615
+        "new_registrations": 8,
+        "camper_weeks_added": 42,
+        "cumulative_campers": 1059,
+        "cumulative_weeks": 5629
       },
       {
         "date": "2025-06-06",
         "new_registrations": 19,
         "camper_weeks_added": 80,
-        "cumulative_campers": 1077,
-        "cumulative_weeks": 5695
+        "cumulative_campers": 1078,
+        "cumulative_weeks": 5709
       },
       {
         "date": "2025-06-07",
         "new_registrations": 2,
         "camper_weeks_added": 7,
-        "cumulative_campers": 1079,
-        "cumulative_weeks": 5702
+        "cumulative_campers": 1080,
+        "cumulative_weeks": 5716
       },
       {
         "date": "2025-06-08",
         "new_registrations": 3,
         "camper_weeks_added": 6,
-        "cumulative_campers": 1082,
-        "cumulative_weeks": 5708
+        "cumulative_campers": 1083,
+        "cumulative_weeks": 5722
       },
       {
         "date": "2025-06-09",
         "new_registrations": 3,
         "camper_weeks_added": 17,
-        "cumulative_campers": 1085,
-        "cumulative_weeks": 5725
+        "cumulative_campers": 1086,
+        "cumulative_weeks": 5739
       },
       {
         "date": "2025-06-10",
         "new_registrations": 6,
         "camper_weeks_added": 20,
-        "cumulative_campers": 1091,
-        "cumulative_weeks": 5745
+        "cumulative_campers": 1092,
+        "cumulative_weeks": 5759
       },
       {
         "date": "2025-06-11",
-        "new_registrations": 9,
+        "new_registrations": 10,
         "camper_weeks_added": 40,
-        "cumulative_campers": 1100,
-        "cumulative_weeks": 5785
+        "cumulative_campers": 1102,
+        "cumulative_weeks": 5799
       },
       {
         "date": "2025-06-12",
         "new_registrations": 7,
         "camper_weeks_added": 49,
-        "cumulative_campers": 1107,
-        "cumulative_weeks": 5834
+        "cumulative_campers": 1109,
+        "cumulative_weeks": 5848
       },
       {
         "date": "2025-06-13",
         "new_registrations": 7,
         "camper_weeks_added": 31,
-        "cumulative_campers": 1114,
-        "cumulative_weeks": 5865
+        "cumulative_campers": 1116,
+        "cumulative_weeks": 5879
       },
       {
         "date": "2025-06-14",
         "new_registrations": 1,
         "camper_weeks_added": 6,
-        "cumulative_campers": 1115,
-        "cumulative_weeks": 5871
+        "cumulative_campers": 1117,
+        "cumulative_weeks": 5885
       },
       {
         "date": "2025-06-15",
         "new_registrations": 3,
         "camper_weeks_added": 21,
-        "cumulative_campers": 1118,
-        "cumulative_weeks": 5892
+        "cumulative_campers": 1120,
+        "cumulative_weeks": 5906
       },
       {
         "date": "2025-06-16",
         "new_registrations": 14,
         "camper_weeks_added": 37,
-        "cumulative_campers": 1132,
-        "cumulative_weeks": 5929
+        "cumulative_campers": 1134,
+        "cumulative_weeks": 5943
       },
       {
         "date": "2025-06-17",
         "new_registrations": 6,
         "camper_weeks_added": 24,
-        "cumulative_campers": 1138,
-        "cumulative_weeks": 5953
+        "cumulative_campers": 1140,
+        "cumulative_weeks": 5967
       },
       {
         "date": "2025-06-18",
         "new_registrations": 4,
         "camper_weeks_added": 18,
-        "cumulative_campers": 1142,
-        "cumulative_weeks": 5971
+        "cumulative_campers": 1144,
+        "cumulative_weeks": 5985
       },
       {
         "date": "2025-06-19",
         "new_registrations": 1,
         "camper_weeks_added": 1,
-        "cumulative_campers": 1143,
-        "cumulative_weeks": 5972
+        "cumulative_campers": 1145,
+        "cumulative_weeks": 5986
       },
       {
         "date": "2025-06-20",
         "new_registrations": 1,
         "camper_weeks_added": 1,
-        "cumulative_campers": 1144,
-        "cumulative_weeks": 5973
+        "cumulative_campers": 1146,
+        "cumulative_weeks": 5987
       },
       {
         "date": "2025-06-22",
         "new_registrations": 3,
         "camper_weeks_added": 11,
-        "cumulative_campers": 1147,
-        "cumulative_weeks": 5984
+        "cumulative_campers": 1149,
+        "cumulative_weeks": 5998
       },
       {
         "date": "2025-06-23",
         "new_registrations": 5,
         "camper_weeks_added": 19,
-        "cumulative_campers": 1152,
-        "cumulative_weeks": 6003
+        "cumulative_campers": 1154,
+        "cumulative_weeks": 6017
       },
       {
         "date": "2025-06-24",
         "new_registrations": 2,
         "camper_weeks_added": 2,
-        "cumulative_campers": 1154,
-        "cumulative_weeks": 6005
+        "cumulative_campers": 1156,
+        "cumulative_weeks": 6019
       },
       {
         "date": "2025-06-25",
         "new_registrations": 5,
-        "camper_weeks_added": 20,
-        "cumulative_campers": 1159,
-        "cumulative_weeks": 6025
+        "camper_weeks_added": 21,
+        "cumulative_campers": 1161,
+        "cumulative_weeks": 6040
       },
       {
         "date": "2025-06-26",
-        "new_registrations": 6,
-        "camper_weeks_added": 23,
-        "cumulative_campers": 1165,
-        "cumulative_weeks": 6048
+        "new_registrations": 7,
+        "camper_weeks_added": 26,
+        "cumulative_campers": 1168,
+        "cumulative_weeks": 6066
       },
       {
         "date": "2025-06-27",
         "new_registrations": 3,
-        "camper_weeks_added": 11,
-        "cumulative_campers": 1168,
-        "cumulative_weeks": 6059
+        "camper_weeks_added": 14,
+        "cumulative_campers": 1171,
+        "cumulative_weeks": 6080
       },
       {
         "date": "2025-06-30",
         "new_registrations": 1,
         "camper_weeks_added": 1,
-        "cumulative_campers": 1169,
-        "cumulative_weeks": 6060
+        "cumulative_campers": 1172,
+        "cumulative_weeks": 6081
       },
       {
         "date": "2025-07-01",
         "new_registrations": 4,
         "camper_weeks_added": 13,
-        "cumulative_campers": 1173,
-        "cumulative_weeks": 6073
+        "cumulative_campers": 1176,
+        "cumulative_weeks": 6094
       },
       {
         "date": "2025-07-02",
         "new_registrations": 2,
-        "camper_weeks_added": 2,
-        "cumulative_campers": 1175,
-        "cumulative_weeks": 6075
+        "camper_weeks_added": 3,
+        "cumulative_campers": 1178,
+        "cumulative_weeks": 6097
       },
       {
         "date": "2025-07-03",
         "new_registrations": 6,
         "camper_weeks_added": 8,
-        "cumulative_campers": 1181,
-        "cumulative_weeks": 6083
+        "cumulative_campers": 1184,
+        "cumulative_weeks": 6105
       },
       {
         "date": "2025-07-04",
         "new_registrations": 2,
         "camper_weeks_added": 2,
-        "cumulative_campers": 1183,
-        "cumulative_weeks": 6085
+        "cumulative_campers": 1186,
+        "cumulative_weeks": 6107
       },
       {
         "date": "2025-07-07",
         "new_registrations": 6,
-        "camper_weeks_added": 11,
-        "cumulative_campers": 1189,
-        "cumulative_weeks": 6096
+        "camper_weeks_added": 13,
+        "cumulative_campers": 1192,
+        "cumulative_weeks": 6120
       },
       {
         "date": "2025-07-09",
         "new_registrations": 3,
         "camper_weeks_added": 5,
-        "cumulative_campers": 1192,
-        "cumulative_weeks": 6101
+        "cumulative_campers": 1195,
+        "cumulative_weeks": 6125
       },
       {
         "date": "2025-07-10",
         "new_registrations": 5,
-        "camper_weeks_added": 11,
-        "cumulative_campers": 1197,
-        "cumulative_weeks": 6112
+        "camper_weeks_added": 13,
+        "cumulative_campers": 1200,
+        "cumulative_weeks": 6138
       },
       {
         "date": "2025-07-11",
-        "new_registrations": 3,
-        "camper_weeks_added": 7,
-        "cumulative_campers": 1200,
-        "cumulative_weeks": 6119
+        "new_registrations": 4,
+        "camper_weeks_added": 14,
+        "cumulative_campers": 1204,
+        "cumulative_weeks": 6152
       },
       {
         "date": "2025-07-12",
         "new_registrations": 1,
         "camper_weeks_added": 1,
-        "cumulative_campers": 1201,
-        "cumulative_weeks": 6120
+        "cumulative_campers": 1205,
+        "cumulative_weeks": 6153
       },
       {
         "date": "2025-07-13",
         "new_registrations": 1,
-        "camper_weeks_added": 2,
-        "cumulative_campers": 1202,
-        "cumulative_weeks": 6122
+        "camper_weeks_added": 3,
+        "cumulative_campers": 1206,
+        "cumulative_weeks": 6156
       },
       {
         "date": "2025-07-14",
-        "new_registrations": 8,
-        "camper_weeks_added": 8,
-        "cumulative_campers": 1210,
-        "cumulative_weeks": 6130
+        "new_registrations": 7,
+        "camper_weeks_added": 7,
+        "cumulative_campers": 1213,
+        "cumulative_weeks": 6163
       },
       {
         "date": "2025-07-15",
         "new_registrations": 1,
         "camper_weeks_added": 2,
-        "cumulative_campers": 1211,
-        "cumulative_weeks": 6132
+        "cumulative_campers": 1214,
+        "cumulative_weeks": 6165
       },
       {
         "date": "2025-07-16",
-        "new_registrations": 3,
-        "camper_weeks_added": 3,
-        "cumulative_campers": 1214,
-        "cumulative_weeks": 6135
+        "new_registrations": 4,
+        "camper_weeks_added": 4,
+        "cumulative_campers": 1218,
+        "cumulative_weeks": 6169
       },
       {
         "date": "2025-07-17",
         "new_registrations": 9,
-        "camper_weeks_added": 15,
-        "cumulative_campers": 1223,
-        "cumulative_weeks": 6150
+        "camper_weeks_added": 16,
+        "cumulative_campers": 1227,
+        "cumulative_weeks": 6185
+      },
+      {
+        "date": "2025-07-20",
+        "new_registrations": 1,
+        "camper_weeks_added": 1,
+        "cumulative_campers": 1228,
+        "cumulative_weeks": 6186
       },
       {
         "date": "2025-07-21",
-        "new_registrations": 2,
-        "camper_weeks_added": 3,
-        "cumulative_campers": 1225,
-        "cumulative_weeks": 6153
+        "new_registrations": 3,
+        "camper_weeks_added": 5,
+        "cumulative_campers": 1231,
+        "cumulative_weeks": 6191
       },
       {
         "date": "2025-07-22",
-        "new_registrations": 3,
-        "camper_weeks_added": 3,
-        "cumulative_campers": 1228,
-        "cumulative_weeks": 6156
+        "new_registrations": 4,
+        "camper_weeks_added": 5,
+        "cumulative_campers": 1235,
+        "cumulative_weeks": 6196
       },
       {
         "date": "2025-07-23",
         "new_registrations": 1,
-        "camper_weeks_added": 1,
-        "cumulative_campers": 1229,
-        "cumulative_weeks": 6157
+        "camper_weeks_added": 2,
+        "cumulative_campers": 1236,
+        "cumulative_weeks": 6198
       },
       {
         "date": "2025-07-24",
         "new_registrations": 2,
         "camper_weeks_added": 2,
-        "cumulative_campers": 1231,
-        "cumulative_weeks": 6159
+        "cumulative_campers": 1238,
+        "cumulative_weeks": 6200
       },
       {
         "date": "2025-07-25",
-        "new_registrations": 5,
-        "camper_weeks_added": 10,
-        "cumulative_campers": 1236,
-        "cumulative_weeks": 6169
+        "new_registrations": 7,
+        "camper_weeks_added": 13,
+        "cumulative_campers": 1245,
+        "cumulative_weeks": 6213
+      },
+      {
+        "date": "2025-07-27",
+        "new_registrations": 1,
+        "camper_weeks_added": 1,
+        "cumulative_campers": 1246,
+        "cumulative_weeks": 6214
+      },
+      {
+        "date": "2025-07-28",
+        "new_registrations": 3,
+        "camper_weeks_added": 3,
+        "cumulative_campers": 1249,
+        "cumulative_weeks": 6217
       },
       {
         "date": "2025-08-01",
-        "new_registrations": 1,
-        "camper_weeks_added": 5,
-        "cumulative_campers": 1237,
-        "cumulative_weeks": 6174
+        "new_registrations": 3,
+        "camper_weeks_added": 7,
+        "cumulative_campers": 1252,
+        "cumulative_weeks": 6224
+      },
+      {
+        "date": "2025-08-04",
+        "new_registrations": 3,
+        "camper_weeks_added": 3,
+        "cumulative_campers": 1255,
+        "cumulative_weeks": 6227
       }
     ],
     "programs": [
       {
         "program": "Art Exploration",
-        "week_1": 14,
-        "week_2": 16,
+        "week_1": 33,
+        "week_2": 35,
+        "week_3": 41,
+        "week_4": 38,
+        "week_5": 33,
+        "week_6": 40,
+        "week_7": 39,
+        "week_8": 27,
+        "week_9": 0,
+        "total": 286,
+        "fte": 31.78
+      },
+      {
+        "program": "Basketball",
+        "week_1": 17,
+        "week_2": 25,
+        "week_3": 33,
+        "week_4": 20,
+        "week_5": 16,
+        "week_6": 24,
+        "week_7": 19,
+        "week_8": 17,
+        "week_9": 14,
+        "total": 185,
+        "fte": 20.56
+      },
+      {
+        "program": "Chaverim",
+        "week_1": 9,
+        "week_2": 18,
         "week_3": 18,
-        "week_4": 16,
-        "week_5": 15,
-        "week_6": 13,
-        "week_7": 8,
-        "week_8": 5,
-        "week_9": 0,
-        "total": 105,
-        "fte": 11.67
-      },
-      {
-        "program": "Teeny Tiny Tnuah",
-        "week_1": 3,
-        "week_2": 10,
-        "week_3": 10,
-        "week_4": 9,
-        "week_5": 0,
-        "week_6": 0,
-        "week_7": 0,
-        "week_8": 0,
-        "week_9": 0,
-        "total": 32,
-        "fte": 3.56
-      },
-      {
-        "program": "Tnuah 1",
-        "week_1": 7,
-        "week_2": 5,
-        "week_3": 8,
-        "week_4": 8,
-        "week_5": 7,
-        "week_6": 11,
-        "week_7": 13,
+        "week_4": 20,
+        "week_5": 19,
+        "week_6": 21,
+        "week_7": 17,
         "week_8": 14,
+        "week_9": 29,
+        "total": 165,
+        "fte": 18.33
+      },
+      {
+        "program": "Chaverim Children's Trust",
+        "week_1": 48,
+        "week_2": 48,
+        "week_3": 48,
+        "week_4": 48,
+        "week_5": 48,
+        "week_6": 48,
+        "week_7": 48,
+        "week_8": 48,
         "week_9": 0,
+        "total": 384,
+        "fte": 42.67
+      },
+      {
+        "program": "Competitive Gymnastics Team",
+        "week_1": 8,
+        "week_2": 9,
+        "week_3": 8,
+        "week_4": 7,
+        "week_5": 9,
+        "week_6": 7,
+        "week_7": 9,
+        "week_8": 9,
+        "week_9": 7,
         "total": 73,
         "fte": 8.11
       },
       {
-        "program": "Tiny Tnuah 1",
-        "week_1": 3,
-        "week_2": 4,
-        "week_3": 4,
-        "week_4": 5,
-        "week_5": 4,
-        "week_6": 5,
-        "week_7": 6,
-        "week_8": 7,
+        "program": "Extreme Tnuah",
+        "week_1": 0,
+        "week_2": 0,
+        "week_3": 0,
+        "week_4": 0,
+        "week_5": 12,
+        "week_6": 16,
+        "week_7": 14,
+        "week_8": 12,
         "week_9": 0,
-        "total": 38,
-        "fte": 4.22
+        "total": 54,
+        "fte": 6.0
       },
       {
-        "program": "Tnuah 2",
-        "week_1": 7,
-        "week_2": 11,
-        "week_3": 12,
-        "week_4": 12,
-        "week_5": 7,
-        "week_6": 8,
-        "week_7": 8,
-        "week_8": 9,
-        "week_9": 0,
-        "total": 74,
-        "fte": 8.22
-      },
-      {
-        "program": "Sports Academy",
-        "week_1": 5,
-        "week_2": 5,
-        "week_3": 6,
-        "week_4": 7,
-        "week_5": 8,
-        "week_6": 9,
-        "week_7": 10,
-        "week_8": 10,
-        "week_9": 0,
-        "total": 60,
-        "fte": 6.67
-      },
-      {
-        "program": "Giborim",
-        "week_1": 1,
-        "week_2": 2,
-        "week_3": 2,
-        "week_4": 1,
-        "week_5": 1,
+        "program": "Flag Football",
+        "week_1": 0,
+        "week_2": 0,
+        "week_3": 0,
+        "week_4": 0,
+        "week_5": 0,
         "week_6": 0,
-        "week_7": 1,
-        "week_8": 1,
-        "week_9": 2,
-        "total": 11,
-        "fte": 1.22
-      },
-      {
-        "program": "Giborim Children's Trust",
-        "week_1": 2,
-        "week_2": 2,
-        "week_3": 2,
-        "week_4": 2,
-        "week_5": 2,
-        "week_6": 2,
-        "week_7": 2,
-        "week_8": 2,
-        "week_9": 0,
+        "week_7": 0,
+        "week_8": 8,
+        "week_9": 8,
         "total": 16,
         "fte": 1.78
       },
       {
-        "program": "Recreational Gymnastics",
-        "week_1": 9,
-        "week_2": 12,
-        "week_3": 18,
-        "week_4": 14,
-        "week_5": 13,
-        "week_6": 17,
-        "week_7": 10,
-        "week_8": 8,
-        "week_9": 21,
-        "total": 122,
-        "fte": 13.56
+        "program": "Giborim",
+        "week_1": 6,
+        "week_2": 10,
+        "week_3": 7,
+        "week_4": 5,
+        "week_5": 8,
+        "week_6": 6,
+        "week_7": 6,
+        "week_8": 9,
+        "week_9": 19,
+        "total": 76,
+        "fte": 8.44
       },
       {
-        "program": "Madli-Teen",
-        "week_1": 1,
-        "week_2": 1,
-        "week_3": 0,
-        "week_4": 0,
-        "week_5": 1,
-        "week_6": 1,
-        "week_7": 0,
-        "week_8": 1,
-        "week_9": 1,
-        "total": 6,
-        "fte": 0.67
+        "program": "Giborim Children's Trust",
+        "week_1": 46,
+        "week_2": 46,
+        "week_3": 46,
+        "week_4": 46,
+        "week_5": 46,
+        "week_6": 46,
+        "week_7": 46,
+        "week_8": 46,
+        "week_9": 0,
+        "total": 368,
+        "fte": 40.89
       },
       {
-        "program": "Chaverim Children's Trust",
+        "program": "Koach Chaverim",
         "week_1": 1,
         "week_2": 1,
         "week_3": 1,
@@ -1403,74 +1417,74 @@
         "fte": 0.89
       },
       {
-        "program": "Tsofim Children's Trust",
-        "week_1": 3,
-        "week_2": 3,
-        "week_3": 3,
-        "week_4": 3,
-        "week_5": 3,
-        "week_6": 3,
-        "week_7": 3,
-        "week_8": 3,
-        "week_9": 0,
-        "total": 24,
-        "fte": 2.67
-      },
-      {
-        "program": "Tsofim",
-        "week_1": 3,
-        "week_2": 5,
-        "week_3": 4,
-        "week_4": 2,
-        "week_5": 4,
-        "week_6": 3,
-        "week_7": 3,
-        "week_8": 2,
-        "week_9": 4,
-        "total": 30,
-        "fte": 3.33
-      },
-      {
-        "program": "Tiny Tnuah 2",
-        "week_1": 1,
-        "week_2": 1,
+        "program": "Koach Madli-Teen",
+        "week_1": 0,
+        "week_2": 0,
         "week_3": 1,
-        "week_4": 2,
-        "week_5": 2,
-        "week_6": 2,
-        "week_7": 13,
-        "week_8": 11,
-        "week_9": 0,
-        "total": 33,
-        "fte": 3.67
-      },
-      {
-        "program": "Basketball",
-        "week_1": 1,
-        "week_2": 1,
-        "week_3": 6,
-        "week_4": 5,
+        "week_4": 1,
         "week_5": 1,
-        "week_6": 2,
-        "week_7": 0,
-        "week_8": 0,
+        "week_6": 1,
+        "week_7": 1,
+        "week_8": 1,
         "week_9": 0,
-        "total": 16,
-        "fte": 1.78
+        "total": 6,
+        "fte": 0.67
       },
       {
-        "program": "Competitive Gymnastics Team",
-        "week_1": 2,
-        "week_2": 3,
-        "week_3": 3,
-        "week_4": 2,
-        "week_5": 2,
-        "week_6": 2,
-        "week_7": 4,
-        "week_8": 2,
-        "week_9": 3,
-        "total": 23,
-        "fte": 2.56
+        "program": "Koach Yeladim",
+        "week_1": 0,
+        "week_2": 0,
+        "week_3": 0,
+        "week_4": 0,
+        "week_5": 1,
+        "week_6": 1,
+        "week_7": 1,
+        "week_8": 1,
+        "week_9": 0,
+        "total": 4,
+        "fte": 0.44
+      },
+      {
+        "program": "LIT Volunteer Staff",
+        "week_1": 4,
+        "week_2": 11,
+        "week_3": 11,
+        "week_4": 20,
+        "week_5": 12,
+        "week_6": 15,
+        "week_7": 14,
+        "week_8": 14,
+        "week_9": 11,
+        "total": 112,
+        "fte": 12.44
+      },
+      {
+        "program": "MMA Camp",
+        "week_1": 0,
+        "week_2": 0,
+        "week_3": 0,
+        "week_4": 0,
+        "week_5": 0,
+        "week_6": 33,
+        "week_7": 44,
+        "week_8": 49,
+        "week_9": 37,
+        "total": 163,
+        "fte": 18.11
+      },
+      {
+        "program": "Madatzim 9th Grade",
+        "week_1": 9,
+        "week_2": 11,
+        "week_3": 6,
+        "week_4": 10,
+        "week_5": 12,
+        "week_6": 9,
+        "week_7": 11,
+        "week_8": 11,
+        "week_9": 6,
+        "total": 85,
+        "fte": 9.44
       },
       {
         "program": "Madatzim CIT",
@@ -1487,242 +1501,32 @@
         "fte": 0.44
       },
       {
-        "program": "Soccer",
-        "week_1": 3,
-        "week_2": 5,
-        "week_3": 1,
-        "week_4": 5,
-        "week_5": 8,
-        "week_6": 10,
-        "week_7": 9,
-        "week_8": 7,
-        "week_9": 6,
-        "total": 54,
-        "fte": 6.0
-      },
-      {
-        "program": "Tennis Academy",
-        "week_1": 3,
-        "week_2": 4,
-        "week_3": 4,
-        "week_4": 3,
-        "week_5": 2,
-        "week_6": 4,
-        "week_7": 4,
-        "week_8": 2,
-        "week_9": 2,
-        "total": 28,
-        "fte": 3.11
-      },
-      {
-        "program": "Yeladim Children's Trust",
-        "week_1": 1,
-        "week_2": 1,
-        "week_3": 1,
-        "week_4": 1,
-        "week_5": 1,
-        "week_6": 1,
-        "week_7": 1,
-        "week_8": 1,
-        "week_9": 0,
-        "total": 8,
-        "fte": 0.89
-      },
-      {
-        "program": "Swim Academy",
-        "week_1": 1,
-        "week_2": 3,
-        "week_3": 3,
-        "week_4": 2,
-        "week_5": 5,
-        "week_6": 3,
-        "week_7": 4,
-        "week_8": 4,
-        "week_9": 0,
-        "total": 25,
-        "fte": 2.78
-      },
-      {
-        "program": "Theater Camp",
-        "week_1": 0,
-        "week_2": 7,
-        "week_3": 7,
-        "week_4": 7,
-        "week_5": 7,
-        "week_6": 4,
-        "week_7": 4,
-        "week_8": 4,
-        "week_9": 4,
-        "total": 44,
-        "fte": 4.89
-      },
-      {
-        "program": "PK3",
-        "week_1": 0,
+        "program": "Madli-Teen",
+        "week_1": 14,
         "week_2": 14,
-        "week_3": 16,
-        "week_4": 14,
-        "week_5": 14,
-        "week_6": 16,
-        "week_7": 15,
-        "week_8": 12,
+        "week_3": 12,
+        "week_4": 12,
+        "week_5": 13,
+        "week_6": 15,
+        "week_7": 14,
+        "week_8": 17,
         "week_9": 9,
-        "total": 110,
-        "fte": 12.22
+        "total": 120,
+        "fte": 13.33
       },
       {
-        "program": "PK2",
-        "week_1": 0,
-        "week_2": 5,
-        "week_3": 7,
-        "week_4": 5,
-        "week_5": 8,
-        "week_6": 8,
-        "week_7": 8,
-        "week_8": 7,
-        "week_9": 6,
-        "total": 54,
-        "fte": 6.0
-      },
-      {
-        "program": "Teen Travel",
-        "week_1": 0,
-        "week_2": 4,
-        "week_3": 5,
-        "week_4": 6,
-        "week_5": 4,
-        "week_6": 2,
-        "week_7": 2,
-        "week_8": 3,
-        "week_9": 0,
-        "total": 26,
-        "fte": 2.89
-      },
-      {
-        "program": "Toddler",
-        "week_1": 0,
-        "week_2": 4,
-        "week_3": 4,
-        "week_4": 4,
-        "week_5": 4,
-        "week_6": 4,
-        "week_7": 4,
-        "week_8": 4,
-        "week_9": 4,
-        "total": 32,
-        "fte": 3.56
-      },
-      {
-        "program": "PK4",
-        "week_1": 0,
-        "week_2": 4,
-        "week_3": 5,
-        "week_4": 5,
-        "week_5": 7,
+        "program": "Madli-Teen Children's Trust",
+        "week_1": 10,
+        "week_2": 10,
+        "week_3": 10,
+        "week_4": 10,
+        "week_5": 10,
         "week_6": 10,
-        "week_7": 9,
-        "week_8": 8,
-        "week_9": 4,
-        "total": 52,
-        "fte": 5.78
-      },
-      {
-        "program": "Tiny Tumblers Gymnastics",
-        "week_1": 0,
-        "week_2": 1,
-        "week_3": 3,
-        "week_4": 4,
-        "week_5": 8,
-        "week_6": 10,
-        "week_7": 9,
-        "week_8": 8,
-        "week_9": 13,
-        "total": 56,
-        "fte": 6.22
-      },
-      {
-        "program": "Chaverim",
-        "week_1": 0,
-        "week_2": 0,
-        "week_3": 0,
-        "week_4": 3,
-        "week_5": 3,
-        "week_6": 5,
-        "week_7": 4,
-        "week_8": 2,
-        "week_9": 5,
-        "total": 22,
-        "fte": 2.44
-      },
-      {
-        "program": "Extreme Tnuah",
-        "week_1": 0,
-        "week_2": 0,
-        "week_3": 0,
-        "week_4": 0,
-        "week_5": 2,
-        "week_6": 2,
-        "week_7": 2,
-        "week_8": 2,
+        "week_7": 10,
+        "week_8": 10,
         "week_9": 0,
-        "total": 8,
-        "fte": 0.89
-      },
-      {
-        "program": "Yeladim",
-        "week_1": 0,
-        "week_2": 0,
-        "week_3": 0,
-        "week_4": 0,
-        "week_5": 1,
-        "week_6": 0,
-        "week_7": 0,
-        "week_8": 0,
-        "week_9": 1,
-        "total": 2,
-        "fte": 0.22
-      },
-      {
-        "program": "Karate",
-        "week_1": 0,
-        "week_2": 0,
-        "week_3": 0,
-        "week_4": 0,
-        "week_5": 0,
-        "week_6": 4,
-        "week_7": 4,
-        "week_8": 7,
-        "week_9": 6,
-        "total": 21,
-        "fte": 2.33
-      },
-      {
-        "program": "Volleyball",
-        "week_1": 0,
-        "week_2": 0,
-        "week_3": 0,
-        "week_4": 0,
-        "week_5": 0,
-        "week_6": 2,
-        "week_7": 0,
-        "week_8": 0,
-        "week_9": 0,
-        "total": 2,
-        "fte": 0.22
-      },
-      {
-        "program": "Flag Football",
-        "week_1": 0,
-        "week_2": 0,
-        "week_3": 0,
-        "week_4": 0,
-        "week_5": 0,
-        "week_6": 0,
-        "week_7": 0,
-        "week_8": 1,
-        "week_9": 0,
-        "total": 1,
-        "fte": 0.11
+        "total": 80,
+        "fte": 8.89
       },
       {
         "program": "Music Camp",
@@ -1734,9 +1538,331 @@
         "week_6": 0,
         "week_7": 0,
         "week_8": 0,
-        "week_9": 2,
-        "total": 2,
-        "fte": 0.22
+        "week_9": 8,
+        "total": 8,
+        "fte": 0.89
+      },
+      {
+        "program": "Ometz",
+        "week_1": 0,
+        "week_2": 4,
+        "week_3": 5,
+        "week_4": 8,
+        "week_5": 6,
+        "week_6": 8,
+        "week_7": 8,
+        "week_8": 7,
+        "week_9": 0,
+        "total": 46,
+        "fte": 5.11
+      },
+      {
+        "program": "PK2",
+        "week_1": 0,
+        "week_2": 23,
+        "week_3": 24,
+        "week_4": 22,
+        "week_5": 26,
+        "week_6": 26,
+        "week_7": 25,
+        "week_8": 24,
+        "week_9": 21,
+        "total": 191,
+        "fte": 21.22
+      },
+      {
+        "program": "PK3",
+        "week_1": 0,
+        "week_2": 43,
+        "week_3": 51,
+        "week_4": 51,
+        "week_5": 53,
+        "week_6": 52,
+        "week_7": 50,
+        "week_8": 51,
+        "week_9": 45,
+        "total": 396,
+        "fte": 44.0
+      },
+      {
+        "program": "PK4",
+        "week_1": 0,
+        "week_2": 32,
+        "week_3": 36,
+        "week_4": 37,
+        "week_5": 35,
+        "week_6": 40,
+        "week_7": 37,
+        "week_8": 37,
+        "week_9": 34,
+        "total": 288,
+        "fte": 32.0
+      },
+      {
+        "program": "Recreational Gymnastics",
+        "week_1": 21,
+        "week_2": 41,
+        "week_3": 44,
+        "week_4": 42,
+        "week_5": 37,
+        "week_6": 43,
+        "week_7": 37,
+        "week_8": 36,
+        "week_9": 59,
+        "total": 360,
+        "fte": 40.0
+      },
+      {
+        "program": "Soccer",
+        "week_1": 14,
+        "week_2": 33,
+        "week_3": 25,
+        "week_4": 37,
+        "week_5": 63,
+        "week_6": 39,
+        "week_7": 44,
+        "week_8": 49,
+        "week_9": 40,
+        "total": 344,
+        "fte": 38.22
+      },
+      {
+        "program": "Sports Academy",
+        "week_1": 18,
+        "week_2": 23,
+        "week_3": 25,
+        "week_4": 28,
+        "week_5": 38,
+        "week_6": 41,
+        "week_7": 39,
+        "week_8": 31,
+        "week_9": 0,
+        "total": 243,
+        "fte": 27.0
+      },
+      {
+        "program": "Swim Academy",
+        "week_1": 13,
+        "week_2": 16,
+        "week_3": 10,
+        "week_4": 9,
+        "week_5": 12,
+        "week_6": 12,
+        "week_7": 14,
+        "week_8": 7,
+        "week_9": 0,
+        "total": 93,
+        "fte": 10.33
+      },
+      {
+        "program": "Teen Travel",
+        "week_1": 0,
+        "week_2": 16,
+        "week_3": 17,
+        "week_4": 23,
+        "week_5": 19,
+        "week_6": 10,
+        "week_7": 15,
+        "week_8": 15,
+        "week_9": 0,
+        "total": 115,
+        "fte": 12.78
+      },
+      {
+        "program": "Teeny Tiny Tnuah",
+        "week_1": 5,
+        "week_2": 17,
+        "week_3": 17,
+        "week_4": 16,
+        "week_5": 0,
+        "week_6": 0,
+        "week_7": 0,
+        "week_8": 0,
+        "week_9": 0,
+        "total": 55,
+        "fte": 6.11
+      },
+      {
+        "program": "Tennis Academy",
+        "week_1": 9,
+        "week_2": 17,
+        "week_3": 12,
+        "week_4": 12,
+        "week_5": 12,
+        "week_6": 20,
+        "week_7": 16,
+        "week_8": 6,
+        "week_9": 10,
+        "total": 114,
+        "fte": 12.67
+      },
+      {
+        "program": "Theater Camp",
+        "week_1": 0,
+        "week_2": 16,
+        "week_3": 18,
+        "week_4": 17,
+        "week_5": 18,
+        "week_6": 16,
+        "week_7": 17,
+        "week_8": 17,
+        "week_9": 17,
+        "total": 136,
+        "fte": 15.11
+      },
+      {
+        "program": "Tiny Tnuah 1",
+        "week_1": 4,
+        "week_2": 7,
+        "week_3": 7,
+        "week_4": 8,
+        "week_5": 16,
+        "week_6": 17,
+        "week_7": 22,
+        "week_8": 20,
+        "week_9": 0,
+        "total": 101,
+        "fte": 11.22
+      },
+      {
+        "program": "Tiny Tnuah 2",
+        "week_1": 2,
+        "week_2": 10,
+        "week_3": 12,
+        "week_4": 11,
+        "week_5": 18,
+        "week_6": 7,
+        "week_7": 25,
+        "week_8": 22,
+        "week_9": 0,
+        "total": 107,
+        "fte": 11.89
+      },
+      {
+        "program": "Tiny Tumblers Gymnastics",
+        "week_1": 6,
+        "week_2": 9,
+        "week_3": 9,
+        "week_4": 6,
+        "week_5": 15,
+        "week_6": 20,
+        "week_7": 20,
+        "week_8": 18,
+        "week_9": 23,
+        "total": 126,
+        "fte": 14.0
+      },
+      {
+        "program": "Tnuah 1",
+        "week_1": 13,
+        "week_2": 15,
+        "week_3": 17,
+        "week_4": 19,
+        "week_5": 14,
+        "week_6": 21,
+        "week_7": 25,
+        "week_8": 27,
+        "week_9": 0,
+        "total": 151,
+        "fte": 16.78
+      },
+      {
+        "program": "Tnuah 2",
+        "week_1": 14,
+        "week_2": 28,
+        "week_3": 30,
+        "week_4": 31,
+        "week_5": 28,
+        "week_6": 25,
+        "week_7": 29,
+        "week_8": 28,
+        "week_9": 0,
+        "total": 213,
+        "fte": 23.67
+      },
+      {
+        "program": "Toddler",
+        "week_1": 0,
+        "week_2": 11,
+        "week_3": 11,
+        "week_4": 11,
+        "week_5": 10,
+        "week_6": 12,
+        "week_7": 10,
+        "week_8": 12,
+        "week_9": 13,
+        "total": 90,
+        "fte": 10.0
+      },
+      {
+        "program": "Tsofim",
+        "week_1": 25,
+        "week_2": 33,
+        "week_3": 30,
+        "week_4": 31,
+        "week_5": 28,
+        "week_6": 25,
+        "week_7": 23,
+        "week_8": 24,
+        "week_9": 34,
+        "total": 253,
+        "fte": 28.11
+      },
+      {
+        "program": "Tsofim Children's Trust",
+        "week_1": 28,
+        "week_2": 28,
+        "week_3": 28,
+        "week_4": 28,
+        "week_5": 28,
+        "week_6": 28,
+        "week_7": 28,
+        "week_8": 28,
+        "week_9": 0,
+        "total": 224,
+        "fte": 24.89
+      },
+      {
+        "program": "Volleyball",
+        "week_1": 0,
+        "week_2": 0,
+        "week_3": 0,
+        "week_4": 0,
+        "week_5": 0,
+        "week_6": 16,
+        "week_7": 0,
+        "week_8": 0,
+        "week_9": 0,
+        "total": 16,
+        "fte": 1.78
+      },
+      {
+        "program": "Yeladim",
+        "week_1": 11,
+        "week_2": 12,
+        "week_3": 10,
+        "week_4": 9,
+        "week_5": 13,
+        "week_6": 10,
+        "week_7": 12,
+        "week_8": 12,
+        "week_9": 22,
+        "total": 111,
+        "fte": 12.33
+      },
+      {
+        "program": "Yeladim Children's Trust",
+        "week_1": 33,
+        "week_2": 33,
+        "week_3": 33,
+        "week_4": 33,
+        "week_5": 33,
+        "week_6": 33,
+        "week_7": 33,
+        "week_8": 33,
+        "week_9": 0,
+        "total": 264,
+        "fte": 29.33
       }
     ]
   },
