@@ -1864,6 +1864,7610 @@
         "total": 264,
         "fte": 29.33
       }
+    ],
+    "enrollments_by_date": [
+      {
+        "date": "2025-01-05",
+        "programs": {
+          "Art Exploration": {
+            "week_8": 2,
+            "week_1": 3,
+            "week_2": 2,
+            "week_3": 2,
+            "week_6": 3,
+            "week_7": 2,
+            "week_5": 2
+          },
+          "PK3": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_6": 2,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 1,
+            "week_9": 4
+          },
+          "Sports Academy": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tennis Academy": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Theater Camp": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_2": 3,
+            "week_3": 3,
+            "week_1": 2,
+            "week_4": 2
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_4": 1,
+            "week_5": 3,
+            "week_6": 4,
+            "week_7": 3,
+            "week_8": 3,
+            "week_9": 3
+          },
+          "Tnuah 1": {
+            "week_4": 3,
+            "week_5": 3,
+            "week_6": 4,
+            "week_7": 4,
+            "week_8": 5,
+            "week_1": 3,
+            "week_2": 3,
+            "week_3": 3
+          },
+          "Tnuah 2": {
+            "week_2": 4,
+            "week_3": 4,
+            "week_4": 3,
+            "week_6": 1,
+            "week_1": 3
+          }
+        }
+      },
+      {
+        "date": "2025-01-06",
+        "programs": {
+          "Art Exploration": {
+            "week_5": 8,
+            "week_6": 6,
+            "week_4": 2,
+            "week_1": 1,
+            "week_2": 4,
+            "week_3": 3
+          },
+          "Chaverim": {
+            "week_5": 2,
+            "week_4": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 1,
+            "week_9": 2
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Extreme Tnuah": {
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Giborim": {
+            "week_1": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_6": 4,
+            "week_7": 3,
+            "week_8": 5,
+            "week_9": 4
+          },
+          "Madli-Teen": {
+            "week_2": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_1": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK2": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_5": 3,
+            "week_6": 4,
+            "week_7": 4,
+            "week_4": 2,
+            "week_8": 3,
+            "week_9": 2
+          },
+          "PK3": {
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 3,
+            "week_5": 3,
+            "week_6": 3,
+            "week_7": 3,
+            "week_8": 3,
+            "week_9": 2
+          },
+          "PK4": {
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_1": 6,
+            "week_2": 7,
+            "week_3": 11,
+            "week_4": 8,
+            "week_9": 11,
+            "week_5": 4,
+            "week_6": 5,
+            "week_7": 5,
+            "week_8": 4
+          },
+          "Soccer": {
+            "week_2": 1,
+            "week_4": 5,
+            "week_5": 6,
+            "week_6": 6,
+            "week_7": 5,
+            "week_8": 4,
+            "week_9": 4,
+            "week_3": 1
+          },
+          "Sports Academy": {
+            "week_5": 4,
+            "week_6": 4,
+            "week_7": 5,
+            "week_8": 5,
+            "week_1": 2,
+            "week_2": 1,
+            "week_3": 2,
+            "week_4": 2
+          },
+          "Swim Academy": {
+            "week_5": 3,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Teen Travel": {
+            "week_3": 3,
+            "week_4": 3,
+            "week_8": 1,
+            "week_2": 2,
+            "week_5": 1,
+            "week_7": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 3,
+            "week_1": 1
+          },
+          "Tennis Academy": {
+            "week_6": 3,
+            "week_7": 3,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_8": 1
+          },
+          "Theater Camp": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_4": 2,
+            "week_7": 5,
+            "week_8": 6,
+            "week_6": 5,
+            "week_5": 4
+          },
+          "Tiny Tnuah 2": {
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 4,
+            "week_8": 4,
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_9": 5,
+            "week_4": 3,
+            "week_5": 2,
+            "week_3": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Tnuah 1": {
+            "week_1": 4,
+            "week_2": 2,
+            "week_3": 5,
+            "week_4": 5,
+            "week_5": 4,
+            "week_6": 6,
+            "week_7": 8,
+            "week_8": 8
+          },
+          "Tnuah 2": {
+            "week_2": 3,
+            "week_3": 4,
+            "week_4": 4,
+            "week_5": 3,
+            "week_6": 3,
+            "week_8": 5,
+            "week_1": 2,
+            "week_7": 4
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_9": 3,
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Yeladim": {
+            "week_5": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-07",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 6,
+            "week_2": 6,
+            "week_3": 6,
+            "week_4": 6
+          },
+          "Basketball": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1
+          },
+          "Chaverim": {
+            "week_6": 1,
+            "week_9": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_1": 1,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Flag Football": {
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_7": 1,
+            "week_8": 2,
+            "week_9": 1
+          },
+          "Music Camp": {
+            "week_9": 2
+          },
+          "PK2": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "PK3": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 1,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 5,
+            "week_6": 6,
+            "week_3": 4,
+            "week_1": 2,
+            "week_2": 2,
+            "week_4": 3,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_1": 1
+          },
+          "Swim Academy": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Teen Travel": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Tennis Academy": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_9": 2
+          },
+          "Theater Camp": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 6,
+            "week_8": 6
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_9": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Volleyball": {
+            "week_6": 2
+          }
+        }
+      },
+      {
+        "date": "2025-01-08",
+        "programs": {
+          "Art Exploration": {
+            "week_3": 2,
+            "week_4": 2,
+            "week_7": 1
+          },
+          "Madatzim CIT": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "PK3": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 2,
+            "week_6": 2
+          },
+          "Soccer": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Teen Travel": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_8": 1
+          },
+          "Theater Camp": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 1
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-09",
+        "programs": {
+          "PK3": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_9": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-10",
+        "programs": {
+          "Basketball": {
+            "week_3": 2,
+            "week_4": 1
+          },
+          "Chaverim": {
+            "week_4": 1
+          },
+          "Soccer": {
+            "week_1": 2,
+            "week_2": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-11",
+        "programs": {
+          "Basketball": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Soccer": {
+            "week_1": 1,
+            "week_2": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-12",
+        "programs": {
+          "Art Exploration": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Recreational Gymnastics": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_9": 2
+          },
+          "Tnuah 1": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-13",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Giborim": {
+            "week_2": 1
+          },
+          "Recreational Gymnastics": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tennis Academy": {
+            "week_1": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-14",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Chaverim": {
+            "week_9": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "PK3": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Tsofim": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-15",
+        "programs": {
+          "Chaverim": {
+            "week_4": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_1": 1,
+            "week_4": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_9": 1
+          },
+          "Tnuah 2": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_2": 3,
+            "week_3": 3,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 1,
+            "week_4": 2,
+            "week_1": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-16",
+        "programs": {
+          "Giborim": {
+            "week_3": 1
+          },
+          "Swim Academy": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tennis Academy": {
+            "week_2": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_9": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-01-17",
+        "programs": {
+          "Competitive Gymnastics Team": {
+            "week_7": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_9": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_4": 1
+          },
+          "Tnuah 2": {
+            "week_5": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-20",
+        "programs": {
+          "Art Exploration": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tnuah 2": {
+            "week_2": 1,
+            "week_4": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-21",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-22",
+        "programs": {
+          "Art Exploration": {
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Giborim": {
+            "week_9": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Teen Travel": {
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Theater Camp": {
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Tnuah 2": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-23",
+        "programs": {
+          "Art Exploration": {
+            "week_2": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Recreational Gymnastics": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_7": 1,
+            "week_5": 1,
+            "week_6": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-24",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Chaverim": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK2": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK3": {
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2,
+            "week_2": 1
+          },
+          "Swim Academy": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 1
+          },
+          "Yeladim": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-25",
+        "programs": {
+          "Art Exploration": {
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Basketball": {
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Soccer": {
+            "week_2": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Tennis Academy": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_1": 2,
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-26",
+        "programs": {
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tnuah 2": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-27",
+        "programs": {
+          "Art Exploration": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "PK2": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tnuah 2": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-28",
+        "programs": {
+          "PK3": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "PK4": {
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 3,
+            "week_6": 4,
+            "week_7": 4,
+            "week_8": 4,
+            "week_5": 2,
+            "week_9": 2
+          },
+          "Tnuah 2": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Toddler": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          }
+        }
+      },
+      {
+        "date": "2025-01-29",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "MMA Camp": {
+            "week_9": 1
+          },
+          "PK3": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_4": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Sports Academy": {
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Swim Academy": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2
+          },
+          "Tiny Tnuah 1": {
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-30",
+        "programs": {
+          "Basketball": {
+            "week_9": 2,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Recreational Gymnastics": {
+            "week_3": 1,
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_5": 1
+          },
+          "Teen Travel": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-01-31",
+        "programs": {
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 1,
+            "week_9": 2
+          },
+          "Recreational Gymnastics": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 1": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-01",
+        "programs": {
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Swim Academy": {
+            "week_1": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-02",
+        "programs": {
+          "PK4": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Recreational Gymnastics": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 2
+          }
+        }
+      },
+      {
+        "date": "2025-02-03",
+        "programs": {
+          "Basketball": {
+            "week_5": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Flag Football": {
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_7": 2,
+            "week_8": 2,
+            "week_6": 1,
+            "week_9": 2
+          },
+          "PK3": {
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_2": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_4": 1
+          },
+          "Soccer": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Sports Academy": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_5": 1
+          },
+          "Tsofim": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-04",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Basketball": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Chaverim": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "MMA Camp": {
+            "week_8": 3,
+            "week_7": 2,
+            "week_9": 2
+          },
+          "PK3": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_2": 3,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tennis Academy": {
+            "week_7": 1
+          },
+          "Theater Camp": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-05",
+        "programs": {
+          "Art Exploration": {
+            "week_6": 2,
+            "week_7": 2
+          },
+          "Chaverim": {
+            "week_9": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Extreme Tnuah": {
+            "week_5": 3,
+            "week_6": 3,
+            "week_7": 3,
+            "week_8": 2
+          },
+          "Giborim": {
+            "week_1": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_6": 2,
+            "week_7": 2
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 3,
+            "week_7": 3,
+            "week_8": 4,
+            "week_9": 3,
+            "week_6": 3
+          },
+          "Sports Academy": {
+            "week_6": 1,
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Swim Academy": {
+            "week_4": 1,
+            "week_5": 2,
+            "week_6": 1
+          },
+          "Teen Travel": {
+            "week_4": 1,
+            "week_2": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tennis Academy": {
+            "week_6": 1,
+            "week_7": 2
+          },
+          "Theater Camp": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_9": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 1": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 2": {
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 1
+          },
+          "Tsofim": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Yeladim": {
+            "week_3": 2,
+            "week_8": 1,
+            "week_9": 1,
+            "week_1": 1,
+            "week_2": 1,
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-06",
+        "programs": {
+          "Basketball": {
+            "week_1": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Flag Football": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Giborim": {
+            "week_5": 1
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 2,
+            "week_9": 1
+          },
+          "Madli-Teen": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tnuah 2": {
+            "week_2": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          },
+          "Yeladim": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-07",
+        "programs": {
+          "Art Exploration": {
+            "week_4": 1,
+            "week_1": 3,
+            "week_2": 5,
+            "week_5": 1,
+            "week_3": 2
+          },
+          "Chaverim": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Extreme Tnuah": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_6": 3,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Theater Camp": {
+            "week_6": 3,
+            "week_7": 3,
+            "week_8": 3,
+            "week_9": 3,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_1": 1
+          },
+          "Tnuah 1": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_5": 2,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_2": 2,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-08",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-09",
+        "programs": {
+          "Basketball": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "MMA Camp": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Sports Academy": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tsofim": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-02-10",
+        "programs": {
+          "Art Exploration": {
+            "week_8": 1
+          },
+          "Basketball": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Chaverim": {
+            "week_1": 3,
+            "week_9": 5,
+            "week_2": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 1,
+            "week_3": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Flag Football": {
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK3": {
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 2,
+            "week_5": 3,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 1
+          },
+          "Recreational Gymnastics": {
+            "week_9": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_8": 2,
+            "week_9": 2,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Swim Academy": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tennis Academy": {
+            "week_6": 2,
+            "week_7": 1,
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 2,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 1": {
+            "week_2": 2,
+            "week_8": 2,
+            "week_1": 1,
+            "week_3": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 3,
+            "week_5": 3,
+            "week_8": 2,
+            "week_6": 1
+          },
+          "Tsofim": {
+            "week_6": 2,
+            "week_7": 1,
+            "week_1": 3,
+            "week_2": 3,
+            "week_4": 2,
+            "week_5": 2,
+            "week_3": 1,
+            "week_9": 1
+          },
+          "Yeladim": {
+            "week_4": 1,
+            "week_5": 2,
+            "week_7": 2,
+            "week_6": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-11",
+        "programs": {
+          "Art Exploration": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Basketball": {
+            "week_1": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Chaverim": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Flag Football": {
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 2,
+            "week_9": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK3": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_9": 3,
+            "week_2": 1,
+            "week_3": 2,
+            "week_4": 2,
+            "week_6": 2
+          },
+          "Soccer": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_7": 3,
+            "week_8": 2,
+            "week_9": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2
+          },
+          "Swim Academy": {
+            "week_2": 1
+          },
+          "Theater Camp": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 1": {
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Tnuah 2": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1
+          },
+          "Volleyball": {
+            "week_6": 2
+          }
+        }
+      },
+      {
+        "date": "2025-02-12",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Basketball": {
+            "week_5": 1,
+            "week_7": 2,
+            "week_1": 2,
+            "week_4": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_1": 2,
+            "week_2": 3,
+            "week_3": 2,
+            "week_4": 3,
+            "week_5": 3,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 1
+          },
+          "Extreme Tnuah": {
+            "week_5": 2,
+            "week_7": 2,
+            "week_6": 1,
+            "week_8": 1
+          },
+          "Flag Football": {
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_8": 2
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 3,
+            "week_6": 3,
+            "week_7": 3,
+            "week_8": 3,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_9": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_8": 2,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Sports Academy": {
+            "week_6": 3,
+            "week_7": 2
+          },
+          "Swim Academy": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 1
+          },
+          "Tennis Academy": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_4": 2,
+            "week_5": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Tnuah 1": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tnuah 2": {
+            "week_6": 2,
+            "week_7": 3,
+            "week_8": 3,
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_7": 2,
+            "week_8": 2,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Volleyball": {
+            "week_6": 2
+          }
+        }
+      },
+      {
+        "date": "2025-02-13",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 4,
+            "week_2": 4,
+            "week_3": 3,
+            "week_5": 4,
+            "week_6": 2,
+            "week_7": 2,
+            "week_4": 2,
+            "week_8": 1
+          },
+          "Basketball": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Chaverim": {
+            "week_3": 2,
+            "week_4": 2,
+            "week_9": 1,
+            "week_2": 1
+          },
+          "Extreme Tnuah": {
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_5": 1
+          },
+          "MMA Camp": {
+            "week_9": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Madatzim 9th Grade": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 3,
+            "week_6": 3,
+            "week_9": 1,
+            "week_5": 2,
+            "week_7": 2,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_4": 3,
+            "week_5": 4,
+            "week_6": 4,
+            "week_7": 3,
+            "week_8": 3,
+            "week_9": 3,
+            "week_1": 2,
+            "week_2": 3,
+            "week_3": 2
+          },
+          "Soccer": {
+            "week_4": 8,
+            "week_5": 9,
+            "week_9": 2,
+            "week_2": 1,
+            "week_3": 2,
+            "week_6": 2,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Sports Academy": {
+            "week_6": 4,
+            "week_7": 2,
+            "week_1": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_8": 1
+          },
+          "Swim Academy": {
+            "week_1": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Teen Travel": {
+            "week_2": 1,
+            "week_4": 3,
+            "week_5": 2,
+            "week_3": 1
+          },
+          "Theater Camp": {
+            "week_6": 3,
+            "week_7": 3,
+            "week_8": 3,
+            "week_9": 3,
+            "week_5": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_1": 1,
+            "week_2": 2,
+            "week_3": 3,
+            "week_4": 3,
+            "week_5": 1
+          },
+          "Tnuah 1": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 2": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_9": 3,
+            "week_1": 2,
+            "week_2": 2,
+            "week_7": 1,
+            "week_8": 2,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          },
+          "Yeladim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-14",
+        "programs": {
+          "Art Exploration": {
+            "week_6": 6,
+            "week_7": 3,
+            "week_8": 3,
+            "week_3": 5,
+            "week_4": 3,
+            "week_5": 3,
+            "week_2": 1
+          },
+          "Basketball": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_9": 1
+          },
+          "Chaverim": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_4": 2,
+            "week_9": 1,
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Extreme Tnuah": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Flag Football": {
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_6": 3,
+            "week_7": 4,
+            "week_8": 4,
+            "week_9": 2
+          },
+          "Madatzim 9th Grade": {
+            "week_1": 3,
+            "week_2": 3,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 3,
+            "week_6": 3,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 1
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK2": {
+            "week_6": 4,
+            "week_7": 4,
+            "week_8": 5,
+            "week_9": 5,
+            "week_2": 5,
+            "week_3": 5,
+            "week_4": 5,
+            "week_5": 3
+          },
+          "PK3": {
+            "week_2": 10,
+            "week_3": 11,
+            "week_4": 11,
+            "week_5": 12,
+            "week_6": 12,
+            "week_7": 12,
+            "week_8": 10,
+            "week_9": 11
+          },
+          "PK4": {
+            "week_2": 6,
+            "week_3": 6,
+            "week_4": 6,
+            "week_5": 6,
+            "week_6": 6,
+            "week_7": 6,
+            "week_8": 6,
+            "week_9": 5
+          },
+          "Recreational Gymnastics": {
+            "week_1": 4,
+            "week_2": 5,
+            "week_3": 2,
+            "week_4": 3,
+            "week_7": 4,
+            "week_8": 3,
+            "week_9": 7,
+            "week_5": 2,
+            "week_6": 1
+          },
+          "Soccer": {
+            "week_1": 1,
+            "week_2": 2,
+            "week_3": 2,
+            "week_5": 4,
+            "week_7": 3,
+            "week_8": 3,
+            "week_4": 3,
+            "week_6": 2,
+            "week_9": 5
+          },
+          "Sports Academy": {
+            "week_6": 5,
+            "week_1": 3,
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 4,
+            "week_5": 4,
+            "week_7": 4,
+            "week_8": 3
+          },
+          "Swim Academy": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Teen Travel": {
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tennis Academy": {
+            "week_1": 3,
+            "week_2": 3,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Theater Camp": {
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_2": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 3,
+            "week_6": 2,
+            "week_7": 3,
+            "week_8": 2
+          },
+          "Tiny Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_8": 1,
+            "week_9": 4,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tnuah 1": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_8": 3,
+            "week_6": 3,
+            "week_7": 2,
+            "week_5": 1
+          },
+          "Tnuah 2": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 2,
+            "week_8": 2,
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 1,
+            "week_9": 2
+          },
+          "Yeladim": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-15",
+        "programs": {
+          "Art Exploration": {
+            "week_3": 4,
+            "week_6": 6,
+            "week_7": 6,
+            "week_5": 3,
+            "week_8": 1
+          },
+          "Basketball": {
+            "week_5": 2,
+            "week_2": 1,
+            "week_3": 2,
+            "week_4": 1,
+            "week_9": 1,
+            "week_1": 1,
+            "week_8": 1,
+            "week_6": 1
+          },
+          "Chaverim": {
+            "week_5": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_1": 1,
+            "week_6": 2,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Extreme Tnuah": {
+            "week_5": 1,
+            "week_6": 3,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Flag Football": {
+            "week_9": 2,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_5": 2,
+            "week_2": 2,
+            "week_3": 1,
+            "week_6": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Koach Chaverim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_8": 5,
+            "week_6": 2,
+            "week_9": 5,
+            "week_7": 5
+          },
+          "Madli-Teen": {
+            "week_9": 1,
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Madli-Teen Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "PK3": {
+            "week_2": 2,
+            "week_3": 3,
+            "week_4": 4,
+            "week_5": 4,
+            "week_6": 5,
+            "week_7": 4,
+            "week_8": 4,
+            "week_9": 2
+          },
+          "PK4": {
+            "week_3": 2,
+            "week_2": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Recreational Gymnastics": {
+            "week_3": 4,
+            "week_4": 4,
+            "week_5": 2,
+            "week_6": 5,
+            "week_7": 3,
+            "week_8": 4,
+            "week_9": 3,
+            "week_2": 4
+          },
+          "Soccer": {
+            "week_6": 4,
+            "week_8": 4,
+            "week_2": 5,
+            "week_5": 5,
+            "week_3": 3,
+            "week_4": 1,
+            "week_1": 1
+          },
+          "Sports Academy": {
+            "week_5": 6,
+            "week_7": 5,
+            "week_8": 3,
+            "week_4": 4,
+            "week_3": 3,
+            "week_2": 1,
+            "week_6": 1
+          },
+          "Swim Academy": {
+            "week_1": 3,
+            "week_2": 2,
+            "week_5": 1,
+            "week_6": 2,
+            "week_7": 1
+          },
+          "Teen Travel": {
+            "week_4": 4,
+            "week_5": 4,
+            "week_6": 1,
+            "week_7": 2,
+            "week_8": 1,
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tennis Academy": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Theater Camp": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2
+          },
+          "Tiny Tnuah 1": {
+            "week_3": 2,
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 2,
+            "week_8": 1,
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_5": 3,
+            "week_7": 1,
+            "week_8": 1,
+            "week_6": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_8": 2,
+            "week_9": 1,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 1
+          },
+          "Tnuah 1": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 2,
+            "week_4": 3,
+            "week_6": 1,
+            "week_8": 2,
+            "week_7": 2
+          },
+          "Tnuah 2": {
+            "week_1": 3,
+            "week_2": 5,
+            "week_3": 5,
+            "week_4": 4,
+            "week_6": 3,
+            "week_7": 2,
+            "week_8": 1,
+            "week_5": 2
+          },
+          "Tsofim": {
+            "week_7": 2,
+            "week_8": 2,
+            "week_1": 1,
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 1
+          },
+          "Yeladim": {
+            "week_2": 2,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 2,
+            "week_8": 2,
+            "week_9": 2,
+            "week_1": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-16",
+        "programs": {
+          "Flag Football": {
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-17",
+        "programs": {
+          "Art Exploration": {
+            "week_6": 2
+          },
+          "Tiny Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tnuah 2": {
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-18",
+        "programs": {
+          "Basketball": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_8": 1
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-19",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_1": 1,
+            "week_4": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 2,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK3": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_5": 1
+          },
+          "Sports Academy": {
+            "week_1": 1,
+            "week_3": 2,
+            "week_2": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Tsofim": {
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-20",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Toddler": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-21",
+        "programs": {
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Sports Academy": {
+            "week_8": 1
+          },
+          "Theater Camp": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-23",
+        "programs": {
+          "Chaverim": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-24",
+        "programs": {
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 3,
+            "week_8": 2
+          },
+          "Sports Academy": {
+            "week_2": 1,
+            "week_3": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-25",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Madli-Teen": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Madli-Teen Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 2,
+            "week_8": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_1": 1
+          },
+          "Tsofim": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_9": 2
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-26",
+        "programs": {
+          "Chaverim": {
+            "week_9": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-27",
+        "programs": {
+          "MMA Camp": {
+            "week_9": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-02-28",
+        "programs": {
+          "Chaverim": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Giborim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-03-03",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Music Camp": {
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-04",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 3,
+            "week_4": 3
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_6": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 3,
+            "week_6": 3,
+            "week_7": 2,
+            "week_8": 1
+          },
+          "Sports Academy": {
+            "week_1": 1,
+            "week_5": 1,
+            "week_7": 1
+          },
+          "Swim Academy": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Teen Travel": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-05",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-07",
+        "programs": {
+          "Chaverim": {
+            "week_9": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-10",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-03-11",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1
+          },
+          "MMA Camp": {
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Soccer": {
+            "week_1": 2,
+            "week_2": 2
+          },
+          "Tiny Tnuah 1": {
+            "week_2": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_9": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim": {
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-12",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-13",
+        "programs": {
+          "Madli-Teen": {
+            "week_6": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Teen Travel": {
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-14",
+        "programs": {
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_6": 1,
+            "week_8": 1
+          },
+          "Teen Travel": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-15",
+        "programs": {
+          "Chaverim": {
+            "week_9": 1,
+            "week_6": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_3": 1,
+            "week_4": 2,
+            "week_5": 1
+          },
+          "Sports Academy": {
+            "week_2": 1
+          },
+          "Tennis Academy": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Yeladim": {
+            "week_1": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-16",
+        "programs": {
+          "Basketball": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-18",
+        "programs": {
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-19",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Madli-Teen Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-20",
+        "programs": {
+          "Chaverim": {
+            "week_9": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-21",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim": {
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-24",
+        "programs": {
+          "Soccer": {
+            "week_6": 2,
+            "week_7": 2,
+            "week_9": 2
+          }
+        }
+      },
+      {
+        "date": "2025-03-25",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_9": 1
+          },
+          "Madli-Teen Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Teeny Tiny Tnuah": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-27",
+        "programs": {
+          "Tiny Tumblers Gymnastics": {
+            "week_7": 1,
+            "week_5": 1,
+            "week_6": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-28",
+        "programs": {
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_4": 2,
+            "week_3": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_5": 2,
+            "week_6": 1,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Tsofim": {
+            "week_9": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-29",
+        "programs": {
+          "PK2": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-03-30",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-03-31",
+        "programs": {
+          "Giborim": {
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_9": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-01",
+        "programs": {
+          "Art Exploration": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Music Camp": {
+            "week_9": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tennis Academy": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-04-02",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_3": 1
+          },
+          "Teen Travel": {
+            "week_2": 1,
+            "week_4": 1,
+            "week_8": 1
+          },
+          "Tnuah 2": {
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-03",
+        "programs": {
+          "Extreme Tnuah": {
+            "week_7": 2,
+            "week_8": 2
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tennis Academy": {
+            "week_2": 1,
+            "week_3": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-04",
+        "programs": {
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-05",
+        "programs": {
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-06",
+        "programs": {
+          "Recreational Gymnastics": {
+            "week_6": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_5": 1
+          },
+          "Tsofim": {
+            "week_2": 1,
+            "week_3": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-07",
+        "programs": {
+          "Chaverim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-08",
+        "programs": {
+          "Chaverim": {
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Theater Camp": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tnuah 1": {
+            "week_1": 1,
+            "week_2": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-09",
+        "programs": {
+          "PK3": {
+            "week_4": 1
+          },
+          "PK4": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Soccer": {
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_2": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-10",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "PK2": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 1
+          },
+          "Soccer": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_6": 1,
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-11",
+        "programs": {
+          "Recreational Gymnastics": {
+            "week_3": 1
+          },
+          "Soccer": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tnuah 1": {
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-13",
+        "programs": {
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-14",
+        "programs": {
+          "Basketball": {
+            "week_3": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_4": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Teen Travel": {
+            "week_5": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-16",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-17",
+        "programs": {
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_4": 2,
+            "week_7": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tnuah 2": {
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-21",
+        "programs": {
+          "Basketball": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Recreational Gymnastics": {
+            "week_9": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tnuah 2": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-22",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-23",
+        "programs": {
+          "Art Exploration": {
+            "week_2": 1,
+            "week_4": 1
+          },
+          "Giborim": {
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_1": 1,
+            "week_3": 1,
+            "week_5": 1
+          },
+          "Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tsofim": {
+            "week_9": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim": {
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-04-24",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Soccer": {
+            "week_3": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-25",
+        "programs": {
+          "PK4": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Yeladim": {
+            "week_1": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-26",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_5": 1
+          },
+          "PK2": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Teen Travel": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-27",
+        "programs": {
+          "Tsofim": {
+            "week_1": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Yeladim": {
+            "week_1": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-28",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Sports Academy": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-29",
+        "programs": {
+          "Basketball": {
+            "week_1": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "LIT Volunteer Staff": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_1": 2,
+            "week_2": 1
+          },
+          "Madli-Teen Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-04-30",
+        "programs": {
+          "Art Exploration": {
+            "week_4": 1
+          },
+          "Basketball": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_1": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_3": 3,
+            "week_5": 1,
+            "week_6": 1,
+            "week_1": 2,
+            "week_2": 2,
+            "week_4": 2
+          },
+          "Toddler": {
+            "week_2": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-01",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_4": 2
+          },
+          "Soccer": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Sports Academy": {
+            "week_6": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_5": 1
+          },
+          "Tnuah 2": {
+            "week_5": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-05-02",
+        "programs": {
+          "Basketball": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Swim Academy": {
+            "week_6": 1,
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-03",
+        "programs": {
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-04",
+        "programs": {
+          "Chaverim": {
+            "week_2": 2,
+            "week_3": 2
+          }
+        }
+      },
+      {
+        "date": "2025-05-05",
+        "programs": {
+          "Basketball": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_9": 2,
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_4": 1,
+            "week_5": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Soccer": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Sports Academy": {
+            "week_5": 1
+          },
+          "Swim Academy": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teen Travel": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Tennis Academy": {
+            "week_5": 1,
+            "week_6": 2,
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-06",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2
+          },
+          "Madatzim 9th Grade": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_2": 1,
+            "week_4": 1
+          },
+          "Teen Travel": {
+            "week_2": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_9": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-07",
+        "programs": {
+          "Art Exploration": {
+            "week_4": 2,
+            "week_1": 1
+          },
+          "Basketball": {
+            "week_6": 1
+          },
+          "Chaverim": {
+            "week_2": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Flag Football": {
+            "week_9": 1
+          },
+          "Koach Madli-Teen": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 2,
+            "week_3": 1
+          },
+          "Soccer": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Sports Academy": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Swim Academy": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-08",
+        "programs": {
+          "Basketball": {
+            "week_1": 2,
+            "week_2": 1
+          },
+          "PK3": {
+            "week_2": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Tnuah 2": {
+            "week_2": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-09",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 3,
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 3,
+            "week_5": 3,
+            "week_6": 3,
+            "week_7": 3,
+            "week_8": 3
+          },
+          "Competitive Gymnastics Team": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-10",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1
+          },
+          "Chaverim": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-11",
+        "programs": {
+          "Recreational Gymnastics": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-12",
+        "programs": {
+          "Basketball": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Chaverim": {
+            "week_9": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_9": 1
+          },
+          "Tennis Academy": {
+            "week_2": 1,
+            "week_9": 1
+          },
+          "Tnuah 2": {
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-13",
+        "programs": {
+          "Basketball": {
+            "week_2": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "MMA Camp": {
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_6": 1
+          },
+          "Swim Academy": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Tennis Academy": {
+            "week_2": 2,
+            "week_9": 2
+          },
+          "Yeladim": {
+            "week_6": 1,
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-14",
+        "programs": {
+          "Art Exploration": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_2": 1
+          },
+          "Recreational Gymnastics": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_7": 2,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_7": 1
+          },
+          "Yeladim": {
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-15",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 2,
+            "week_8": 1
+          },
+          "Basketball": {
+            "week_6": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Recreational Gymnastics": {
+            "week_6": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_5": 1,
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Sports Academy": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Theater Camp": {
+            "week_3": 1
+          },
+          "Yeladim": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-16",
+        "programs": {
+          "Tsofim": {
+            "week_2": 1
+          },
+          "Yeladim": {
+            "week_2": 2,
+            "week_1": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-17",
+        "programs": {
+          "Soccer": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tnuah 1": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Yeladim": {
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-18",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1,
+            "week_6": 1
+          },
+          "Madli-Teen": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim": {
+            "week_2": 1,
+            "week_3": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-19",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1,
+            "week_5": 1
+          },
+          "Yeladim": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-20",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 3,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Basketball": {
+            "week_2": 1,
+            "week_3": 2,
+            "week_8": 2,
+            "week_9": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Chaverim": {
+            "week_9": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Madli-Teen": {
+            "week_2": 1,
+            "week_9": 1
+          },
+          "Madli-Teen Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Music Camp": {
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Teeny Tiny Tnuah": {
+            "week_2": 1
+          },
+          "Tennis Academy": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Theater Camp": {
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 1": {
+            "week_2": 1
+          },
+          "Tnuah 2": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Volleyball": {
+            "week_6": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-21",
+        "programs": {
+          "Basketball": {
+            "week_6": 3
+          },
+          "Chaverim": {
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_5": 2
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2
+          },
+          "Madatzim 9th Grade": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Music Camp": {
+            "week_9": 1
+          },
+          "PK3": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "PK4": {
+            "week_2": 2,
+            "week_4": 2,
+            "week_5": 2
+          },
+          "Recreational Gymnastics": {
+            "week_2": 2,
+            "week_4": 1,
+            "week_5": 1,
+            "week_1": 1,
+            "week_3": 1,
+            "week_6": 1
+          },
+          "Soccer": {
+            "week_1": 3,
+            "week_2": 3,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_9": 1
+          },
+          "Teen Travel": {
+            "week_4": 1
+          },
+          "Tennis Academy": {
+            "week_2": 1
+          },
+          "Tsofim": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_9": 2
+          },
+          "Yeladim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 2,
+            "week_6": 2
+          }
+        }
+      },
+      {
+        "date": "2025-05-22",
+        "programs": {
+          "Basketball": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Giborim": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Tnuah 2": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tsofim": {
+            "week_1": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-23",
+        "programs": {
+          "Basketball": {
+            "week_7": 2
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Soccer": {
+            "week_8": 2
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-24",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-25",
+        "programs": {
+          "Basketball": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 2
+          },
+          "Flag Football": {
+            "week_9": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Sports Academy": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-26",
+        "programs": {
+          "Madli-Teen": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "PK3": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_9": 2
+          },
+          "Swim Academy": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_8": 1
+          },
+          "Tnuah 2": {
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-27",
+        "programs": {
+          "Art Exploration": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 2,
+            "week_8": 1
+          },
+          "Basketball": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 4,
+            "week_2": 4,
+            "week_3": 4,
+            "week_4": 4,
+            "week_5": 4,
+            "week_6": 4,
+            "week_7": 4,
+            "week_8": 4
+          },
+          "Flag Football": {
+            "week_8": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Madli-Teen Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Music Camp": {
+            "week_9": 1
+          },
+          "PK4": {
+            "week_3": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_4": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Sports Academy": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 2,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Tnuah 2": {
+            "week_3": 1
+          },
+          "Tsofim": {
+            "week_8": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          },
+          "Yeladim": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          }
+        }
+      },
+      {
+        "date": "2025-05-28",
+        "programs": {
+          "Chaverim": {
+            "week_9": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_9": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 3,
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 3,
+            "week_5": 3,
+            "week_6": 3,
+            "week_7": 3,
+            "week_8": 3
+          },
+          "MMA Camp": {
+            "week_9": 1
+          },
+          "PK2": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-29",
+        "programs": {
+          "Art Exploration": {
+            "week_4": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_2": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_3": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-30",
+        "programs": {
+          "Chaverim": {
+            "week_7": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_5": 4,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Swim Academy": {
+            "week_7": 1
+          },
+          "Teen Travel": {
+            "week_2": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 1": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-05-31",
+        "programs": {
+          "Sports Academy": {
+            "week_5": 1
+          },
+          "Tennis Academy": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tnuah 1": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-01",
+        "programs": {
+          "Chaverim": {
+            "week_1": 1,
+            "week_3": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "PK3": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_6": 1
+          },
+          "Soccer": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_7": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Tnuah 2": {
+            "week_7": 2,
+            "week_8": 1,
+            "week_6": 1
+          },
+          "Tsofim": {
+            "week_1": 1,
+            "week_3": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-02",
+        "programs": {
+          "Basketball": {
+            "week_2": 2,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-03",
+        "programs": {
+          "Chaverim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_2": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Tennis Academy": {
+            "week_3": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-04",
+        "programs": {
+          "Basketball": {
+            "week_2": 2,
+            "week_3": 1,
+            "week_5": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Chaverim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Competitive Gymnastics Team": {
+            "week_1": 1,
+            "week_3": 1
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Ometz": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_3": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1,
+            "week_2": 1
+          },
+          "Sports Academy": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_5": 2,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Swim Academy": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_2": 1
+          },
+          "Yeladim": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-05",
+        "programs": {
+          "Chaverim": {
+            "week_1": 1,
+            "week_2": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Madli-Teen": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Sports Academy": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-06",
+        "programs": {
+          "Art Exploration": {
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 1,
+            "week_8": 1,
+            "week_2": 1
+          },
+          "Chaverim": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 3,
+            "week_2": 3,
+            "week_3": 3,
+            "week_4": 3,
+            "week_5": 3,
+            "week_6": 3,
+            "week_7": 3,
+            "week_8": 3
+          },
+          "Giborim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "MMA Camp": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Madli-Teen": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Ometz": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1
+          },
+          "PK2": {
+            "week_2": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "PK3": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_2": 1
+          },
+          "Swim Academy": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Tsofim": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-07",
+        "programs": {
+          "Chaverim": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-08",
+        "programs": {
+          "Art Exploration": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Recreational Gymnastics": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_2": 1,
+            "week_3": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-09",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Teen Travel": {
+            "week_2": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-10",
+        "programs": {
+          "Basketball": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Chaverim": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Giborim": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_2": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_2": 1,
+            "week_4": 1,
+            "week_9": 1
+          },
+          "Tennis Academy": {
+            "week_2": 1
+          },
+          "Tiny Tnuah 2": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Tnuah 2": {
+            "week_5": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-11",
+        "programs": {
+          "Chaverim": {
+            "week_6": 1,
+            "week_9": 1
+          },
+          "Giborim": {
+            "week_2": 1,
+            "week_6": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Madli-Teen": {
+            "week_5": 1
+          },
+          "Music Camp": {
+            "week_9": 1
+          },
+          "PK3": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_5": 2
+          },
+          "Tennis Academy": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tiny Tumblers Gymnastics": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Tnuah 1": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_2": 2,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-12",
+        "programs": {
+          "Art Exploration": {
+            "week_2": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Chaverim Children's Trust": {
+            "week_1": 2,
+            "week_2": 2,
+            "week_3": 2,
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2
+          },
+          "Extreme Tnuah": {
+            "week_5": 1,
+            "week_6": 1
+          },
+          "Madli-Teen": {
+            "week_7": 1
+          },
+          "Swim Academy": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teen Travel": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_9": 1
+          },
+          "Yeladim": {
+            "week_3": 1,
+            "week_9": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-13",
+        "programs": {
+          "Chaverim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_2": 2,
+            "week_3": 1
+          },
+          "Ometz": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_2": 1,
+            "week_3": 1
+          },
+          "Toddler": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-14",
+        "programs": {
+          "LIT Volunteer Staff": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-15",
+        "programs": {
+          "Giborim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Ometz": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-16",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 1,
+            "week_8": 2
+          },
+          "Basketball": {
+            "week_2": 2,
+            "week_3": 2,
+            "week_5": 1
+          },
+          "Chaverim": {
+            "week_2": 1,
+            "week_9": 1
+          },
+          "Giborim": {
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_7": 2,
+            "week_8": 1,
+            "week_9": 1,
+            "week_2": 2,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Teen Travel": {
+            "week_3": 1
+          },
+          "Tennis Academy": {
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Yeladim": {
+            "week_9": 1,
+            "week_2": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-17",
+        "programs": {
+          "Chaverim": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Madli-Teen": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "PK4": {
+            "week_3": 1,
+            "week_4": 1
+          },
+          "Soccer": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Teen Travel": {
+            "week_3": 1,
+            "week_5": 1
+          },
+          "Tennis Academy": {
+            "week_6": 1
+          },
+          "Toddler": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_6": 1,
+            "week_9": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-18",
+        "programs": {
+          "Chaverim": {
+            "week_3": 1
+          },
+          "Teen Travel": {
+            "week_3": 1
+          },
+          "Tsofim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Yeladim Children's Trust": {
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-19",
+        "programs": {
+          "LIT Volunteer Staff": {
+            "week_4": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-20",
+        "programs": {
+          "Tennis Academy": {
+            "week_3": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-22",
+        "programs": {
+          "Chaverim": {
+            "week_5": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_4": 2,
+            "week_1": 1,
+            "week_2": 1,
+            "week_3": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-23",
+        "programs": {
+          "Art Exploration": {
+            "week_4": 2
+          },
+          "MMA Camp": {
+            "week_6": 1,
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_9": 1
+          },
+          "Tennis Academy": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tnuah 2": {
+            "week_5": 2,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-24",
+        "programs": {
+          "Soccer": {
+            "week_4": 2
+          }
+        }
+      },
+      {
+        "date": "2025-06-25",
+        "programs": {
+          "Madatzim 9th Grade": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Madli-Teen": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Sports Academy": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Teen Travel": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-26",
+        "programs": {
+          "Art Exploration": {
+            "week_6": 1,
+            "week_7": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_4": 1
+          },
+          "Ometz": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_4": 2,
+            "week_5": 2,
+            "week_6": 2,
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Tiny Tnuah 2": {
+            "week_4": 1,
+            "week_5": 1
+          },
+          "Tsofim": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-27",
+        "programs": {
+          "Giborim": {
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_5": 2,
+            "week_6": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Sports Academy": {
+            "week_4": 1
+          },
+          "Tnuah 2": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-06-30",
+        "programs": {
+          "LIT Volunteer Staff": {
+            "week_5": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-01",
+        "programs": {
+          "Art Exploration": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Ometz": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Teen Travel": {
+            "week_5": 1
+          },
+          "Tnuah 2": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-02",
+        "programs": {
+          "MMA Camp": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_5": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-03",
+        "programs": {
+          "LIT Volunteer Staff": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_5": 1
+          },
+          "Soccer": {
+            "week_5": 4
+          }
+        }
+      },
+      {
+        "date": "2025-07-04",
+        "programs": {
+          "Giborim": {
+            "week_8": 1
+          },
+          "Yeladim": {
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-07",
+        "programs": {
+          "Chaverim": {
+            "week_6": 2,
+            "week_5": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1
+          },
+          "Recreational Gymnastics": {
+            "week_7": 2,
+            "week_8": 2,
+            "week_9": 2
+          },
+          "Tnuah 2": {
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-09",
+        "programs": {
+          "LIT Volunteer Staff": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "MMA Camp": {
+            "week_6": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-10",
+        "programs": {
+          "Art Exploration": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_8": 2,
+            "week_6": 1,
+            "week_7": 1,
+            "week_9": 1
+          },
+          "Tsofim": {
+            "week_9": 1,
+            "week_6": 1
+          },
+          "Yeladim": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-11",
+        "programs": {
+          "Chaverim": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          },
+          "Koach Yeladim": {
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK4": {
+            "week_9": 1
+          },
+          "Sports Academy": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Volleyball": {
+            "week_6": 1
+          },
+          "Yeladim": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-12",
+        "programs": {
+          "Soccer": {
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-13",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 1
+          },
+          "Basketball": {
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-14",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 2
+          },
+          "Extreme Tnuah": {
+            "week_6": 2
+          },
+          "MMA Camp": {
+            "week_6": 1
+          },
+          "Soccer": {
+            "week_7": 2
+          }
+        }
+      },
+      {
+        "date": "2025-07-15",
+        "programs": {
+          "Chaverim": {
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-16",
+        "programs": {
+          "Art Exploration": {
+            "week_7": 1
+          },
+          "Flag Football": {
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_7": 1
+          },
+          "Teen Travel": {
+            "week_7": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-17",
+        "programs": {
+          "Art Exploration": {
+            "week_8": 1
+          },
+          "Chaverim": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Giborim": {
+            "week_7": 1
+          },
+          "LIT Volunteer Staff": {
+            "week_8": 1
+          },
+          "Madatzim 9th Grade": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Ometz": {
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "Soccer": {
+            "week_7": 1
+          },
+          "Swim Academy": {
+            "week_7": 1
+          },
+          "Teen Travel": {
+            "week_7": 1
+          },
+          "Yeladim": {
+            "week_7": 1,
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-20",
+        "programs": {
+          "Tennis Academy": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-21",
+        "programs": {
+          "LIT Volunteer Staff": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK3": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-22",
+        "programs": {
+          "LIT Volunteer Staff": {
+            "week_8": 1,
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_9": 1
+          },
+          "Tiny Tnuah 1": {
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-23",
+        "programs": {
+          "Soccer": {
+            "week_8": 1,
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-24",
+        "programs": {
+          "Art Exploration": {
+            "week_8": 1
+          },
+          "Tsofim": {
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-25",
+        "programs": {
+          "Art Exploration": {
+            "week_8": 1
+          },
+          "Madli-Teen": {
+            "week_9": 1
+          },
+          "Ometz": {
+            "week_3": 1,
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          },
+          "PK2": {
+            "week_8": 1
+          },
+          "Recreational Gymnastics": {
+            "week_9": 2
+          },
+          "Sports Academy": {
+            "week_8": 1
+          },
+          "Teen Travel": {
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-27",
+        "programs": {
+          "Recreational Gymnastics": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-07-28",
+        "programs": {
+          "PK3": {
+            "week_9": 1
+          },
+          "Recreational Gymnastics": {
+            "week_9": 1
+          },
+          "Soccer": {
+            "week_9": 1
+          }
+        }
+      },
+      {
+        "date": "2025-08-01",
+        "programs": {
+          "Giborim": {
+            "week_9": 1
+          },
+          "MMA Camp": {
+            "week_9": 1
+          },
+          "Ometz": {
+            "week_4": 1,
+            "week_5": 1,
+            "week_6": 1,
+            "week_7": 1,
+            "week_8": 1
+          }
+        }
+      },
+      {
+        "date": "2025-08-04",
+        "programs": {
+          "MMA Camp": {
+            "week_9": 3
+          }
+        }
+      }
     ]
   },
   "2024": {

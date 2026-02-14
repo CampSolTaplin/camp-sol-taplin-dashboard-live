@@ -297,6 +297,56 @@ class HistoricalDataManager:
             'unique_campers': ct_unique_campers
         }
 
+    def get_programs_as_of_date(self, year: int, month: int, day: int) -> List[Dict]:
+        """
+        Get program-level enrollment data for a given year, filtered to only include
+        enrollments that occurred on or before the given month/day of that year.
+
+        Uses the 'enrollments_by_date' section which stores per-date, per-program, per-week counts.
+        Returns a list of program dicts in the same format as 'programs' section.
+        """
+        year_data = self.get_year_data(year)
+        if not year_data or 'enrollments_by_date' not in year_data:
+            # Fallback: return full programs data if no date-level data available
+            return year_data.get('programs', []) if year_data else []
+
+        target_date = f"{year}-{month:02d}-{day:02d}"
+
+        # Accumulate per-program, per-week counts up to target_date
+        from collections import defaultdict
+        program_weeks = defaultdict(lambda: defaultdict(int))
+
+        for day_entry in year_data['enrollments_by_date']:
+            if day_entry['date'] > target_date:
+                break  # dates are sorted, stop early
+            for prog_name, weeks_dict in day_entry.get('programs', {}).items():
+                for week_key, count in weeks_dict.items():
+                    program_weeks[prog_name][week_key] += count
+
+        # Build programs list in same format as 'programs' section
+        programs_list = []
+        for prog_name in sorted(program_weeks.keys()):
+            weeks = program_weeks[prog_name]
+            total = sum(weeks.get(f'week_{w}', 0) for w in range(1, 10))
+            fte = round(total / 9, 2)
+            entry = {
+                'program': prog_name,
+                'week_1': weeks.get('week_1', 0),
+                'week_2': weeks.get('week_2', 0),
+                'week_3': weeks.get('week_3', 0),
+                'week_4': weeks.get('week_4', 0),
+                'week_5': weeks.get('week_5', 0),
+                'week_6': weeks.get('week_6', 0),
+                'week_7': weeks.get('week_7', 0),
+                'week_8': weeks.get('week_8', 0),
+                'week_9': weeks.get('week_9', 0),
+                'total': total,
+                'fte': fte
+            }
+            programs_list.append(entry)
+
+        return programs_list
+
     def get_program_data(self, year: int, program_name: str) -> Optional[Dict]:
         """
         Get enrollment data for a specific program in a specific year

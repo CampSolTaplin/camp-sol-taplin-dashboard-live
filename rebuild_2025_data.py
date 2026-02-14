@@ -408,7 +408,30 @@ def main():
     print()
 
     # =====================================================================
-    # STEP 4: Build summary
+    # STEP 4: Build enrollments_by_date (for date-filtered Old View Stats)
+    # =====================================================================
+    # Structure: { "YYYY-MM-DD": { "program_name": { "week_1": count, ... } } }
+    # This allows us to sum up to any cutoff date to get per-program week counts
+
+    ebd = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+
+    for person_id, week, program, date in all_enrollments:
+        if date and 1 <= week <= 9:
+            ebd[date][program][f'week_{week}'] += 1
+
+    # Convert to serializable list format: [ { date, programs: { name: { week_1: n, ... } } } ]
+    enrollments_by_date_list = []
+    for dt in sorted(ebd.keys()):
+        day_entry = {'date': dt, 'programs': {}}
+        for prog_name, weeks_dict in sorted(ebd[dt].items()):
+            day_entry['programs'][prog_name] = dict(weeks_dict)
+        enrollments_by_date_list.append(day_entry)
+
+    print(f"Built enrollments_by_date with {len(enrollments_by_date_list)} date entries")
+    print()
+
+    # =====================================================================
+    # STEP 5: Build summary
     # =====================================================================
 
     summary = {
@@ -430,7 +453,7 @@ def main():
     print()
 
     # =====================================================================
-    # STEP 5: Update historical_enrollment.json
+    # STEP 6: Update historical_enrollment.json
     # =====================================================================
 
     with open(JSON_PATH, 'r', encoding='utf-8') as f:
@@ -440,14 +463,15 @@ def main():
     historical['2025'] = {
         'summary': summary,
         'daily': daily_list,
-        'programs': programs_list
+        'programs': programs_list,
+        'enrollments_by_date': enrollments_by_date_list
     }
 
     with open(JSON_PATH, 'w', encoding='utf-8') as f:
         json.dump(historical, f, indent=2, ensure_ascii=False)
 
     print(f"SUCCESS: Updated {JSON_PATH}")
-    print(f"  2025 section replaced with {len(programs_list)} programs and {len(daily_list)} daily entries")
+    print(f"  2025 section replaced with {len(programs_list)} programs, {len(daily_list)} daily entries, {len(enrollments_by_date_list)} enrollments_by_date entries")
 
     # Final verification
     print("\n=== VERIFICATION ===")

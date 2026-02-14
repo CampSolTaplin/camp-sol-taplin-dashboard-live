@@ -457,8 +457,9 @@ def dashboard():
     ct_stats_2025 = historical_manager.get_childrens_trust_stats(2025)
 
     # Get 2025 program-level data for OLD VIEW STATS comparison
-    year_2025_data = historical_manager.get_year_data(2025)
-    programs_2025 = year_2025_data.get('programs', []) if year_2025_data else []
+    # Filter to only include enrollments up to the equivalent date last year
+    # (e.g. if today is Feb 14 2026, show 2025 data through Feb 14 2025)
+    programs_2025 = historical_manager.get_programs_as_of_date(2025, today.month, today.day)
     # Build a dict for quick lookup by program name
     programs_2025_map = {}
     if isinstance(programs_2025, list):
