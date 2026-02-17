@@ -211,6 +211,9 @@ function renderParticipantsTable(participants, list, program, week) {
     html += '</div>';
     if (program && week) {
         html += '<div class="participant-action-buttons">';
+        if (isAdmin) {
+            html += '<button class="btn-action btn-reset" onclick="resetGroups()">🔄 Reset Groups</button>';
+        }
         html += '<button class="btn-action btn-download" onclick="downloadByGroups()">📥 Download By Groups</button>';
         html += '<button class="btn-action btn-print" onclick="printByGroups()">🖨️ Print By Groups</button>';
         html += '</div>';
@@ -337,6 +340,32 @@ function refreshParticipantsTable() {
         .catch(function(err) {
             console.error('Failed to refresh participants table:', err);
         });
+}
+
+// Reset all group assignments for current program/week
+function resetGroups() {
+    if (!currentModalProgram || !currentModalWeek) return;
+
+    if (!confirm('Reset all group assignments for ' + currentModalProgram + ' Week ' + currentModalWeek + ' to unassigned?')) {
+        return;
+    }
+
+    fetch('/api/reset-groups/' + encodeURIComponent(currentModalProgram) + '/' + currentModalWeek, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast('Reset ' + data.deleted_count + ' group assignment' + (data.deleted_count !== 1 ? 's' : '') + ' for Week ' + currentModalWeek, 'success');
+            refreshParticipantsTable();
+        } else {
+            alert('Error resetting groups: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(function(err) {
+        alert('Failed to reset groups: ' + err.message);
+    });
 }
 
 // Download By Groups Excel

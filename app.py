@@ -1517,6 +1517,23 @@ def api_save_group_assignment(program, week):
         'updated_weeks': updated_weeks
     })
 
+@app.route('/api/reset-groups/<program>/<int:week>', methods=['POST'])
+@login_required
+def api_reset_groups(program, week):
+    """Reset all group assignments for a given program/week (set all to unassigned)"""
+    if not current_user.has_permission('edit_groups'):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    deleted = GroupAssignment.query.filter_by(program=program, week=week).delete()
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'deleted_count': deleted,
+        'program': program,
+        'week': week
+    })
+
 @app.route('/api/download-by-groups/<program>/<int:week>')
 @login_required
 def download_by_groups(program, week):

@@ -1574,6 +1574,16 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     transform: translateY(-1px);
 }
 
+.btn-action.btn-reset {
+    background: #FF5722;
+    color: white;
+}
+
+.btn-action.btn-reset:hover {
+    background: #E64A19;
+    transform: translateY(-1px);
+}
+
 /* Group select dropdown in table */
 .group-cell {
     text-align: center;
