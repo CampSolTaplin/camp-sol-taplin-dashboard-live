@@ -1023,13 +1023,49 @@
             {% endif %}
 
             {% else %}
-            <!-- No finance data available -->
-            <div class="empty-state">
+            <!-- Finance data loading / not available -->
+            <div class="empty-state" id="financeLoadingState">
                 <div class="empty-state-icon">💰</div>
-                <h2>No Financial Data</h2>
-                <p>Financial data is not yet available. Make sure the CampMinder API is configured and there are transactions for the current season.</p>
-                <button class="btn btn-primary" onclick="refreshFinanceData()">🔄 Refresh Finance Data</button>
+                <h2>Loading Financial Data...</h2>
+                <p>Fetching financial data from CampMinder API. This may take a moment on first load.</p>
+                <div style="margin: 16px 0;">
+                    <div class="finance-goal-bar" style="max-width: 300px; margin: 0 auto;">
+                        <div class="finance-goal-fill" style="width: 100%; animation: pulse 1.5s ease-in-out infinite;"></div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="refreshFinanceData()" style="margin-top: 8px;">🔄 Retry</button>
             </div>
+            <script>
+            // Auto-fetch finance data when tab is viewed and data isn't loaded yet
+            (function autoLoadFinance() {
+                var attempts = 0;
+                var maxAttempts = 3;
+                function tryFetch() {
+                    attempts++;
+                    fetch('/api/finance/refresh', { method: 'POST' })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.success) {
+                                // Reload to show the finance data
+                                location.reload();
+                            } else if (attempts < maxAttempts) {
+                                setTimeout(tryFetch, 5000);
+                            } else {
+                                document.getElementById('financeLoadingState').innerHTML =
+                                    '<div class="empty-state-icon">💰</div>' +
+                                    '<h2>No Financial Data</h2>' +
+                                    '<p>Could not load financial data. Please try again later.</p>' +
+                                    '<button class="btn btn-primary" onclick="refreshFinanceData()">🔄 Refresh Finance Data</button>';
+                            }
+                        })
+                        .catch(function() {
+                            if (attempts < maxAttempts) setTimeout(tryFetch, 5000);
+                        });
+                }
+                // Start fetching after a short delay to let the background thread start
+                setTimeout(tryFetch, 3000);
+            })();
+            </script>
             {% endif %}
 
         </div>

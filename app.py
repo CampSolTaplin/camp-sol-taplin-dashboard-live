@@ -49,6 +49,14 @@ if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Connection pool settings to handle stale/dropped PostgreSQL connections
+if database_url.startswith('postgresql://'):
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,        # Test connections before use (fixes SSL EOF errors)
+        'pool_recycle': 300,           # Recycle connections every 5 minutes
+        'pool_size': 5,
+        'max_overflow': 10,
+    }
 
 db = SQLAlchemy(app)
 
@@ -575,13 +583,21 @@ def dashboard():
             if isinstance(p, dict):
                 programs_2025_map[p.get('program', '')] = p
 
-    # Fetch financial data if user has permission
+    # Get financial data from cache only (non-blocking).
+    # If no cache, the frontend will auto-trigger /api/finance/refresh via AJAX.
     finance_data = None
     if current_user.has_permission('view_finance') and is_api_configured():
-        try:
-            finance_data = fetch_financial_data(enrollment_report=report_data)
-        except Exception as e:
-            print(f"Error loading finance data: {e}")
+        finance_data = finance_cache.get('data')
+        # Kick off background fetch if cache is empty or stale
+        if not finance_data:
+            def _bg_fetch(app_ctx, report):
+                with app_ctx:
+                    try:
+                        fetch_financial_data(enrollment_report=report)
+                    except Exception as e:
+                        print(f"Background finance fetch error: {e}")
+            t = threading.Thread(target=_bg_fetch, args=(app.app_context(), report_data), daemon=True)
+            t.start()
 
     return render_template('dashboard.html',
                          report=report_data,

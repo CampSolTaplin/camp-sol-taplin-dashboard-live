@@ -1837,6 +1837,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     transition: width 0.8s ease;
 }
 
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 /* Finance Category Cards */
 .finance-category-cards {
     display: grid;
