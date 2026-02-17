@@ -209,7 +209,7 @@
                             {{ '%.1f' | format(total_2025_fte | sum) }}
                         </td>
                         <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
-                            {{ report.programs | sum(attribute='fte') }}
+                            {{ '%.2f'|format(report.programs | sum(attribute='fte')) }}
                         </td>
                         <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
                             {{ report.programs | sum(attribute='goal') }}
@@ -285,7 +285,7 @@
                             {{ '%.1f' | format(nct_2025_fte | sum) }}
                         </td>
                         <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
-                            {{ non_ct_ov | sum(attribute='fte') }}
+                            {{ '%.2f'|format(non_ct_ov | sum(attribute='fte')) }}
                         </td>
                         <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
                             {{ non_ct_ov | sum(attribute='goal') }}

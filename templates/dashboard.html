@@ -503,7 +503,7 @@
                                 {% endif %}
                                 {% endfor %}
                                 <td class="total-cell">{{ prog.total }}</td>
-                                <td class="fte-cell">{{ prog.fte }}</td>
+                                <td class="fte-cell">{{ '%.2f'|format(prog.fte) }}</td>
                                 <td class="goal-cell">{{ prog.goal }}</td>
                                 <td class="percent-cell {{ 'success' if prog.percent_to_goal >= 70 else 'warning' if prog.percent_to_goal >= 50 else 'danger' }}">
                                     {{ '%.0f'|format(prog.percent_to_goal) }}%
@@ -523,7 +523,7 @@
                                     {{ report.programs | sum(attribute='total') }}
                                 </td>
                                 <td class="fte-cell" style="background: #1a202c; color: white; font-weight: 700;">
-                                    {{ report.programs | sum(attribute='fte') }}
+                                    {{ '%.2f'|format(report.programs | sum(attribute='fte')) }}
                                 </td>
                                 <td class="goal-cell" style="background: #1a202c; color: white; font-weight: 700;">
                                     {{ report.programs | sum(attribute='goal') }}
@@ -552,7 +552,7 @@
                                     {{ non_ct | sum(attribute='total') }}
                                 </td>
                                 <td class="fte-cell" style="background: #374151; color: white; font-weight: 700;">
-                                    {{ non_ct | sum(attribute='fte') }}
+                                    {{ '%.2f'|format(non_ct | sum(attribute='fte')) }}
                                 </td>
                                 <td class="goal-cell" style="background: #374151; color: white; font-weight: 700;">
                                     {{ non_ct | sum(attribute='goal') }}
@@ -688,7 +688,7 @@
                             {% set p25 = programs_2025_map.get(p25_name, {}) %}
                             <tr>
                                 <td style="text-align:center;">{{ '%.1f'|format(p25.fte) if p25.fte is defined else '0.0' }}</td>
-                                <td style="text-align:center;">{{ prog.fte }}</td>
+                                <td style="text-align:center;">{{ '%.2f'|format(prog.fte) }}</td>
                                 <td style="text-align:center;">{{ prog.goal }}</td>
                                 <td class="sticky-col program-name" style="background-color: {{ prog.category_color_light }}; font-weight:600;">
                                     {{ prog.program }}
@@ -733,7 +733,7 @@
                                     {{ '%.1f' | format(total_2025_fte | sum) }}
                                 </td>
                                 <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
-                                    {{ report.programs | sum(attribute='fte') }}
+                                    {{ '%.2f'|format(report.programs | sum(attribute='fte')) }}
                                 </td>
                                 <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
                                     {{ report.programs | sum(attribute='goal') }}
@@ -809,7 +809,7 @@
                                     {{ '%.1f' | format(nct_2025_fte | sum) }}
                                 </td>
                                 <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
-                                    {{ non_ct_ov | sum(attribute='fte') }}
+                                    {{ '%.2f'|format(non_ct_ov | sum(attribute='fte')) }}
                                 </td>
                                 <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
                                     {{ non_ct_ov | sum(attribute='goal') }}
