@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camp Sol Taplin - Enrollment Matrix</title>
+    <title>Camp Sol Taplin - Old View Stats</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <style>
@@ -14,7 +14,7 @@
             padding: 0;
         }
         .shared-container {
-            max-width: 1440px;
+            max-width: 1800px;
             margin: 0 auto;
             padding: 24px 32px;
         }
@@ -94,7 +94,7 @@
         <div class="shared-header">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Camp Sol Taplin" onerror="this.style.display='none'">
             <div>
-                <h1>Enrollment Matrix &mdash; Summer 2026</h1>
+                <h1>Old View Stats &mdash; 2026 vs 2025</h1>
                 <p class="subtitle">Camp Sol Taplin | Michael-Ann Russell JCC</p>
             </div>
         </div>
@@ -121,71 +121,144 @@
             </select>
         </div>
 
-        <!-- Enrollment Matrix Table -->
+        <!-- Old View Stats Table -->
         <div class="detailed-table-container">
             <table class="enrollment-matrix" id="enrollmentMatrix">
                 <thead>
                     <tr>
-                        <th class="sticky-col">Program</th>
-                        <th>W1</th>
-                        <th>W2</th>
-                        <th>W3</th>
-                        <th>W4</th>
-                        <th>W5</th>
-                        <th>W6</th>
-                        <th>W7</th>
-                        <th>W8</th>
-                        <th>W9</th>
-                        <th>Total</th>
-                        <th>FTC</th>
+                        <th>2025 FTC</th>
+                        <th>2026 FTC</th>
                         <th>Goal</th>
-                        <th>%</th>
+                        <th class="sticky-col">Program</th>
+                        <th colspan="9" class="oldview-header-2026">2026</th>
+                        <th class="oldview-header-2026">Total</th>
+                        <th colspan="9" class="oldview-header-2025">2025</th>
+                        <th class="oldview-header-2025">Total</th>
+                    </tr>
+                    <tr>
+                        <th></th><th></th><th></th><th class="sticky-col"></th>
+                        {% for w in range(1, 10) %}
+                        <th class="oldview-subheader-2026">W{{ w }}</th>
+                        {% endfor %}
+                        <th class="oldview-subheader-2026"></th>
+                        {% for w in range(1, 10) %}
+                        <th class="oldview-subheader-2025">W{{ w }}</th>
+                        {% endfor %}
+                        <th class="oldview-subheader-2025"></th>
                     </tr>
                 </thead>
                 <tbody>
+                    {# Name mapping: 2026 name -> 2025 name for programs that changed names #}
+                    {% set name_map = {
+                        'Madatzim 10th Grade': 'LIT Volunteer Staff',
+                        'Sports Academy 1': 'Sports Academy',
+                        'Sports Academy 2': 'Sports Academy',
+                        "Children's Trust Tsofim": "Tsofim Children's Trust",
+                        "Children's Trust Yeladim": "Yeladim Children's Trust",
+                        "Children's Trust Chaverim": "Chaverim Children's Trust",
+                        "Children's Trust Giborim": "Giborim Children's Trust",
+                        "Children's Trust Madli-Teen": "Madli-Teen Children's Trust"
+                    } %}
                     {% for prog in report.programs %}
+                    {% set p25_name = name_map.get(prog.program, prog.program) %}
+                    {% set p25 = programs_2025_map.get(p25_name, {}) %}
                     <tr data-category="{{ prog.category }}">
-                        <td class="sticky-col program-name" style="background-color: {{ prog.category_color_light }};">
+                        <td style="text-align:center;">{{ '%.1f'|format(p25.fte) if p25.fte is defined else '0.0' }}</td>
+                        <td style="text-align:center;">{{ prog.fte }}</td>
+                        <td style="text-align:center;">{{ prog.goal }}</td>
+                        <td class="sticky-col program-name" style="background-color: {{ prog.category_color_light }}; font-weight:600;">
                             {{ prog.program }}
                         </td>
-                        {% set active_weeks = prog.get('weeks_active', '1,2,3,4,5,6,7,8,9').split(',') %}
+                        {# 2026 weeks #}
+                        {% set active_weeks_ov = prog.get('weeks_active', '1,2,3,4,5,6,7,8,9').split(',') %}
                         {% for w in range(1, 10) %}
-                        {% if w|string in active_weeks %}
-                        <td class="week-cell">{{ prog['week_' ~ w] or 0 }}</td>
+                        {% if w|string in active_weeks_ov %}
+                        <td class="oldview-cell-2026">{{ prog['week_' ~ w] or 0 }}</td>
                         {% else %}
-                        <td class="week-cell week-inactive">-</td>
+                        <td class="oldview-cell-inactive">-</td>
                         {% endif %}
                         {% endfor %}
-                        <td class="total-cell">{{ prog.total }}</td>
-                        <td class="fte-cell">{{ prog.fte }}</td>
-                        <td class="goal-cell">{{ prog.goal }}</td>
-                        <td class="percent-cell {{ 'success' if prog.percent_to_goal >= 70 else 'warning' if prog.percent_to_goal >= 50 else 'danger' }}">
-                            {{ '%.0f'|format(prog.percent_to_goal) }}%
-                        </td>
+                        <td class="oldview-total-2026">{{ prog.total }}</td>
+                        {# 2025 weeks #}
+                        {% for w in range(1, 10) %}
+                        {% if w|string in active_weeks_ov %}
+                        <td class="oldview-cell-2025">{{ p25.get('week_' ~ w, '') if p25 else '' }}</td>
+                        {% else %}
+                        <td class="oldview-cell-inactive">-</td>
+                        {% endif %}
+                        {% endfor %}
+                        <td class="oldview-total-2025">{{ p25.total if p25.total is defined else '' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
                     <tr class="totals-row">
+                        <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                            {% set total_2025_fte = [] %}
+                            {% set counted_fte = [] %}
+                            {% for prog in report.programs %}
+                                {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                {% if p25_name not in counted_fte %}
+                                    {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                    {% if p25.fte is defined %}
+                                        {% set _ = total_2025_fte.append(p25.fte) %}
+                                        {% set _ = counted_fte.append(p25_name) %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ '%.1f' | format(total_2025_fte | sum) }}
+                        </td>
+                        <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                            {{ report.programs | sum(attribute='fte') }}
+                        </td>
+                        <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                            {{ report.programs | sum(attribute='goal') }}
+                        </td>
                         <td class="sticky-col program-name" style="background: #2d3748; color: white; font-weight: 700;">TOTALS</td>
+                        {# 2026 week totals #}
                         {% for w in range(1, 10) %}
-                        <td class="week-cell" style="background: #2d3748; color: white; font-weight: 700;">
+                        <td style="background: #1e3a5f; color: white; font-weight: 700; text-align: center;">
                             {{ report.programs | sum(attribute='week_' ~ w) }}
                         </td>
                         {% endfor %}
-                        <td class="total-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                        <td style="background: #142d4c; color: white; font-weight: 700; text-align: center;">
                             {{ report.programs | sum(attribute='total') }}
                         </td>
-                        <td class="fte-cell" style="background: #1a202c; color: white; font-weight: 700;">
-                            {{ report.programs | sum(attribute='fte') }}
+                        {# 2025 week totals #}
+                        {% for w in range(1, 10) %}
+                        <td style="background: #5c3d00; color: white; font-weight: 700; text-align: center;">
+                            {% set week_sum = [] %}
+                            {% set counted_week = [] %}
+                            {% for prog in report.programs %}
+                                {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                {% if p25_name not in counted_week %}
+                                    {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                    {% if p25 %}
+                                        {% set val = p25.get('week_' ~ w, 0) %}
+                                        {% if val %}
+                                            {% set _ = week_sum.append(val) %}
+                                            {% set _ = counted_week.append(p25_name) %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ week_sum | sum }}
                         </td>
-                        <td class="goal-cell" style="background: #1a202c; color: white; font-weight: 700;">
-                            {{ report.programs | sum(attribute='goal') }}
-                        </td>
-                        <td class="percent-cell" style="background: #1a202c; color: white; font-weight: 700;">
-                            {% set total_fte = report.programs | sum(attribute='fte') %}
-                            {% set total_goal = report.programs | sum(attribute='goal') %}
-                            {{ '%.0f' | format((total_fte / total_goal * 100) if total_goal > 0 else 0) }}%
+                        {% endfor %}
+                        <td style="background: #4a3200; color: white; font-weight: 700; text-align: center;">
+                            {% set total_2025 = [] %}
+                            {% set counted_total = [] %}
+                            {% for prog in report.programs %}
+                                {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                {% if p25_name not in counted_total %}
+                                    {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                    {% if p25.total is defined %}
+                                        {% set _ = total_2025.append(p25.total) %}
+                                        {% set _ = counted_total.append(p25_name) %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ total_2025 | sum }}
                         </td>
                     </tr>
                 </tfoot>

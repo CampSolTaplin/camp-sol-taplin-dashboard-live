@@ -554,10 +554,20 @@ def shared_matrix(token):
     if not report_data:
         return "Not Found", 404
 
+    # Get 2025 program-level data for Old View Stats comparison
+    today = datetime.now()
+    programs_2025 = historical_manager.get_programs_as_of_date(2025, today.month, today.day)
+    programs_2025_map = {}
+    if isinstance(programs_2025, list):
+        for p in programs_2025:
+            if isinstance(p, dict):
+                programs_2025_map[p.get('program', '')] = p
+
     return render_template('shared_matrix.html',
                          report=report_data,
                          generated_at=generated_at,
-                         data_source=data_source)
+                         data_source=data_source,
+                         programs_2025_map=programs_2025_map)
 
 # ==================== DASHBOARD ====================
 
