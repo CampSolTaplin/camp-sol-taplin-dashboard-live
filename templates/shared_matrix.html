@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camp Sol Taplin - Enrollment Matrix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        /* Standalone layout — no sidebar */
+        body {
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+        .shared-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+        .shared-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 3px solid var(--teal);
+        }
+        .shared-header img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+        }
+        .shared-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0;
+        }
+        .shared-header .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 2px;
+        }
+        .shared-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .shared-meta .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ECFDF5;
+            color: #059669;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+        }
+        .shared-meta .live-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            animation: pulse-live 2s ease-in-out infinite;
+        }
+        .shared-footer {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        /* Filter bar adjustment for standalone page */
+        .shared-container .filter-bar {
+            margin-bottom: 16px;
+        }
+        /* Ensure the table container works without sidebar offset */
+        .shared-container .detailed-table-container {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="shared-container">
+        <!-- Header -->
+        <div class="shared-header">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Camp Sol Taplin" onerror="this.style.display='none'">
+            <div>
+                <h1>Enrollment Matrix &mdash; Summer 2026</h1>
+                <p class="subtitle">Camp Sol Taplin | Michael-Ann Russell JCC</p>
+            </div>
+        </div>
+
+        <!-- Meta info -->
+        <div class="shared-meta">
+            {% if generated_at %}
+            <span>Updated: {{ generated_at }}</span>
+            {% endif %}
+            {% if data_source == 'api' %}
+            <span class="live-badge">LIVE</span>
+            {% endif %}
+        </div>
+
+        {% if report and report.programs %}
+        <!-- Category filter -->
+        <div class="filter-bar">
+            <label>Filter by Category:</label>
+            <select id="categoryFilter" onchange="filterMatrix()">
+                <option value="all">All Categories</option>
+                {% for cat in report.categories %}
+                <option value="{{ cat.category }}">{{ cat.emoji }} {{ cat.category }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Enrollment Matrix Table -->
+        <div class="detailed-table-container">
+            <table class="enrollment-matrix" id="enrollmentMatrix">
+                <thead>
+                    <tr>
+                        <th class="sticky-col">Program</th>
+                        <th>W1</th>
+                        <th>W2</th>
+                        <th>W3</th>
+                        <th>W4</th>
+                        <th>W5</th>
+                        <th>W6</th>
+                        <th>W7</th>
+                        <th>W8</th>
+                        <th>W9</th>
+                        <th>Total</th>
+                        <th>FTC</th>
+                        <th>Goal</th>
+                        <th>%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prog in report.programs %}
+                    <tr data-category="{{ prog.category }}">
+                        <td class="sticky-col program-name" style="background-color: {{ prog.category_color_light }};">
+                            {{ prog.program }}
+                        </td>
+                        {% set active_weeks = prog.get('weeks_active', '1,2,3,4,5,6,7,8,9').split(',') %}
+                        {% for w in range(1, 10) %}
+                        {% if w|string in active_weeks %}
+                        <td class="week-cell">{{ prog['week_' ~ w] or 0 }}</td>
+                        {% else %}
+                        <td class="week-cell week-inactive">-</td>
+                        {% endif %}
+                        {% endfor %}
+                        <td class="total-cell">{{ prog.total }}</td>
+                        <td class="fte-cell">{{ prog.fte }}</td>
+                        <td class="goal-cell">{{ prog.goal }}</td>
+                        <td class="percent-cell {{ 'success' if prog.percent_to_goal >= 70 else 'warning' if prog.percent_to_goal >= 50 else 'danger' }}">
+                            {{ '%.0f'|format(prog.percent_to_goal) }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <td class="sticky-col program-name" style="background: #2d3748; color: white; font-weight: 700;">TOTALS</td>
+                        {% for w in range(1, 10) %}
+                        <td class="week-cell" style="background: #2d3748; color: white; font-weight: 700;">
+                            {{ report.programs | sum(attribute='week_' ~ w) }}
+                        </td>
+                        {% endfor %}
+                        <td class="total-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                            {{ report.programs | sum(attribute='total') }}
+                        </td>
+                        <td class="fte-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                            {{ report.programs | sum(attribute='fte') }}
+                        </td>
+                        <td class="goal-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                            {{ report.programs | sum(attribute='goal') }}
+                        </td>
+                        <td class="percent-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                            {% set total_fte = report.programs | sum(attribute='fte') %}
+                            {% set total_goal = report.programs | sum(attribute='goal') %}
+                            {{ '%.0f' | format((total_fte / total_goal * 100) if total_goal > 0 else 0) }}%
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+            <p style="font-size: 48px; margin-bottom: 12px;">📊</p>
+            <h2>No Data Available</h2>
+            <p>Enrollment data is not currently available. Please try again later.</p>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="shared-footer">
+            Camp Sol Taplin Enrollment Dashboard &bull; Michael-Ann Russell JCC &copy; 2026
+        </div>
+    </div>
+
+    <script>
+    function filterMatrix() {
+        var filter = document.getElementById('categoryFilter').value;
+        var rows = document.querySelectorAll('#enrollmentMatrix tbody tr');
+        rows.forEach(function(row) {
+            var cat = row.getAttribute('data-category') || '';
+            row.style.display = (filter === 'all' || cat === filter) ? '' : 'none';
+        });
+    }
+    </script>
+</body>
+</html>

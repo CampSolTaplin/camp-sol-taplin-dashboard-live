@@ -308,6 +308,18 @@
                 </div>
             </div>
 
+            <!-- Share Link Section -->
+            <div class="global-settings" id="shareLinkSection">
+                <h3>Share Link</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                    Generate a public link to share the Enrollment Matrix with people who don't have accounts.
+                    Anyone with this link can view the matrix (read-only).
+                </p>
+                <div id="shareLinkContent">
+                    <p style="font-size: 13px; color: var(--text-muted);">Loading...</p>
+                </div>
+            </div>
+
             <table class="settings-table">
                 <thead>
                     <tr>
@@ -460,6 +472,78 @@
                 document.querySelectorAll('.modal').forEach(function(m) { m.classList.remove('show'); });
             }
         });
+
+        // ===== Share Link Management =====
+        async function loadShareLink() {
+            try {
+                var resp = await fetch('/api/share-token');
+                var data = await resp.json();
+                var container = document.getElementById('shareLinkContent');
+                if (data.token) {
+                    container.innerHTML =
+                        '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">' +
+                            '<input type="text" id="shareUrlInput" value="' + data.url + '" readonly ' +
+                                'style="flex:1; min-width:280px; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:#f8f8f8; color:#333;">' +
+                            '<button class="btn-save-all" onclick="copyShareLink()" style="padding:10px 20px; font-size:13px;">Copy Link</button>' +
+                            '<button onclick="revokeShareLink()" ' +
+                                'style="padding:10px 20px; font-size:13px; background:#EF4444; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;">Revoke</button>' +
+                        '</div>' +
+                        '<p style="font-size:12px; color:var(--text-muted); margin-top:8px;">This link is active. Anyone with it can view the enrollment matrix (read-only).</p>';
+                } else {
+                    container.innerHTML =
+                        '<button class="btn-save-all" onclick="generateShareLink()" style="padding:10px 24px; font-size:14px;">Generate Share Link</button>' +
+                        '<p style="font-size:12px; color:var(--text-muted); margin-top:8px;">No share link is currently active.</p>';
+                }
+            } catch (e) {
+                console.error('Error loading share link:', e);
+            }
+        }
+
+        async function generateShareLink() {
+            try {
+                var resp = await fetch('/api/share-token/generate', { method: 'POST' });
+                var data = await resp.json();
+                if (data.success) {
+                    showAlert('Share link generated!', 'success');
+                    loadShareLink();
+                } else {
+                    showAlert(data.error || 'Error generating link', 'error');
+                }
+            } catch (e) {
+                showAlert('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function revokeShareLink() {
+            if (!confirm('Revoke the share link? Anyone with the current link will no longer be able to access the matrix.')) return;
+            try {
+                var resp = await fetch('/api/share-token', { method: 'DELETE' });
+                var data = await resp.json();
+                if (data.success) {
+                    showAlert('Share link revoked.', 'success');
+                    loadShareLink();
+                } else {
+                    showAlert(data.error || 'Error revoking link', 'error');
+                }
+            } catch (e) {
+                showAlert('Error: ' + e.message, 'error');
+            }
+        }
+
+        function copyShareLink() {
+            var input = document.getElementById('shareUrlInput');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value).then(function() {
+                showAlert('Link copied to clipboard!', 'success');
+            }).catch(function() {
+                document.execCommand('copy');
+                showAlert('Link copied!', 'success');
+            });
+        }
+
+        // Load share link on page load
+        loadShareLink();
     </script>
 </body>
 </html>

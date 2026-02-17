@@ -14,6 +14,7 @@ import pandas as pd
 import os
 import json
 import traceback
+import uuid
 from datetime import datetime, timedelta
 from io import BytesIO
 import threading
@@ -516,6 +517,50 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+# ==================== PUBLIC SHARED VIEW ====================
+
+@app.route('/shared/<token>')
+def shared_matrix(token):
+    """Public read-only enrollment matrix view (no login required)"""
+    # Validate token against stored share_token
+    stored = GlobalSetting.query.filter_by(key='share_token').first()
+    if not stored or stored.value != token:
+        return "Not Found", 404
+
+    # Fetch enrollment data (same logic as dashboard route)
+    report_data = None
+    generated_at = None
+    data_source = None
+
+    if is_api_configured():
+        api_data = fetch_live_data(force_refresh=False)
+        if api_data:
+            report_data = api_data
+            generated_at = api_cache.get('fetched_at', datetime.now().isoformat())
+            if generated_at:
+                try:
+                    dt = datetime.fromisoformat(generated_at)
+                    generated_at = dt.strftime('%B %d, %Y at %I:%M %p')
+                except:
+                    pass
+            data_source = 'api'
+
+    # Fall back to CSV upload data
+    if not report_data and current_report.get('data'):
+        report_data = current_report.get('data')
+        generated_at = current_report.get('generated_at')
+        data_source = 'csv'
+
+    if not report_data:
+        return "Not Found", 404
+
+    return render_template('shared_matrix.html',
+                         report=report_data,
+                         generated_at=generated_at,
+                         data_source=data_source)
+
+# ==================== DASHBOARD ====================
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -966,6 +1011,53 @@ def api_update_settings():
         pass
 
     return jsonify({'success': True, 'message': 'Settings saved successfully'})
+
+# ==================== SHARE LINK API ====================
+
+@app.route('/api/share-token', methods=['GET'])
+@login_required
+def api_get_share_token():
+    """Get current share token for public matrix view"""
+    if not current_user.has_permission('manage_settings'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    existing = GlobalSetting.query.filter_by(key='share_token').first()
+    if existing:
+        return jsonify({
+            'token': existing.value,
+            'url': url_for('shared_matrix', token=existing.value, _external=True)
+        })
+    return jsonify({'token': None, 'url': None})
+
+@app.route('/api/share-token/generate', methods=['POST'])
+@login_required
+def api_generate_share_token():
+    """Generate a new share token for public matrix view"""
+    if not current_user.has_permission('manage_settings'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    token = str(uuid.uuid4())
+    existing = GlobalSetting.query.filter_by(key='share_token').first()
+    if existing:
+        existing.value = token
+    else:
+        db.session.add(GlobalSetting(key='share_token', value=token))
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'token': token,
+        'url': url_for('shared_matrix', token=token, _external=True)
+    })
+
+@app.route('/api/share-token', methods=['DELETE'])
+@login_required
+def api_revoke_share_token():
+    """Revoke the current share token"""
+    if not current_user.has_permission('manage_settings'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    existing = GlobalSetting.query.filter_by(key='share_token').first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+    return jsonify({'success': True, 'message': 'Share link revoked'})
 
 # ==================== CAMPMINDER API ROUTES ====================
 
