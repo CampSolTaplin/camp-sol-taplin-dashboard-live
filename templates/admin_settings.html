@@ -293,10 +293,18 @@
 
             <div class="global-settings">
                 <h3>Global Settings</h3>
-                <div class="global-row">
+                <div class="global-row" style="margin-bottom: 12px;">
                     <label>Total FTC Goal:</label>
                     <span id="totalGoal" style="font-size:24px; font-weight:700; color:var(--teal);">{{ total_goal }}</span>
                     <span style="font-size:13px; color:var(--text-muted);">(auto-calculated from active program goals)</span>
+                </div>
+                <div class="global-row">
+                    <label>Revenue Goal:</label>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:18px; font-weight:600; color:var(--text-muted);">$</span>
+                        <input type="number" id="revenueGoalInput" value="{{ revenue_goal }}" min="0" max="99999999" step="1000" placeholder="e.g. 500000" style="width:160px;">
+                    </div>
+                    <span style="font-size:13px; color:var(--text-muted);">Target net revenue for the season (used in Finance tab)</span>
                 </div>
             </div>
 
@@ -420,12 +428,13 @@
             });
 
             var totalGoal = parseInt(document.getElementById('totalGoal').textContent) || 750;
+            var revenueGoal = parseInt(document.getElementById('revenueGoalInput').value) || 0;
 
             try {
                 var response = await fetch('/api/settings', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ programs: programs, total_goal: totalGoal })
+                    body: JSON.stringify({ programs: programs, total_goal: totalGoal, revenue_goal: revenueGoal })
                 });
 
                 var data = await response.json();

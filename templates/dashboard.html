@@ -50,6 +50,12 @@
                 <span>Old View Stats</span>
             </div>
             {% endif %}
+            {% if user.has_permission('view_finance') %}
+            <div class="nav-item" data-view="finance" onclick="switchView('finance')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Finance</span>
+            </div>
+            {% endif %}
             {% if user.has_permission('upload_csv') %}
             <div class="nav-item" id="uploadBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -757,6 +763,278 @@
         </div>
         {% endif %}
 
+        <!-- FINANCE VIEW -->
+        {% if user.has_permission('view_finance') %}
+        <div id="finance-view" class="view-content">
+
+            {% if finance_data %}
+            <!-- Section 1: Revenue Overview KPIs -->
+            <div class="kpi-grid kpi-grid-4">
+                <div class="kpi-card finance-revenue">
+                    <div class="kpi-label">💰 Net Revenue <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Total revenue minus discounts, credits, and refunds. Represents actual income from camper registrations.</span></span></div>
+                    <div class="kpi-value">${{ '{:,.0f}'.format(finance_data.summary.net_revenue) }}</div>
+                    <div class="kpi-subtext">Gross: ${{ '{:,.0f}'.format(finance_data.summary.gross_revenue) }} | Discounts: ${{ '{:,.0f}'.format(finance_data.summary.total_discounts|abs) }}</div>
+                </div>
+                <div class="kpi-card finance-percamper">
+                    <div class="kpi-label">👤 Revenue / Camper <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Net revenue divided by number of unique campers with financial transactions. Shows average revenue generated per camper.</span></span></div>
+                    <div class="kpi-value">${{ '{:,.0f}'.format(finance_data.summary.revenue_per_camper) }}</div>
+                    <div class="kpi-subtext">Based on {{ finance_data.summary.total_campers }} campers</div>
+                </div>
+                <div class="kpi-card finance-perftc">
+                    <div class="kpi-label">📊 Revenue / FTC <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Net revenue divided by total FTC (Full-Time Camper equivalents). Normalizes revenue by camp duration to compare across programs.</span></span></div>
+                    <div class="kpi-value">${{ '{:,.0f}'.format(finance_data.summary.revenue_per_ftc) }}</div>
+                    <div class="kpi-subtext">Based on {{ finance_data.summary.total_fte }} FTC</div>
+                </div>
+                <div class="kpi-card finance-discount">
+                    <div class="kpi-label">🏷️ Discount Rate <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Percentage of campers who received any type of discount. Shows how many families benefit from financial aid, early-bird discounts, or other reductions.</span></span></div>
+                    <div class="kpi-value">{{ '{:.1f}'.format(finance_data.discounts.discount_rate) }}%</div>
+                    <div class="kpi-subtext">{{ finance_data.discounts.campers_with_discount }} of {{ finance_data.summary.total_campers }} campers</div>
+                </div>
+            </div>
+
+            <!-- Section 2: Revenue Goal Tracking -->
+            {% if finance_data.revenue_goal and finance_data.revenue_goal > 0 %}
+            <div class="section-card finance-goal-section">
+                <div class="section-header">
+                    <h3>🎯 Revenue Goal Progress</h3>
+                </div>
+                {% set rev_pct = (finance_data.summary.net_revenue / finance_data.revenue_goal * 100) if finance_data.revenue_goal > 0 else 0 %}
+                <div class="finance-goal-bar-container">
+                    <div class="finance-goal-info">
+                        <span class="finance-goal-current">${{ '{:,.0f}'.format(finance_data.summary.net_revenue) }}</span>
+                        <span class="finance-goal-separator">of</span>
+                        <span class="finance-goal-target">${{ '{:,.0f}'.format(finance_data.revenue_goal) }}</span>
+                        <span class="finance-goal-pct status-{{ 'success' if rev_pct >= 60 else 'warning' if rev_pct >= 40 else 'danger' }}">{{ '{:.1f}'.format(rev_pct) }}%</span>
+                    </div>
+                    <div class="finance-goal-bar">
+                        <div class="finance-goal-fill" style="width: {{ [rev_pct, 100] | min }}%"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 3: Revenue by Enrollment Category -->
+            {% if finance_data.by_enrollment_category %}
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>📂 Revenue by Program Category</h3>
+                    <p class="section-subtitle">Financial breakdown by enrollment category</p>
+                </div>
+                <div class="finance-category-cards">
+                    {% for cat in finance_data.by_enrollment_category %}
+                    <div class="finance-cat-card">
+                        <div class="finance-cat-name">{{ cat.category }}</div>
+                        <div class="finance-cat-revenue">${{ '{:,.0f}'.format(cat.net_revenue) }}</div>
+                        <div class="finance-cat-details">
+                            <span>Rev/FTC: ${{ '{:,.0f}'.format(cat.revenue_per_ftc) if cat.revenue_per_ftc else 'N/A' }}</span>
+                            <span>{{ '{:.1f}'.format(cat.pct_of_total) }}% of total</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="detailed-table-container" style="margin-top: 16px;">
+                    <table class="finance-table">
+                        <thead>
+                            <tr>
+                                <th>Program</th>
+                                <th>Enrolled</th>
+                                <th>FTC</th>
+                                <th>Gross Revenue</th>
+                                <th>Discounts</th>
+                                <th>Net Revenue</th>
+                                <th>Rev/Camper</th>
+                                <th>Rev/FTC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="financeByProgramBody">
+                            <!-- Populated by JS from finance_data.by_enrollment_category programs -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 4: Discount Analysis -->
+            {% if finance_data.discounts %}
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>🏷️ Discount Analysis</h3>
+                    <p class="section-subtitle">Breakdown of discounts and financial aid</p>
+                </div>
+                <div class="kpi-grid kpi-grid-3">
+                    <div class="kpi-card mini">
+                        <div class="kpi-label">Total Discounts</div>
+                        <div class="kpi-value">${{ '{:,.0f}'.format(finance_data.discounts.total_amount|abs) }}</div>
+                    </div>
+                    <div class="kpi-card mini">
+                        <div class="kpi-label">Avg Discount/Camper</div>
+                        <div class="kpi-value">${{ '{:,.0f}'.format(finance_data.discounts.avg_discount|abs) }}</div>
+                    </div>
+                    <div class="kpi-card mini">
+                        <div class="kpi-label">Scholarships/Aid</div>
+                        <div class="kpi-value">${{ '{:,.0f}'.format(finance_data.discounts.scholarships.total|abs) }}</div>
+                        <div class="kpi-subtext">{{ finance_data.discounts.scholarships.recipients }} recipients</div>
+                    </div>
+                </div>
+
+                <div class="detailed-table-container" style="margin-top: 16px;">
+                    <table class="finance-table">
+                        <thead>
+                            <tr>
+                                <th>Discount Type</th>
+                                <th>Amount</th>
+                                <th>Recipients</th>
+                                <th>Avg/Recipient</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dc in finance_data.discounts.by_category %}
+                            <tr>
+                                <td><span class="discount-badge">{{ dc.name }}</span></td>
+                                <td class="finance-negative">${{ '{:,.0f}'.format(dc.amount|abs) }}</td>
+                                <td>{{ dc.recipients }}</td>
+                                <td>${{ '{:,.0f}'.format(dc.avg_per_recipient|abs) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 5: Payment Methods -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>💳 Payment Methods</h3>
+                    <p class="section-subtitle">Revenue breakdown by payment method</p>
+                </div>
+                <div class="finance-chart-container">
+                    <canvas id="paymentMethodChart" height="250"></canvas>
+                </div>
+                <div class="detailed-table-container" style="margin-top: 16px;">
+                    <table class="finance-table">
+                        <thead>
+                            <tr>
+                                <th>Payment Method</th>
+                                <th>Amount</th>
+                                <th>% of Total</th>
+                                <th># Transactions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pm in finance_data.by_payment_method %}
+                            <tr>
+                                <td>{{ pm.method }}</td>
+                                <td>${{ '{:,.0f}'.format(pm.amount) }}</td>
+                                <td>{{ '{:.1f}'.format(pm.percent) }}%</td>
+                                <td>{{ pm.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 6: Revenue Timeline -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>📈 Revenue Timeline</h3>
+                    <p class="section-subtitle">Cumulative revenue over time</p>
+                </div>
+                <div class="finance-chart-container">
+                    <canvas id="revenueTimelineChart" height="300"></canvas>
+                </div>
+
+                <!-- Pace comparison cards for revenue -->
+                {% if finance_data.get('historical_2025') or finance_data.get('historical_2024') %}
+                <div class="pace-comparison-section" style="margin-top: 20px;">
+                    <h4 class="section-title">💵 Revenue Pace vs Previous Years</h4>
+                    <div class="pace-cards">
+                        <div class="pace-card current">
+                            <div class="pace-year">2026 (Current)</div>
+                            <div class="pace-value">${{ '{:,.0f}'.format(finance_data.summary.net_revenue) }}</div>
+                            <div class="pace-label">Net Revenue</div>
+                        </div>
+                        {% if finance_data.get('historical_2025') %}
+                        {% set h25 = finance_data.historical_2025 %}
+                        {% set diff25 = finance_data.summary.net_revenue - h25.net_revenue %}
+                        {% set pct25 = ((diff25 / h25.net_revenue) * 100) if h25.net_revenue != 0 else 0 %}
+                        <div class="pace-card {% if diff25 >= 0 %}positive{% else %}negative{% endif %}">
+                            <div class="pace-year">2025</div>
+                            <div class="pace-value">${{ '{:,.0f}'.format(h25.net_revenue) }}</div>
+                            <div class="pace-label">Net Revenue</div>
+                            <div class="pace-diff">
+                                {% if diff25 >= 0 %}+{% endif %}${{ '{:,.0f}'.format(diff25) }}
+                                ({% if pct25 >= 0 %}+{% endif %}{{ '{:.1f}'.format(pct25) }}%)
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if finance_data.get('historical_2024') %}
+                        {% set h24 = finance_data.historical_2024 %}
+                        {% set diff24 = finance_data.summary.net_revenue - h24.net_revenue %}
+                        {% set pct24 = ((diff24 / h24.net_revenue) * 100) if h24.net_revenue != 0 else 0 %}
+                        <div class="pace-card {% if diff24 >= 0 %}positive{% else %}negative{% endif %}">
+                            <div class="pace-year">2024</div>
+                            <div class="pace-value">${{ '{:,.0f}'.format(h24.net_revenue) }}</div>
+                            <div class="pace-label">Net Revenue</div>
+                            <div class="pace-diff">
+                                {% if diff24 >= 0 %}+{% endif %}${{ '{:,.0f}'.format(diff24) }}
+                                ({% if pct24 >= 0 %}+{% endif %}{{ '{:.1f}'.format(pct24) }}%)
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Section 7: Camper Distribution by Price -->
+            {% if finance_data.distribution %}
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>👥 Camper Distribution by Price Level</h3>
+                    <p class="section-subtitle">How campers are distributed by the percentage of average tuition they pay</p>
+                </div>
+                <div class="finance-distribution-container">
+                    <div class="finance-chart-container" style="max-width: 350px; margin: 0 auto;">
+                        <canvas id="camperDistributionChart" height="280"></canvas>
+                    </div>
+                    <div class="finance-distribution-legend">
+                        <div class="dist-legend-item">
+                            <span class="dist-dot" style="background: #10B981;"></span>
+                            <span>Full Price (≥90%): <strong>{{ finance_data.distribution.full_price }}</strong></span>
+                        </div>
+                        <div class="dist-legend-item">
+                            <span class="dist-dot" style="background: #3B82F6;"></span>
+                            <span>Partial Discount (50-89%): <strong>{{ finance_data.distribution.partial_discount }}</strong></span>
+                        </div>
+                        <div class="dist-legend-item">
+                            <span class="dist-dot" style="background: #F59E0B;"></span>
+                            <span>Heavy Discount (10-49%): <strong>{{ finance_data.distribution.heavy_discount }}</strong></span>
+                        </div>
+                        <div class="dist-legend-item">
+                            <span class="dist-dot" style="background: #EF4444;"></span>
+                            <span>Subsidized (&lt;10%): <strong>{{ finance_data.distribution.subsidized }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- No finance data available -->
+            <div class="empty-state">
+                <div class="empty-state-icon">💰</div>
+                <h2>No Financial Data</h2>
+                <p>Financial data is not yet available. Make sure the CampMinder API is configured and there are transactions for the current season.</p>
+                <button class="btn btn-primary" onclick="refreshFinanceData()">🔄 Refresh Finance Data</button>
+            </div>
+            {% endif %}
+
+        </div>
+        {% endif %}
+
         {% endif %}
     </main>
 
@@ -859,6 +1137,12 @@
         }
     };
     </script>
+
+    {% if finance_data %}
+    <script>window.financeData = {{ finance_data | tojson | safe }};</script>
+    {% else %}
+    <script>window.financeData = null;</script>
+    {% endif %}
 
     {% if comparison_chart_data %}
     <script>window.comparisonChartData = {{ comparison_chart_data | tojson | safe }};</script>

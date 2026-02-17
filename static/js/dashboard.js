@@ -23,6 +23,9 @@ function switchView(viewName) {
     if (viewName === 'bydate') {
         setTimeout(initCumulativeChart, 100);
     }
+    if (viewName === 'finance') {
+        setTimeout(initFinanceCharts, 100);
+    }
 }
 
 // Filter by category
@@ -1195,3 +1198,261 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load retention rate asynchronously (it can take a few seconds)
     setTimeout(loadRetentionRate, 1000);
 });
+
+// ==================== FINANCE TAB FUNCTIONS ====================
+
+let revenueTimelineChartInstance = null;
+let paymentMethodChartInstance = null;
+let camperDistributionChartInstance = null;
+let financeChartsInitialized = false;
+
+function initFinanceCharts() {
+    if (!window.financeData || financeChartsInitialized) return;
+    financeChartsInitialized = true;
+
+    populateFinanceProgramTable();
+    initRevenueTimelineChart();
+    initPaymentMethodChart();
+    initCamperDistributionChart();
+}
+
+function populateFinanceProgramTable() {
+    const tbody = document.getElementById('financeByProgramBody');
+    if (!tbody || !window.financeData || !window.financeData.by_enrollment_category) return;
+
+    let html = '';
+    window.financeData.by_enrollment_category.forEach(function(cat) {
+        html += '<tr>';
+        html += '<td style="font-weight:600;">' + (cat.emoji || '') + ' ' + cat.category + '</td>';
+        html += '<td>' + (cat.enrolled || '-') + '</td>';
+        html += '<td>' + (cat.fte ? cat.fte.toFixed(1) : '-') + '</td>';
+        html += '<td>$' + formatNumber(cat.gross_revenue || 0) + '</td>';
+        html += '<td class="finance-negative">$' + formatNumber(Math.abs(cat.discounts || 0)) + '</td>';
+        html += '<td style="font-weight:600;">$' + formatNumber(cat.net_revenue || 0) + '</td>';
+        html += '<td>-</td>';
+        html += '<td>$' + formatNumber(cat.revenue_per_ftc || 0) + '</td>';
+        html += '</tr>';
+    });
+
+    // Also add a total row
+    var totals = window.financeData.summary;
+    html += '<tr style="font-weight:700; background:var(--bg);">';
+    html += '<td>TOTAL</td>';
+    html += '<td>' + (totals.total_campers || '-') + '</td>';
+    html += '<td>' + (totals.total_fte ? totals.total_fte.toFixed(1) : '-') + '</td>';
+    html += '<td>$' + formatNumber(totals.gross_revenue || 0) + '</td>';
+    html += '<td class="finance-negative">$' + formatNumber(Math.abs(totals.total_discounts || 0)) + '</td>';
+    html += '<td>$' + formatNumber(totals.net_revenue || 0) + '</td>';
+    html += '<td>$' + formatNumber(totals.revenue_per_camper || 0) + '</td>';
+    html += '<td>$' + formatNumber(totals.revenue_per_ftc || 0) + '</td>';
+    html += '</tr>';
+
+    tbody.innerHTML = html;
+}
+
+function initRevenueTimelineChart() {
+    const canvas = document.getElementById('revenueTimelineChart');
+    if (!canvas || !window.financeData || !window.financeData.timeline) return;
+
+    if (revenueTimelineChartInstance) {
+        revenueTimelineChartInstance.destroy();
+    }
+
+    const timeline = window.financeData.timeline;
+    const labels = timeline.map(function(d) { return d.date; });
+    const cumulativeRevenue = timeline.map(function(d) { return d.cumulative_revenue; });
+
+    const datasets = [{
+        label: '2026 Revenue',
+        data: cumulativeRevenue,
+        borderColor: '#10B981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2.5
+    }];
+
+    // Add historical timeline if available
+    if (window.financeData.historical_2025 && window.financeData.historical_2025.timeline) {
+        const hist25 = window.financeData.historical_2025.timeline;
+        datasets.push({
+            label: '2025 Revenue',
+            data: hist25.map(function(d) { return d.cumulative_revenue; }),
+            borderColor: '#6B7280',
+            backgroundColor: 'transparent',
+            borderDash: [5, 5],
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 1.5
+        });
+    }
+
+    if (window.financeData.historical_2024 && window.financeData.historical_2024.timeline) {
+        const hist24 = window.financeData.historical_2024.timeline;
+        datasets.push({
+            label: '2024 Revenue',
+            data: hist24.map(function(d) { return d.cumulative_revenue; }),
+            borderColor: '#D1D5DB',
+            backgroundColor: 'transparent',
+            borderDash: [3, 3],
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 1.5
+        });
+    }
+
+    revenueTimelineChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: { labels: labels, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': $' + formatNumber(ctx.parsed.y);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Date' },
+                    ticks: { maxTicksLimit: 12 }
+                },
+                y: {
+                    title: { display: true, text: 'Cumulative Revenue ($)' },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + formatNumber(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initPaymentMethodChart() {
+    const canvas = document.getElementById('paymentMethodChart');
+    if (!canvas || !window.financeData || !window.financeData.by_payment_method) return;
+
+    if (paymentMethodChartInstance) {
+        paymentMethodChartInstance.destroy();
+    }
+
+    const methods = window.financeData.by_payment_method;
+    const labels = methods.map(function(m) { return m.method; });
+    const amounts = methods.map(function(m) { return m.amount; });
+
+    const colors = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4', '#EC4899', '#6366F1'];
+
+    paymentMethodChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Amount',
+                data: amounts,
+                backgroundColor: colors.slice(0, labels.length),
+                borderRadius: 6,
+                barThickness: 30
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return '$' + formatNumber(ctx.parsed.x);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + formatNumber(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initCamperDistributionChart() {
+    const canvas = document.getElementById('camperDistributionChart');
+    if (!canvas || !window.financeData || !window.financeData.distribution) return;
+
+    if (camperDistributionChartInstance) {
+        camperDistributionChartInstance.destroy();
+    }
+
+    const dist = window.financeData.distribution;
+
+    camperDistributionChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Full Price', 'Partial Discount', 'Heavy Discount', 'Subsidized'],
+            datasets: [{
+                data: [dist.full_price, dist.partial_discount, dist.heavy_discount, dist.subsidized],
+                backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '55%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                            var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0';
+                            return ctx.label + ': ' + ctx.parsed + ' campers (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function refreshFinanceData() {
+    try {
+        showToast('Refreshing financial data...', 'success');
+        const response = await fetch('/api/finance/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Financial data refreshed! Reloading...', 'success');
+            setTimeout(function() { window.location.reload(); }, 1500);
+        } else {
+            showToast('Error: ' + data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Failed to refresh finance data: ' + error.message, 'error');
+    }
+}
+
+function formatNumber(num) {
+    if (num === null || num === undefined) return '0';
+    return Math.round(num).toLocaleString('en-US');
+}

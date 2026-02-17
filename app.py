@@ -24,7 +24,7 @@ from historical_data import HistoricalDataManager
 
 # Try to import CampMinder API client (optional)
 try:
-    from campminder_api import CampMinderAPIClient, EnrollmentDataProcessor
+    from campminder_api import CampMinderAPIClient, EnrollmentDataProcessor, FinancialDataProcessor
     CAMPMINDER_API_AVAILABLE = True
 except ImportError:
     CAMPMINDER_API_AVAILABLE = False
@@ -67,8 +67,9 @@ login_manager.login_view = 'login'
 
 ALL_PERMISSIONS = [
     'view_dashboard', 'view_bydate', 'view_comparison',
-    'view_campcomparison', 'view_detailed', 'edit_groups',
-    'download_excel', 'upload_csv', 'manage_users', 'manage_settings',
+    'view_campcomparison', 'view_detailed', 'view_finance',
+    'edit_groups', 'download_excel', 'upload_csv',
+    'manage_users', 'manage_settings',
 ]
 
 PERMISSION_LABELS = {
@@ -77,6 +78,7 @@ PERMISSION_LABELS = {
     'view_comparison': 'Year Comparison',
     'view_campcomparison': 'Camp Comparison',
     'view_detailed': 'Detailed View',
+    'view_finance': 'Finance Tab',
     'edit_groups': 'Edit Groups',
     'download_excel': 'Download Excel',
     'upload_csv': 'Upload CSV',
@@ -207,6 +209,8 @@ with app.app_context():
     # Seed global settings if empty
     if not GlobalSetting.query.filter_by(key='total_goal').first():
         db.session.add(GlobalSetting(key='total_goal', value='750'))
+    if not GlobalSetting.query.filter_by(key='revenue_goal').first():
+        db.session.add(GlobalSetting(key='revenue_goal', value='0'))
     db.session.commit()
 
 class User(UserMixin):
@@ -249,6 +253,14 @@ api_cache = {
     'fetched_at': None,
     'is_fetching': False
 }
+
+# Finance cache (separate, longer TTL)
+finance_cache = {
+    'data': None,
+    'fetched_at': None,
+    'is_fetching': False
+}
+FINANCE_CACHE_TTL_MINUTES = 60
 
 # ==================== CAMPMINDER API FUNCTIONS ====================
 
@@ -369,6 +381,98 @@ def fetch_live_data(force_refresh: bool = False) -> dict:
     finally:
         api_cache['is_fetching'] = False
 
+def fetch_financial_data(force_refresh: bool = False, enrollment_report: dict = None) -> dict:
+    """
+    Fetch financial data from CampMinder Financial API.
+    Cached separately from enrollment data with 60-min TTL.
+    """
+    global finance_cache
+
+    if not is_api_configured():
+        return None
+
+    # Check cache
+    if not force_refresh and finance_cache.get('data') and finance_cache.get('fetched_at'):
+        try:
+            cached_at = datetime.fromisoformat(finance_cache['fetched_at'])
+            if datetime.now() - cached_at < timedelta(minutes=FINANCE_CACHE_TTL_MINUTES):
+                print("Using cached finance data")
+                return finance_cache['data']
+        except Exception:
+            pass
+
+    if finance_cache.get('is_fetching'):
+        return finance_cache.get('data')
+
+    try:
+        finance_cache['is_fetching'] = True
+        print(f"Fetching financial data from CampMinder API (Season {CAMPMINDER_SEASON_ID})...")
+
+        client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
+
+        # Fetch the three financial endpoints
+        categories = client.get_financial_categories()
+        payment_methods = client.get_payment_methods()
+        transactions = client.get_transaction_details(CAMPMINDER_SEASON_ID)
+
+        print(f"Financial data fetched: {len(transactions)} transactions, "
+              f"{len(categories)} categories, {len(payment_methods)} payment methods")
+
+        # Process financial data
+        processor = FinancialDataProcessor()
+        finance_data = processor.process_financial_data(
+            transactions=transactions,
+            categories=categories,
+            payment_methods=payment_methods,
+            enrollment_report=enrollment_report,
+            season=CAMPMINDER_SEASON_ID
+        )
+
+        # Also try to fetch historical financial data for comparison
+        for hist_season in [2025, 2024]:
+            try:
+                hist_txns = client.get_transaction_details(hist_season)
+                if hist_txns:
+                    hist_data = processor.process_financial_data(
+                        transactions=hist_txns,
+                        categories=categories,
+                        payment_methods=payment_methods,
+                        enrollment_report=None,
+                        season=hist_season
+                    )
+                    finance_data[f'historical_{hist_season}'] = {
+                        'net_revenue': hist_data['summary']['net_revenue'],
+                        'gross_revenue': hist_data['summary']['gross_revenue'],
+                        'total_discounts': hist_data['summary']['total_discounts'],
+                        'timeline': hist_data.get('timeline', [])
+                    }
+                    print(f"Historical finance {hist_season}: ${hist_data['summary']['net_revenue']:,.2f} net revenue")
+            except Exception as e:
+                print(f"Could not fetch historical finance for {hist_season}: {e}")
+
+        # Read revenue goal
+        try:
+            rg = GlobalSetting.query.filter_by(key='revenue_goal').first()
+            finance_data['revenue_goal'] = int(rg.value) if rg and rg.value != '0' else 0
+        except Exception:
+            finance_data['revenue_goal'] = 0
+
+        # Update cache
+        finance_cache['data'] = finance_data
+        finance_cache['fetched_at'] = datetime.now().isoformat()
+
+        print(f"Finance data processed: ${finance_data['summary']['net_revenue']:,.2f} net revenue")
+        return finance_data
+
+    except Exception as e:
+        print(f"Error fetching financial data: {e}")
+        traceback.print_exc()
+        return finance_cache.get('data')
+
+    finally:
+        finance_cache['is_fetching'] = False
+
+
 # ==================== ROUTES ====================
 
 @app.route('/')
@@ -471,6 +575,14 @@ def dashboard():
             if isinstance(p, dict):
                 programs_2025_map[p.get('program', '')] = p
 
+    # Fetch financial data if user has permission
+    finance_data = None
+    if current_user.has_permission('view_finance') and is_api_configured():
+        try:
+            finance_data = fetch_financial_data(enrollment_report=report_data)
+        except Exception as e:
+            print(f"Error loading finance data: {e}")
+
     return render_template('dashboard.html',
                          report=report_data,
                          generated_at=generated_at,
@@ -488,6 +600,7 @@ def dashboard():
                          ct_daily_2024=ct_daily_2024,
                          ct_daily_2025=ct_daily_2025,
                          programs_2025_map=programs_2025_map,
+                         finance_data=finance_data,
                          user=current_user)
 
 # ==================== USER MANAGEMENT ROUTES ====================
@@ -748,9 +861,11 @@ def admin_settings():
         return redirect(url_for('dashboard'))
     all_settings = _sort_settings(ProgramSetting.query.all())
     total_goal = GlobalSetting.query.filter_by(key='total_goal').first()
+    revenue_goal = GlobalSetting.query.filter_by(key='revenue_goal').first()
     return render_template('admin_settings.html',
                          settings=all_settings,
                          total_goal=int(total_goal.value) if total_goal else 750,
+                         revenue_goal=int(revenue_goal.value) if revenue_goal and revenue_goal.value != '0' else 0,
                          user=current_user)
 
 @app.route('/api/settings', methods=['GET'])
@@ -761,6 +876,7 @@ def api_get_settings():
         return jsonify({'error': 'Unauthorized'}), 403
     all_settings = _sort_settings(ProgramSetting.query.all())
     total_goal = GlobalSetting.query.filter_by(key='total_goal').first()
+    revenue_goal = GlobalSetting.query.filter_by(key='revenue_goal').first()
     return jsonify({
         'programs': [{
             'program': s.program,
@@ -769,7 +885,8 @@ def api_get_settings():
             'weeks_active': s.weeks_active or '1,2,3,4,5,6,7,8,9',
             'active': s.active
         } for s in all_settings],
-        'total_goal': int(total_goal.value) if total_goal else 750
+        'total_goal': int(total_goal.value) if total_goal else 750,
+        'revenue_goal': int(revenue_goal.value) if revenue_goal and revenue_goal.value != '0' else 0
     })
 
 @app.route('/api/settings', methods=['PUT'])
@@ -808,11 +925,23 @@ def api_update_settings():
         else:
             db.session.add(GlobalSetting(key='total_goal', value=str(int(total_goal))))
 
+    # Save revenue goal if provided
+    revenue_goal = data.get('revenue_goal')
+    if revenue_goal is not None:
+        rg = GlobalSetting.query.filter_by(key='revenue_goal').first()
+        if rg:
+            rg.value = str(int(revenue_goal))
+        else:
+            db.session.add(GlobalSetting(key='revenue_goal', value=str(int(revenue_goal))))
+
     db.session.commit()
 
     # Clear both memory and file cache so dashboard recalculates with new settings
     api_cache['data'] = None
     api_cache['fetched_at'] = None
+    # Also clear finance cache so it picks up new revenue_goal
+    finance_cache['data'] = None
+    finance_cache['fetched_at'] = None
     # Also clear the file cache
     try:
         if os.path.exists(CACHE_FILE):
@@ -857,6 +986,46 @@ def api_refresh_data():
             
     except Exception as e:
         print(f"Refresh error: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/finance/refresh', methods=['POST'])
+@login_required
+def api_finance_refresh():
+    """Refresh financial data from CampMinder Financial API"""
+    if not current_user.has_permission('view_finance'):
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+    if not is_api_configured():
+        return jsonify({
+            'success': False,
+            'error': 'CampMinder API not configured.'
+        }), 400
+
+    try:
+        print("Manual finance refresh requested...")
+        # Get current enrollment data for cross-referencing
+        enrollment_report = api_cache.get('data')
+        finance_data = fetch_financial_data(force_refresh=True, enrollment_report=enrollment_report)
+
+        if finance_data:
+            return jsonify({
+                'success': True,
+                'message': 'Financial data refreshed successfully',
+                'finance_data': finance_data,
+                'fetched_at': finance_cache.get('fetched_at')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch financial data from API'
+            }), 500
+
+    except Exception as e:
+        print(f"Finance refresh error: {e}")
         traceback.print_exc()
         return jsonify({
             'success': False,

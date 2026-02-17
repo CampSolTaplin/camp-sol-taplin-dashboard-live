@@ -199,6 +199,116 @@ class CampMinderAPIClient:
         
         return all_results
     
+    # ==================== FINANCIAL ENDPOINTS ====================
+
+    FINANCIAL_BASE_URL = "https://api.campminder.com/financials"
+
+    def _make_financial_request(self, endpoint: str, params: Dict = None) -> Optional[Any]:
+        """
+        Make authenticated request to the Financial API.
+        Uses a different base URL than enrollment endpoints.
+        """
+        import time as _time
+
+        self._ensure_authenticated()
+
+        url = f"{self.FINANCIAL_BASE_URL}{endpoint}"
+        headers = self._get_headers()
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, headers=headers, params=params, timeout=60)
+
+                if response.status_code == 200:
+                    return response.json()
+                elif response.status_code == 429:
+                    retry_after = int(response.headers.get('Retry-After', 60))
+                    logger.warning(f"Rate limited on financial {endpoint}. Waiting {retry_after}s (attempt {attempt + 1}/{max_retries})")
+                    _time.sleep(retry_after)
+                    continue
+                else:
+                    logger.error(f"Financial API request failed: {response.status_code} - {response.text}")
+                    return None
+            except Exception as e:
+                logger.error(f"Financial API request error: {e}")
+                return None
+
+        logger.error(f"Financial API request to {endpoint} failed after max retries")
+        return None
+
+    def _paginated_financial_request(self, endpoint: str, params: Dict = None, max_pages: int = 100) -> List[Dict]:
+        """Make paginated request to Financial API and collect all results"""
+        all_results = []
+        params = params or {}
+        params['pageNumber'] = 1
+        params['pageSize'] = 1000
+
+        for page in range(1, max_pages + 1):
+            params['pageNumber'] = page
+
+            data = self._make_financial_request(endpoint, params)
+            if not data:
+                break
+
+            # Financial API may return array directly or paginated object
+            if isinstance(data, list):
+                all_results.extend(data)
+                break  # Direct array = no pagination
+            else:
+                results = data.get('result', data.get('Results', data.get('results', [])))
+                if isinstance(results, list) and results and isinstance(results[0], list):
+                    # Nested array structure
+                    for sublist in results:
+                        all_results.extend(sublist)
+                elif isinstance(results, list):
+                    all_results.extend(results)
+
+                total_count = data.get('totalCount', data.get('TotalCount', 0))
+                if len(all_results) >= total_count or not results:
+                    break
+
+                logger.info(f"Financial: Fetched page {page}, {len(all_results)}/{total_count} total")
+
+        return all_results
+
+    def get_financial_categories(self, client_id: int = None) -> List[Dict]:
+        """
+        Fetch all financial categories (Tuition, Discounts, etc.)
+        GET /financialcategories
+        """
+        client_id = client_id or self.client_id
+        params = {'clientid': client_id}
+        return self._paginated_financial_request('/financialcategories', params)
+
+    def get_payment_methods(self, client_id: int = None) -> List[Dict]:
+        """
+        Fetch all payment method types (Credit Card, Check, Scholarship, etc.)
+        GET /paymentmethods
+        """
+        client_id = client_id or self.client_id
+        params = {'clientid': client_id}
+        result = self._make_financial_request('/paymentmethods', params)
+        if isinstance(result, list):
+            return result
+        return []
+
+    def get_transaction_details(self, season: int, client_id: int = None,
+                                include_reversals: bool = False) -> List[Dict]:
+        """
+        Fetch all transaction details for a season.
+        GET /transactionreporting/transactiondetails
+        """
+        client_id = client_id or self.client_id
+        params = {
+            'clientid': client_id,
+            'season': season,
+            'includeReversals': str(include_reversals).lower()
+        }
+        return self._paginated_financial_request(
+            '/transactionreporting/transactiondetails', params
+        )
+
     # ==================== SESSION ENDPOINTS ====================
     
     def get_sessions(self, season_id: int, client_id: int = None) -> List[Dict]:
@@ -1173,6 +1283,352 @@ class EnrollmentDataProcessor:
             'categories': [],
             'date_stats': {'daily': []},
             'participants': {}
+        }
+
+
+class FinancialDataProcessor:
+    """Process financial transaction data into dashboard-ready format"""
+
+    def __init__(self, enrollment_processor: EnrollmentDataProcessor = None):
+        self.enrollment_processor = enrollment_processor or EnrollmentDataProcessor()
+
+    def process_financial_data(self, transactions: List[Dict],
+                                categories: List[Dict],
+                                payment_methods: List[Dict],
+                                enrollment_report: Dict = None,
+                                season: int = 2026) -> Dict:
+        """
+        Process raw financial API data into dashboard-ready format.
+
+        Args:
+            transactions: List from get_transaction_details()
+            categories: List from get_financial_categories()
+            payment_methods: List from get_payment_methods()
+            enrollment_report: Processed enrollment data (from EnrollmentDataProcessor)
+            season: Season year
+
+        Returns:
+            Dict with all financial metrics for the dashboard
+        """
+        if not transactions:
+            return self._empty_finance_report()
+
+        # Build lookup maps
+        cat_map = {}
+        for c in categories:
+            cid = c.get('id') or c.get('Id') or c.get('ID')
+            cname = c.get('name') or c.get('Name') or 'Unknown'
+            if cid is not None:
+                cat_map[cid] = cname
+
+        pm_map = {}
+        for pm in payment_methods:
+            pmid = pm.get('id') or pm.get('Id') or pm.get('ID')
+            pmname = pm.get('name') or pm.get('Name') or 'Unknown'
+            if pmid is not None:
+                pm_map[pmid] = pmname
+
+        # Build enrollment lookups for cross-referencing
+        enrolled_person_ids = set()
+        program_id_to_name = {}
+        if enrollment_report:
+            # Extract unique person IDs from enrollment
+            for prog_data in enrollment_report.get('programs', []):
+                prog_name = prog_data.get('program', '')
+                # We don't have programId in processed enrollment, but we have personId in participants
+            participants = enrollment_report.get('participants', {})
+            for prog_name, weeks in participants.items():
+                for week_num, campers in weeks.items():
+                    for camper in campers:
+                        enrolled_person_ids.add(camper.get('person_id'))
+
+        # Filter out reversed transactions
+        valid_txns = [t for t in transactions if not t.get('isReversed', False)]
+
+        # Classify and aggregate
+        gross_revenue = 0.0
+        total_discounts = 0.0
+        by_category = {}
+        by_payment_method = {}
+        by_person = {}
+        by_program = {}
+        timeline_data = {}
+
+        for t in valid_txns:
+            amount = t.get('amount', 0) or 0
+            fin_cat_id = t.get('financialCategoryId')
+            pm_id = t.get('paymentMethodId')
+            person_id = t.get('personId')
+            program_id = t.get('programId')
+            post_date = (t.get('postDate') or '')[:10]
+            description = t.get('description') or ''
+
+            # Revenue vs discount classification
+            if amount >= 0:
+                gross_revenue += amount
+            else:
+                total_discounts += abs(amount)
+
+            # By financial category
+            cat_name = cat_map.get(fin_cat_id, f'Category {fin_cat_id}') if fin_cat_id else 'Uncategorized'
+            if cat_name not in by_category:
+                by_category[cat_name] = {'amount': 0, 'count': 0, 'persons': set()}
+            by_category[cat_name]['amount'] += amount
+            by_category[cat_name]['count'] += 1
+            if person_id:
+                by_category[cat_name]['persons'].add(person_id)
+
+            # By payment method
+            if pm_id is not None:
+                pm_name = pm_map.get(pm_id, f'Method {pm_id}')
+                if pm_name not in by_payment_method:
+                    by_payment_method[pm_name] = {'amount': 0, 'count': 0}
+                by_payment_method[pm_name]['amount'] += amount
+                by_payment_method[pm_name]['count'] += 1
+
+            # By person
+            if person_id:
+                if person_id not in by_person:
+                    by_person[person_id] = {'revenue': 0, 'discounts': 0, 'net': 0}
+                if amount >= 0:
+                    by_person[person_id]['revenue'] += amount
+                else:
+                    by_person[person_id]['discounts'] += abs(amount)
+                by_person[person_id]['net'] += amount
+
+            # By program (use description as fallback for program identification)
+            prog_key = str(program_id) if program_id else 'unassigned'
+            if prog_key not in by_program:
+                by_program[prog_key] = {
+                    'program_id': program_id,
+                    'gross_revenue': 0, 'discounts': 0,
+                    'persons': set(), 'description_samples': set()
+                }
+            if amount >= 0:
+                by_program[prog_key]['gross_revenue'] += amount
+            else:
+                by_program[prog_key]['discounts'] += abs(amount)
+            if person_id:
+                by_program[prog_key]['persons'].add(person_id)
+            if description and len(by_program[prog_key]['description_samples']) < 3:
+                by_program[prog_key]['description_samples'].add(description[:80])
+
+            # Timeline
+            if post_date:
+                if post_date not in timeline_data:
+                    timeline_data[post_date] = {'revenue': 0, 'discounts': 0}
+                if amount >= 0:
+                    timeline_data[post_date]['revenue'] += amount
+                else:
+                    timeline_data[post_date]['discounts'] += abs(amount)
+
+        net_revenue = gross_revenue - total_discounts
+
+        # Get enrollment metrics for cross-reference
+        total_campers = 0
+        total_fte = 0
+        total_camper_weeks = 0
+        if enrollment_report:
+            summary = enrollment_report.get('summary', {})
+            total_campers = summary.get('total_enrollment', 0)
+            total_fte = summary.get('total_fte', 0)
+            total_camper_weeks = summary.get('total_camper_weeks', 0)
+
+        # Discount analysis
+        discount_categories = []
+        scholarship_total = 0
+        scholarship_recipients = set()
+        campers_with_discount = set()
+
+        for cat_name, data in by_category.items():
+            if data['amount'] < 0:  # Negative total = discount category
+                discount_categories.append({
+                    'name': cat_name,
+                    'amount': round(abs(data['amount']), 2),
+                    'recipients': len(data['persons']),
+                    'avg_per_recipient': round(abs(data['amount']) / len(data['persons']), 2) if data['persons'] else 0
+                })
+                campers_with_discount.update(data['persons'])
+                # Detect scholarship/financial aid by name
+                name_lower = cat_name.lower()
+                if any(kw in name_lower for kw in ['scholarship', 'financial aid', 'grant', 'subsidy']):
+                    scholarship_total += abs(data['amount'])
+                    scholarship_recipients.update(data['persons'])
+
+        discount_categories.sort(key=lambda x: x['amount'], reverse=True)
+
+        # Also check by_person for anyone with discounts
+        for pid, pdata in by_person.items():
+            if pdata['discounts'] > 0:
+                campers_with_discount.add(pid)
+
+        campers_full_price = len(by_person) - len(campers_with_discount)
+
+        # Payment method summary
+        payment_summary = []
+        total_payments = sum(d['amount'] for d in by_payment_method.values() if d['amount'] > 0)
+        for pm_name, data in sorted(by_payment_method.items(), key=lambda x: abs(x[1]['amount']), reverse=True):
+            if data['amount'] != 0:
+                payment_summary.append({
+                    'method': pm_name,
+                    'amount': round(data['amount'], 2),
+                    'count': data['count'],
+                    'percent': round((data['amount'] / total_payments * 100) if total_payments > 0 else 0, 1)
+                })
+
+        # Revenue timeline (cumulative)
+        timeline = []
+        cum_rev = 0
+        cum_disc = 0
+        for date_str in sorted(timeline_data.keys()):
+            day = timeline_data[date_str]
+            cum_rev += day['revenue']
+            cum_disc += day['discounts']
+            timeline.append({
+                'date': date_str,
+                'revenue': round(day['revenue'], 2),
+                'discounts': round(day['discounts'], 2),
+                'cumulative_revenue': round(cum_rev, 2),
+                'cumulative_discounts': round(cum_disc, 2),
+                'cumulative_net': round(cum_rev - cum_disc, 2)
+            })
+
+        # Per-camper distribution
+        avg_net_per_camper = net_revenue / len(by_person) if by_person else 0
+        distribution = {'full_price': 0, 'partial_discount': 0, 'heavy_discount': 0, 'subsidized': 0}
+        for pid, pdata in by_person.items():
+            if avg_net_per_camper > 0:
+                ratio = pdata['net'] / avg_net_per_camper
+                if ratio >= 0.9:
+                    distribution['full_price'] += 1
+                elif ratio >= 0.5:
+                    distribution['partial_discount'] += 1
+                elif ratio >= 0.1:
+                    distribution['heavy_discount'] += 1
+                else:
+                    distribution['subsidized'] += 1
+            else:
+                distribution['full_price'] += 1
+
+        # Revenue by enrollment category
+        revenue_by_enrollment_category = self._build_revenue_by_category(
+            by_program, enrollment_report
+        )
+
+        # Build summary
+        return {
+            'summary': {
+                'gross_revenue': round(gross_revenue, 2),
+                'total_discounts': round(total_discounts, 2),
+                'net_revenue': round(net_revenue, 2),
+                'revenue_per_camper': round(net_revenue / total_campers, 2) if total_campers > 0 else 0,
+                'revenue_per_ftc': round(net_revenue / total_fte, 2) if total_fte > 0 else 0,
+                'revenue_per_camper_week': round(net_revenue / total_camper_weeks, 2) if total_camper_weeks > 0 else 0,
+                'total_campers': total_campers,
+                'total_fte': total_fte,
+                'transaction_count': len(valid_txns),
+                'campers_with_transactions': len(by_person),
+            },
+            'discounts': {
+                'total_amount': round(total_discounts, 2),
+                'by_category': discount_categories,
+                'campers_with_discount': len(campers_with_discount),
+                'campers_full_price': max(campers_full_price, 0),
+                'avg_discount': round(total_discounts / len(campers_with_discount), 2) if campers_with_discount else 0,
+                'discount_rate': round(len(campers_with_discount) / len(by_person) * 100, 1) if by_person else 0,
+                'scholarships': {
+                    'total': round(scholarship_total, 2),
+                    'recipients': len(scholarship_recipients),
+                    'avg_per_recipient': round(scholarship_total / len(scholarship_recipients), 2) if scholarship_recipients else 0
+                }
+            },
+            'by_category': [{
+                'name': name,
+                'amount': round(data['amount'], 2),
+                'count': data['count'],
+                'recipients': len(data['persons']),
+                'is_revenue': data['amount'] >= 0
+            } for name, data in sorted(by_category.items(), key=lambda x: abs(x[1]['amount']), reverse=True)],
+            'by_payment_method': payment_summary,
+            'by_enrollment_category': revenue_by_enrollment_category,
+            'timeline': timeline,
+            'distribution': distribution,
+            'season': season
+        }
+
+    def _build_revenue_by_category(self, by_program: Dict, enrollment_report: Dict) -> List[Dict]:
+        """Build revenue breakdown by enrollment category (Early Childhood, Sports, etc.)"""
+        if not enrollment_report:
+            return []
+
+        # Map enrollment programs to their categories
+        cat_revenue = {}
+        ep = self.enrollment_processor
+
+        for prog_data in enrollment_report.get('programs', []):
+            prog_name = prog_data.get('program', '')
+            category = ep._get_category(prog_name)
+            if category not in cat_revenue:
+                cat_revenue[category] = {
+                    'category': category,
+                    'emoji': ep.category_emojis.get(category, '📋'),
+                    'color': ep.category_colors.get(category, '#999'),
+                    'gross_revenue': 0,
+                    'discounts': 0,
+                    'enrolled': 0,
+                    'fte': prog_data.get('fte', 0),
+                }
+            else:
+                cat_revenue[category]['fte'] += prog_data.get('fte', 0)
+
+            # Count unique campers from enrollment (approximate from total/weeks)
+            cat_revenue[category]['enrolled'] += len(set())  # Will be updated below
+
+        # For now, just return category shells with enrollment data
+        # Revenue mapping requires matching programId which we may not have directly
+        result = []
+        for cat_name, data in cat_revenue.items():
+            net = data['gross_revenue'] - data['discounts']
+            result.append({
+                'category': cat_name,
+                'emoji': data['emoji'],
+                'color': data['color'],
+                'gross_revenue': round(data['gross_revenue'], 2),
+                'discounts': round(data['discounts'], 2),
+                'net_revenue': round(net, 2),
+                'fte': round(data['fte'], 1),
+                'revenue_per_ftc': round(net / data['fte'], 2) if data['fte'] > 0 else 0,
+            })
+
+        # Calculate pct_of_total
+        total_net = sum(r['net_revenue'] for r in result) if result else 1
+        for r in result:
+            r['pct_of_total'] = round((r['net_revenue'] / total_net * 100) if total_net > 0 else 0, 1)
+
+        result.sort(key=lambda x: x['net_revenue'], reverse=True)
+        return result
+
+    def _empty_finance_report(self) -> Dict:
+        """Return empty finance report structure"""
+        return {
+            'summary': {
+                'gross_revenue': 0, 'total_discounts': 0, 'net_revenue': 0,
+                'revenue_per_camper': 0, 'revenue_per_ftc': 0, 'revenue_per_camper_week': 0,
+                'total_campers': 0, 'total_fte': 0, 'transaction_count': 0,
+                'campers_with_transactions': 0,
+            },
+            'discounts': {
+                'total_amount': 0, 'by_category': [],
+                'campers_with_discount': 0, 'campers_full_price': 0,
+                'avg_discount': 0, 'discount_rate': 0,
+                'scholarships': {'total': 0, 'recipients': 0, 'avg_per_recipient': 0}
+            },
+            'by_category': [],
+            'by_payment_method': [],
+            'by_enrollment_category': [],
+            'timeline': [],
+            'distribution': {'full_price': 0, 'partial_discount': 0, 'heavy_discount': 0, 'subsidized': 0},
+            'season': 0
         }
 
 
