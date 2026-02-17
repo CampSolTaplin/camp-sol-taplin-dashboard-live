@@ -124,7 +124,9 @@
             <!-- Pace Comparison Cards - Unique Campers -->
             {% if pace_comparison %}
             <div class="pace-comparison-section">
-                <h3 class="section-title">📈 Current Pace vs Previous Years</h3>
+                <h3 class="section-title">📈 Current Pace vs Previous Years
+                    <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Compares current 2026 enrollment numbers against the same calendar date in previous years, showing whether camp is ahead or behind in registrations.</span></span>
+                </h3>
                 <div class="pace-cards">
                     <div class="pace-card current">
                         <div class="pace-year">2026 (Current)</div>
@@ -162,22 +164,22 @@
 
             <div class="kpi-grid kpi-grid-4">
                 <div class="kpi-card fte">
-                    <div class="kpi-label">📈 Total FTC</div>
+                    <div class="kpi-label">📈 Total FTC <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Full-Time Camper equivalent. Calculated as total camper-weeks &divide; 9 (number of camp weeks). Measures overall camp capacity utilization.</span></span></div>
                     <div class="kpi-value">{{ report.summary.total_fte }}</div>
                     <div class="kpi-subtext">Goal: {{ report.summary.goal }}</div>
                 </div>
                 <div class="kpi-card avg-weeks">
-                    <div class="kpi-label">📊 Avg Weeks/Camper</div>
+                    <div class="kpi-label">📊 Avg Weeks/Camper <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Average number of weeks each camper is enrolled. Calculated as total camper-weeks &divide; total unique campers.</span></span></div>
                     <div class="kpi-value">{{ '%.1f'|format(report.summary.avg_weeks_per_camper) if report.summary.avg_weeks_per_camper else '0.0' }}</div>
                 </div>
                 <div class="kpi-card goal">
-                    <div class="kpi-label">🎯 % to Goal</div>
+                    <div class="kpi-label">🎯 % to Goal <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Percentage of the FTC goal achieved so far. Calculated as (Total FTC &divide; FTC Goal) &times; 100.</span></span></div>
                     <div class="kpi-value status-{{ 'success' if report.summary.percent_to_goal >= 60 else 'warning' if report.summary.percent_to_goal >= 40 else 'danger' }}">
                         {{ '%.1f'|format(report.summary.percent_to_goal) }}%
                     </div>
                 </div>
                 <div class="kpi-card retention" id="retentionCard">
-                    <div class="kpi-label">🔄 Retention Rate</div>
+                    <div class="kpi-label">🔄 Retention Rate <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Percentage of last year's campers who have re-enrolled for this year. Calculated as returning campers &divide; total campers from previous year.</span></span></div>
                     <div class="kpi-value" id="retentionValue">
                         <span class="loading-dots">...</span>
                     </div>
@@ -196,6 +198,7 @@
                         <div class="category-summary-header">
                             <span class="category-emoji">{{ cat.emoji }}</span>
                             <span class="category-name">{{ cat.category }}</span>
+                            <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">FTC = Full-Time Camper equivalent (camper-weeks &divide; 9). Goal is the target FTC set in Admin Settings. Progress = FTC as a percentage of the goal.</span></span>
                         </div>
                         <div class="category-summary-stats">
                             <div class="category-stat">
@@ -228,19 +231,19 @@
                 <div class="ct-summary-row">
                     <div class="ct-kpi">
                         <div class="ct-kpi-value">{{ report.childrens_trust.unique_campers }}</div>
-                        <div class="ct-kpi-label">Unique Campers</div>
+                        <div class="ct-kpi-label">Unique Campers <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Total individual children enrolled in any Children's Trust subprogram.</span></span></div>
                     </div>
                     <div class="ct-kpi">
                         <div class="ct-kpi-value">{{ report.childrens_trust.total_fte }}</div>
-                        <div class="ct-kpi-label">Total FTC</div>
+                        <div class="ct-kpi-label">Total FTC <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Full-Time Camper equivalent across all Children's Trust subprograms.</span></span></div>
                     </div>
                     <div class="ct-kpi">
                         <div class="ct-kpi-value">{{ report.childrens_trust.total_goal }}</div>
-                        <div class="ct-kpi-label">Goal</div>
+                        <div class="ct-kpi-label">Goal <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Combined FTC target for all Children's Trust programs.</span></span></div>
                     </div>
                     <div class="ct-kpi">
                         <div class="ct-kpi-value {{ 'success' if report.childrens_trust.percent_to_goal >= 70 else 'warning' if report.childrens_trust.percent_to_goal >= 50 else 'danger' }}">{{ '%.0f'|format(report.childrens_trust.percent_to_goal) }}%</div>
-                        <div class="ct-kpi-label">% to Goal</div>
+                        <div class="ct-kpi-label">% to Goal <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Children's Trust FTC as a percentage of the combined goal.</span></span></div>
                     </div>
                 </div>
                 <table class="ct-detail-table">
@@ -249,9 +252,9 @@
                             <th>Subprogram</th>
                             <th>Unique Campers</th>
                             <th>Camper Weeks</th>
-                            <th>FTC</th>
+                            <th>FTC <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Camper-weeks &divide; 9 for this subprogram.</span></span></th>
                             <th>Goal</th>
-                            <th>% to Goal</th>
+                            <th>% to Goal <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Subprogram FTC as percentage of its individual goal.</span></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -865,5 +868,23 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script>
+    // Auto-reposition tooltips: if icon is in right half of viewport, open tooltip to the left
+    document.querySelectorAll('.kpi-info').forEach(function(info) {
+        info.addEventListener('mouseenter', function() {
+            var tooltip = this.querySelector('.kpi-info-tooltip');
+            if (!tooltip) return;
+            var iconRect = this.getBoundingClientRect();
+            var vw = window.innerWidth;
+            if (iconRect.left > vw * 0.55) {
+                tooltip.style.left = 'auto';
+                tooltip.style.right = '0';
+            } else {
+                tooltip.style.left = '0';
+                tooltip.style.right = 'auto';
+            }
+        });
+    });
+    </script>
 </body>
 </html>

@@ -212,7 +212,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     padding: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .kpi-card::before {
@@ -1701,6 +1701,70 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 .totals-row .sticky-col {
     z-index: 3;
+}
+
+/* KPI Info Tooltips */
+.kpi-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.kpi-info-icon {
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: help;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.kpi-info-icon:hover {
+    opacity: 1;
+}
+
+.kpi-info-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #1a202c;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.4;
+    width: 260px;
+    z-index: 1000;
+    margin-top: 6px;
+    text-align: left;
+    font-weight: 400;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    pointer-events: auto;
+    white-space: normal;
+}
+
+.kpi-info-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 12px;
+    border: 5px solid transparent;
+    border-bottom-color: #1a202c;
+}
+
+.kpi-info:hover .kpi-info-tooltip {
+    display: block;
+}
+
+/* Category card header tooltip alignment */
+.category-summary-header .kpi-info {
+    margin-left: 2px;
+}
+
+/* Prevent tooltip clipping on category cards */
+.category-summary-card {
+    overflow: visible;
 }
 
 /* Widen modal for extra columns */
