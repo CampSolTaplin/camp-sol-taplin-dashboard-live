@@ -26,6 +26,9 @@ function switchView(viewName) {
     if (viewName === 'finance') {
         setTimeout(initFinanceCharts, 100);
     }
+    if (viewName === 'insights') {
+        setTimeout(initInsights, 100);
+    }
 }
 
 // Filter by category
@@ -227,13 +230,30 @@ function renderParticipantsTable(participants, list, program, week) {
     html += '<th>F1P2 Email 2</th>';
     html += '</tr></thead><tbody>';
 
+    var currentGroup = -1;
+    var groupIndex = 0;
+
     participants.forEach(function(p, index) {
-        html += '<tr>';
-        html += '<td>' + (index + 1) + '</td>';
+        var groupVal = p.group || 0;
+
+        // Insert group separator when group changes
+        if (groupVal !== currentGroup) {
+            currentGroup = groupVal;
+            groupIndex = 0;
+            var separatorLabel = groupVal === 0 ? 'Unassigned' : 'Group ' + groupVal;
+            var separatorIcon = groupVal === 0 ? '⬜' : '📌';
+            html += '<tr class="group-separator group-separator-' + groupVal + '">';
+            html += '<td colspan="9">' + separatorIcon + ' ' + separatorLabel + '</td>';
+            html += '</tr>';
+        }
+
+        groupIndex++;
+        var rowClass = groupVal > 0 ? ' class="group-row group-' + groupVal + '"' : '';
+        html += '<tr' + rowClass + '>';
+        html += '<td>' + groupIndex + '</td>';
 
         // Group column
         if (isAdmin && program && week) {
-            var groupVal = p.group || 0;
             html += '<td class="group-cell">';
             html += '<select class="group-select" data-person-id="' + p.person_id + '" onchange="saveGroupAssignment(this)">';
             html += '<option value="0"' + (groupVal === 0 ? ' selected' : '') + '>-</option>';
@@ -243,7 +263,7 @@ function renderParticipantsTable(participants, list, program, week) {
             html += '</select>';
             html += '</td>';
         } else {
-            var groupDisplay = p.group && p.group > 0 ? p.group : '-';
+            var groupDisplay = groupVal > 0 ? groupVal : '-';
             html += '<td class="group-cell">' + groupDisplay + '</td>';
         }
 
@@ -261,7 +281,7 @@ function renderParticipantsTable(participants, list, program, week) {
     list.innerHTML = html;
 }
 
-// Save group assignment via AJAX
+// Save group assignment via AJAX (with forward propagation)
 function saveGroupAssignment(selectEl) {
     var personId = selectEl.getAttribute('data-person-id');
     var group = parseInt(selectEl.value);
@@ -271,7 +291,7 @@ function saveGroupAssignment(selectEl) {
     fetch('/api/group-assignment/' + encodeURIComponent(currentModalProgram) + '/' + currentModalWeek, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ person_id: personId, group: group })
+        body: JSON.stringify({ person_id: personId, group: group, propagate_forward: true })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -279,6 +299,16 @@ function saveGroupAssignment(selectEl) {
         if (data.success) {
             selectEl.classList.add('saved');
             setTimeout(function() { selectEl.classList.remove('saved'); }, 1000);
+
+            // Show toast with updated weeks info
+            var updatedWeeks = data.updated_weeks || [currentModalWeek];
+            if (updatedWeeks.length > 1) {
+                var groupLabel = group === 0 ? 'Unassigned' : 'Group ' + group;
+                showToast(groupLabel + ' set for weeks ' + updatedWeeks.join(', '), 'success');
+            }
+
+            // Re-render table with updated group sorting
+            refreshParticipantsTable();
         } else {
             selectEl.classList.add('error');
             setTimeout(function() { selectEl.classList.remove('error'); }, 2000);
@@ -291,6 +321,22 @@ function saveGroupAssignment(selectEl) {
         setTimeout(function() { selectEl.classList.remove('error'); }, 2000);
         alert('Failed to save group assignment: ' + err.message);
     });
+}
+
+// Re-fetch and re-render participants table after a group change
+function refreshParticipantsTable() {
+    var list = document.getElementById('participantsList');
+    if (!list || !currentModalProgram || !currentModalWeek) return;
+
+    fetch('/api/participants/' + encodeURIComponent(currentModalProgram) + '/' + currentModalWeek)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var participants = data.participants || [];
+            renderParticipantsTable(participants, list, currentModalProgram, currentModalWeek);
+        })
+        .catch(function(err) {
+            console.error('Failed to refresh participants table:', err);
+        });
 }
 
 // Download By Groups Excel
@@ -1578,4 +1624,30 @@ async function refreshFinanceData() {
 function formatNumber(num) {
     if (num === null || num === undefined) return '0';
     return Math.round(num).toLocaleString('en-US');
+}
+
+// ==================== INSIGHTS TAB ====================
+var insightsInitialized = false;
+
+function initInsights() {
+    if (insightsInitialized) return;
+    insightsInitialized = true;
+
+    // Fetch retention data for the insights retention card
+    fetch('/api/retention')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            var rateEl = document.getElementById('insightRetentionRate');
+            var retEl = document.getElementById('insightReturning');
+            var newEl = document.getElementById('insightNew');
+            var lostEl = document.getElementById('insightLost');
+            if (rateEl) rateEl.textContent = data.retention_rate ? data.retention_rate.toFixed(1) + '%' : '—';
+            if (retEl) retEl.textContent = data.returning_campers || '—';
+            if (newEl) newEl.textContent = data.new_campers || '—';
+            if (lostEl) lostEl.textContent = data.lost_campers || '—';
+        })
+        .catch(function(err) {
+            var rateEl = document.getElementById('insightRetentionRate');
+            if (rateEl) rateEl.textContent = 'N/A';
+        });
 }

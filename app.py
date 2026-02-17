@@ -1445,42 +1445,77 @@ def api_participants(program, week):
             'group': group_map.get(pid, 0)
         })
 
-    # Sort by last name
-    enriched.sort(key=lambda x: (x['last_name'].lower(), x['first_name'].lower()))
+    # Sort: unassigned first, then by group number, then by last name
+    enriched.sort(key=lambda x: (
+        0 if x['group'] == 0 else 1,
+        x['group'],
+        x['last_name'].lower(),
+        x['first_name'].lower()
+    ))
 
     return jsonify({'participants': enriched})
 
 @app.route('/api/group-assignment/<program>/<int:week>', methods=['POST'])
 @login_required
 def api_save_group_assignment(program, week):
-    """Save a group assignment for a single camper"""
+    """Save a group assignment for a single camper, propagating forward to subsequent weeks"""
     if not current_user.has_permission('edit_groups'):
         return jsonify({'error': 'Unauthorized'}), 403
 
     data = request.get_json()
     person_id = str(data.get('person_id', ''))
     group = data.get('group')
+    propagate = data.get('propagate_forward', True)
 
     if not person_id:
         return jsonify({'error': 'person_id is required'}), 400
 
-    existing = GroupAssignment.query.filter_by(program=program, week=week, person_id=person_id).first()
+    # Determine which weeks to update
+    weeks_to_update = [week]
 
-    if group is None or group == 0:
-        # Remove assignment
-        if existing:
-            db.session.delete(existing)
-            db.session.commit()
-    else:
-        if existing:
-            existing.group_number = int(group)
+    if propagate:
+        cached_data = api_cache.get('data')
+        if cached_data and 'participants' in cached_data:
+            program_data = cached_data['participants'].get(program, {})
+            enrolled_weeks = []
+            for week_str, participants_list in program_data.items():
+                w = int(week_str)
+                for p in participants_list:
+                    if str(p['person_id']) == person_id:
+                        enrolled_weeks.append(w)
+                        break
+            # Only propagate to weeks >= current week where camper is enrolled
+            weeks_to_update = sorted([w for w in enrolled_weeks if w >= week])
+            if not weeks_to_update:
+                weeks_to_update = [week]
+
+    # Apply the group assignment to all target weeks
+    updated_weeks = []
+    for w in weeks_to_update:
+        existing = GroupAssignment.query.filter_by(program=program, week=w, person_id=person_id).first()
+
+        if group is None or group == 0:
+            if existing:
+                db.session.delete(existing)
+            updated_weeks.append(w)
         else:
-            db.session.add(GroupAssignment(
-                program=program, week=week, person_id=person_id, group_number=int(group)
-            ))
-        db.session.commit()
+            if existing:
+                existing.group_number = int(group)
+            else:
+                db.session.add(GroupAssignment(
+                    program=program, week=w, person_id=person_id, group_number=int(group)
+                ))
+            updated_weeks.append(w)
 
-    return jsonify({'success': True, 'key': f"{program}_{week}", 'person_id': person_id, 'group': group})
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'key': f"{program}_{week}",
+        'person_id': person_id,
+        'group': group,
+        'updated_weeks': updated_weeks
+    })
 
 @app.route('/api/download-by-groups/<program>/<int:week>')
 @login_required
