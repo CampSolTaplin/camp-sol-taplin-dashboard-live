@@ -456,6 +456,10 @@ def dashboard():
     ct_stats_2024 = historical_manager.get_childrens_trust_stats(2024)
     ct_stats_2025 = historical_manager.get_childrens_trust_stats(2025)
 
+    # Get CT daily data for date-filtered display in By Date tab
+    ct_daily_2025 = historical_manager.get_ct_daily_data(2025)
+    ct_daily_2024 = historical_manager.get_ct_daily_data(2024)
+
     # Get 2025 program-level data for OLD VIEW STATS comparison
     # Filter to only include enrollments up to the equivalent date last year
     # (e.g. if today is Feb 14 2026, show 2025 data through Feb 14 2025)
@@ -481,6 +485,8 @@ def dashboard():
                          comparison_chart_data=comparison_chart_data,
                          ct_stats_2024=ct_stats_2024,
                          ct_stats_2025=ct_stats_2025,
+                         ct_daily_2024=ct_daily_2024,
+                         ct_daily_2025=ct_daily_2025,
                          programs_2025_map=programs_2025_map,
                          user=current_user)
 
@@ -2047,7 +2053,7 @@ def download_excel():
         
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             summary_data = {
-                'Metric': ['Total Enrollment', 'Total Camper Weeks', 'Total FTE', 'Goal', '% to Goal'],
+                'Metric': ['Total Enrollment', 'Total Camper Weeks', 'Total FTC', 'Goal', '% to Goal'],
                 'Value': [
                     current_report['data']['summary']['total_enrollment'],
                     current_report['data']['summary']['total_camper_weeks'],

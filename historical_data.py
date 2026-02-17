@@ -297,6 +297,44 @@ class HistoricalDataManager:
             'unique_campers': ct_unique_campers
         }
 
+    def get_ct_daily_data(self, year: int) -> List[Dict]:
+        """
+        Build cumulative Children's Trust unique campers per date using enrollments_by_date.
+        Returns list of {date, ct_campers} entries — one per date where CT data changes.
+        Uses same logic as get_childrens_trust_stats: unique campers = sum of max weekly
+        enrollment per CT program.
+        """
+        year_data = self.get_year_data(year)
+        if not year_data or 'enrollments_by_date' not in year_data:
+            return []
+
+        ct_keywords = ["children's trust", "childrens trust"]
+        from collections import defaultdict
+
+        # Accumulate CT program weekly counts progressively across dates
+        ct_program_weeks = defaultdict(lambda: defaultdict(int))
+        result = []
+
+        for day_entry in year_data['enrollments_by_date']:
+            date_str = day_entry['date']
+            changed = False
+
+            for prog_name, weeks_dict in day_entry.get('programs', {}).items():
+                if any(kw in prog_name.lower() for kw in ct_keywords):
+                    for week_key, count in weeks_dict.items():
+                        ct_program_weeks[prog_name][week_key] += count
+                        changed = True
+
+            if changed or not result:
+                # Compute CT unique campers: sum of max weekly enrollment per CT program
+                ct_unique = 0
+                for prog_name, weeks in ct_program_weeks.items():
+                    max_weekly = max((weeks.get(f'week_{w}', 0) for w in range(1, 10)), default=0)
+                    ct_unique += max_weekly
+                result.append({'date': date_str, 'ct_campers': ct_unique})
+
+        return result
+
     def get_programs_as_of_date(self, year: int, month: int, day: int) -> List[Dict]:
         """
         Get program-level enrollment data for a given year, filtered to only include

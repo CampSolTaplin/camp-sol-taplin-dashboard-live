@@ -162,7 +162,7 @@
 
             <div class="kpi-grid kpi-grid-4">
                 <div class="kpi-card fte">
-                    <div class="kpi-label">📈 Total FTE</div>
+                    <div class="kpi-label">📈 Total FTC</div>
                     <div class="kpi-value">{{ report.summary.total_fte }}</div>
                     <div class="kpi-subtext">Goal: {{ report.summary.goal }}</div>
                 </div>
@@ -200,7 +200,7 @@
                         <div class="category-summary-stats">
                             <div class="category-stat">
                                 <span class="stat-value">{{ cat.fte }}</span>
-                                <span class="stat-label">FTE</span>
+                                <span class="stat-label">FTC</span>
                             </div>
                             <div class="category-stat">
                                 <span class="stat-value">{{ cat.goal }}</span>
@@ -232,7 +232,7 @@
                     </div>
                     <div class="ct-kpi">
                         <div class="ct-kpi-value">{{ report.childrens_trust.total_fte }}</div>
-                        <div class="ct-kpi-label">Total FTE</div>
+                        <div class="ct-kpi-label">Total FTC</div>
                     </div>
                     <div class="ct-kpi">
                         <div class="ct-kpi-value">{{ report.childrens_trust.total_goal }}</div>
@@ -249,7 +249,7 @@
                             <th>Subprogram</th>
                             <th>Unique Campers</th>
                             <th>Camper Weeks</th>
-                            <th>FTE</th>
+                            <th>FTC</th>
                             <th>Goal</th>
                             <th>% to Goal</th>
                         </tr>
@@ -440,7 +440,7 @@
         <div id="detailed-view" class="view-content {{ 'active' if default_view == 'detailed' }}">
             <div class="section-card">
                 <div class="section-header">
-                    <h3>📋 Detailed Enrollment Matrix</h3>
+                    <h3>📋 Detailed Enrollment Matrix — 2026</h3>
                     <p class="section-subtitle">Click any number to see participants</p>
                 </div>
                 
@@ -469,7 +469,7 @@
                                 <th>W8</th>
                                 <th>W9</th>
                                 <th>Total</th>
-                                <th>FTE</th>
+                                <th>FTC</th>
                                 <th>Goal</th>
                                 <th>%</th>
                             </tr>
@@ -612,8 +612,8 @@
                     <table class="enrollment-matrix" id="oldViewMatrix">
                         <thead>
                             <tr>
-                                <th>2025 FTE</th>
-                                <th>2026 FTE</th>
+                                <th>2025 FTC</th>
+                                <th>2026 FTC</th>
                                 <th>Goal</th>
                                 <th class="sticky-col">Program</th>
                                 <th colspan="9" class="oldview-header-2026">2026</th>
@@ -681,11 +681,15 @@
                             <tr class="totals-row">
                                 <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
                                     {% set total_2025_fte = [] %}
+                                    {% set counted_fte = [] %}
                                     {% for prog in report.programs %}
                                         {% set p25_name = name_map.get(prog.program, prog.program) %}
-                                        {% set p25 = programs_2025_map.get(p25_name, {}) %}
-                                        {% if p25.fte is defined %}
-                                            {% set _ = total_2025_fte.append(p25.fte) %}
+                                        {% if p25_name not in counted_fte %}
+                                            {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                            {% if p25.fte is defined %}
+                                                {% set _ = total_2025_fte.append(p25.fte) %}
+                                                {% set _ = counted_fte.append(p25_name) %}
+                                            {% endif %}
                                         {% endif %}
                                     {% endfor %}
                                     {{ '%.1f' | format(total_2025_fte | sum) }}
@@ -710,12 +714,18 @@
                                 {% for w in range(1, 10) %}
                                 <td style="background: #5c3d00; color: white; font-weight: 700; text-align: center;">
                                     {% set week_sum = [] %}
+                                    {% set counted_week = [] %}
                                     {% for prog in report.programs %}
                                         {% set p25_name = name_map.get(prog.program, prog.program) %}
-                                        {% set p25 = programs_2025_map.get(p25_name, {}) %}
-                                        {% if p25 %}
-                                            {% set val = p25.get('week_' ~ w, 0) %}
-                                            {% if val %}{% set _ = week_sum.append(val) %}{% endif %}
+                                        {% if p25_name not in counted_week %}
+                                            {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                            {% if p25 %}
+                                                {% set val = p25.get('week_' ~ w, 0) %}
+                                                {% if val %}
+                                                    {% set _ = week_sum.append(val) %}
+                                                    {% set _ = counted_week.append(p25_name) %}
+                                                {% endif %}
+                                            {% endif %}
                                         {% endif %}
                                     {% endfor %}
                                     {{ week_sum | sum }}
@@ -723,11 +733,15 @@
                                 {% endfor %}
                                 <td style="background: #4a3200; color: white; font-weight: 700; text-align: center;">
                                     {% set total_2025 = [] %}
+                                    {% set counted_total = [] %}
                                     {% for prog in report.programs %}
                                         {% set p25_name = name_map.get(prog.program, prog.program) %}
-                                        {% set p25 = programs_2025_map.get(p25_name, {}) %}
-                                        {% if p25.total is defined %}
-                                            {% set _ = total_2025.append(p25.total) %}
+                                        {% if p25_name not in counted_total %}
+                                            {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                            {% if p25.total is defined %}
+                                                {% set _ = total_2025.append(p25.total) %}
+                                                {% set _ = counted_total.append(p25_name) %}
+                                            {% endif %}
                                         {% endif %}
                                     {% endfor %}
                                     {{ total_2025 | sum }}
@@ -818,6 +832,10 @@
     {% else %}
     <script>window.dateStats2024 = [];</script>
     {% endif %}
+
+    {# CT daily data for date-filtered Children's Trust display #}
+    <script>window.ctDaily2025 = {{ ct_daily_2025 | tojson | safe }};</script>
+    <script>window.ctDaily2024 = {{ ct_daily_2024 | tojson | safe }};</script>
 
     <script>
     window.fullSeasonStats = {

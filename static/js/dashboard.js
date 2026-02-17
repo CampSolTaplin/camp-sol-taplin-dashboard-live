@@ -519,6 +519,27 @@ function getCumulativeAtDayOfYear(dailyData, targetDayOfYear) {
     return result;
 }
 
+// Look up CT unique campers at a given day-of-year from CT daily data
+function getCTAtDayOfYear(ctDailyData, targetDayOfYear) {
+    if (!ctDailyData || ctDailyData.length === 0) return null;
+    let result = null;
+    for (const entry of ctDailyData) {
+        const parts = entry.date.split('-');
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const d = parseInt(parts[2]);
+        const dayDate = new Date(year, month, d);
+        const yearStart = new Date(year, 0, 1);
+        const dayOfYear = Math.floor((dayDate - yearStart) / (1000 * 60 * 60 * 24));
+        if (dayOfYear <= targetDayOfYear) {
+            result = entry.ct_campers;
+        } else {
+            break;
+        }
+    }
+    return result;
+}
+
 // Update the Year-over-Year Enrollment Summary table based on date filter
 function updateSummaryTable() {
     const em = parseInt(document.getElementById('endMonth')?.value) || 0;
@@ -561,8 +582,10 @@ function updateSummaryTable() {
             setCell('stats-' + year + '-campers', '-');
             setCell('stats-' + year + '-weeks', '-');
         }
-        // CT: no daily breakdown available, show full season value with note or dash if filtered
-        setCell('stats-' + year + '-ct', (fullStats[year] || {}).ct || '-');
+        // CT: use date-filtered CT daily data if available, otherwise full season
+        const ctDailyMap = {'2024': window.ctDaily2024 || [], '2025': window.ctDaily2025 || [], '2026': []};
+        const ctVal = getCTAtDayOfYear(ctDailyMap[year], endDayOfYear);
+        setCell('stats-' + year + '-ct', ctVal !== null ? ctVal : (fullStats[year] || {}).ct || '-');
     }
 }
 
