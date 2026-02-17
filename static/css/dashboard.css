@@ -1691,16 +1691,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 /* ==================== TOTALS ROW ==================== */
 
 .totals-row td {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
     border-top: 3px solid #1a202c;
     font-size: 0.95rem;
     letter-spacing: 0.3px;
-}
-
-.totals-row .sticky-col {
-    z-index: 3;
 }
 
 /* KPI Info Tooltips */

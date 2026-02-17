@@ -534,6 +534,35 @@
                                     {{ '%.0f' | format((total_fte / total_goal * 100) if total_goal > 0 else 0) }}%
                                 </td>
                             </tr>
+                            {# TOTALS without Children's Trust #}
+                            {% set non_ct = [] %}
+                            {% for prog in report.programs %}
+                                {% if "Children's Trust" not in prog.program %}
+                                    {% set _ = non_ct.append(prog) %}
+                                {% endif %}
+                            {% endfor %}
+                            <tr class="totals-row">
+                                <td class="sticky-col program-name" style="background: #4a5568; color: white; font-weight: 700;">TOTALS w/o CT</td>
+                                {% for w in range(1, 10) %}
+                                <td class="week-cell" style="background: #4a5568; color: white; font-weight: 700;">
+                                    {{ non_ct | sum(attribute='week_' ~ w) }}
+                                </td>
+                                {% endfor %}
+                                <td class="total-cell" style="background: #374151; color: white; font-weight: 700;">
+                                    {{ non_ct | sum(attribute='total') }}
+                                </td>
+                                <td class="fte-cell" style="background: #374151; color: white; font-weight: 700;">
+                                    {{ non_ct | sum(attribute='fte') }}
+                                </td>
+                                <td class="goal-cell" style="background: #374151; color: white; font-weight: 700;">
+                                    {{ non_ct | sum(attribute='goal') }}
+                                </td>
+                                <td class="percent-cell" style="background: #374151; color: white; font-weight: 700;">
+                                    {% set nct_fte = non_ct | sum(attribute='fte') %}
+                                    {% set nct_goal = non_ct | sum(attribute='goal') %}
+                                    {{ '%.0f' | format((nct_fte / nct_goal * 100) if nct_goal > 0 else 0) }}%
+                                </td>
+                            </tr>
                         </tfoot>
                     </table>
                 </div>
@@ -754,6 +783,82 @@
                                         {% endif %}
                                     {% endfor %}
                                     {{ total_2025 | sum }}
+                                </td>
+                            </tr>
+                            {# TOTALS without Children's Trust #}
+                            {% set non_ct_ov = [] %}
+                            {% for prog in report.programs %}
+                                {% if "Children's Trust" not in prog.program %}
+                                    {% set _ = non_ct_ov.append(prog) %}
+                                {% endif %}
+                            {% endfor %}
+                            <tr class="totals-row">
+                                <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
+                                    {% set nct_2025_fte = [] %}
+                                    {% set nct_counted_fte = [] %}
+                                    {% for prog in non_ct_ov %}
+                                        {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                        {% if p25_name not in nct_counted_fte %}
+                                            {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                            {% if p25.fte is defined %}
+                                                {% set _ = nct_2025_fte.append(p25.fte) %}
+                                                {% set _ = nct_counted_fte.append(p25_name) %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ '%.1f' | format(nct_2025_fte | sum) }}
+                                </td>
+                                <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
+                                    {{ non_ct_ov | sum(attribute='fte') }}
+                                </td>
+                                <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
+                                    {{ non_ct_ov | sum(attribute='goal') }}
+                                </td>
+                                <td class="sticky-col program-name" style="background: #4a5568; color: white; font-weight: 700;">TOTALS w/o CT</td>
+                                {# 2026 week totals without CT #}
+                                {% for w in range(1, 10) %}
+                                <td style="background: #2a4a6f; color: white; font-weight: 700; text-align: center;">
+                                    {{ non_ct_ov | sum(attribute='week_' ~ w) }}
+                                </td>
+                                {% endfor %}
+                                <td style="background: #1e3d5c; color: white; font-weight: 700; text-align: center;">
+                                    {{ non_ct_ov | sum(attribute='total') }}
+                                </td>
+                                {# 2025 week totals without CT #}
+                                {% for w in range(1, 10) %}
+                                <td style="background: #6b4d00; color: white; font-weight: 700; text-align: center;">
+                                    {% set nct_week_sum = [] %}
+                                    {% set nct_counted_week = [] %}
+                                    {% for prog in non_ct_ov %}
+                                        {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                        {% if p25_name not in nct_counted_week %}
+                                            {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                            {% if p25 %}
+                                                {% set val = p25.get('week_' ~ w, 0) %}
+                                                {% if val %}
+                                                    {% set _ = nct_week_sum.append(val) %}
+                                                    {% set _ = nct_counted_week.append(p25_name) %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ nct_week_sum | sum }}
+                                </td>
+                                {% endfor %}
+                                <td style="background: #5a4000; color: white; font-weight: 700; text-align: center;">
+                                    {% set nct_total_2025 = [] %}
+                                    {% set nct_counted_total = [] %}
+                                    {% for prog in non_ct_ov %}
+                                        {% set p25_name = name_map.get(prog.program, prog.program) %}
+                                        {% if p25_name not in nct_counted_total %}
+                                            {% set p25 = programs_2025_map.get(p25_name, {}) %}
+                                            {% if p25.total is defined %}
+                                                {% set _ = nct_total_2025.append(p25.total) %}
+                                                {% set _ = nct_counted_total.append(p25_name) %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ nct_total_2025 | sum }}
                                 </td>
                             </tr>
                         </tfoot>

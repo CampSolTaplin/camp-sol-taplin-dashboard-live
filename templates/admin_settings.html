@@ -485,6 +485,7 @@
                             '<input type="text" id="shareUrlInput" value="' + data.url + '" readonly ' +
                                 'style="flex:1; min-width:280px; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:#f8f8f8; color:#333;">' +
                             '<button class="btn-save-all" onclick="copyShareLink()" style="padding:10px 20px; font-size:13px;">Copy Link</button>' +
+                            '<button class="btn-save-all" onclick="emailReport()" style="padding:10px 20px; font-size:13px; background:#2563EB;">📧 Email Report</button>' +
                             '<button onclick="revokeShareLink()" ' +
                                 'style="padding:10px 20px; font-size:13px; background:#EF4444; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;">Revoke</button>' +
                         '</div>' +
@@ -540,6 +541,41 @@
                 document.execCommand('copy');
                 showAlert('Link copied!', 'success');
             });
+        }
+
+        function emailReport() {
+            var shareUrl = document.getElementById('shareUrlInput').value;
+            var today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            var recipients = [
+                'campsoltaplin@marjcc.org',
+                'DrorG@marjcc.org',
+                'Alan@marjcc.org',
+                'AriH@marjcc.org',
+                'BeileV@marjcc.org',
+                'IrisK@marjcc.org',
+                'ElisaD@marjcc.org',
+                'nicole@npgcoaching.com',
+                'JWeingardlaw@gmail.com',
+                'MarlenyR@marjcc.org',
+                'CamilaZ@marjcc.org',
+                'DaniaS@marjcc.org',
+                'JeffR@marjcc.org',
+                'TanyaC@marjcc.org',
+                'jweisblum@bellsouth.net',
+                'Moisesb@marjcc.org',
+                'tamarg@mac.com',
+                'michellem@marjcc.org',
+                'amanda@sbblawgroup.com',
+                'DylanH@marjcc.org',
+                'MichaelB@marjcc.org',
+                'NicoleGoyhman@marjcc.org',
+                'mbenmoha@marjcc.org',
+                'roxanam@marjcc.org'
+            ];
+            var subject = 'Camp Sol Taplin - Enrollment Report ' + today;
+            var body = 'Hi everyone,\n\nHere is the updated Camp Sol Taplin enrollment report as of ' + today + ':\n\n' + shareUrl + '\n\nBest regards';
+            var mailtoUrl = 'mailto:' + recipients.join(',') + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+            window.location.href = mailtoUrl;
         }
 
         // Load share link on page load
