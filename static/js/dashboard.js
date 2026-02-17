@@ -43,14 +43,137 @@ function filterDetailedView() {
     const categoryFilter = document.getElementById('categoryFilter');
     const table = document.getElementById('enrollmentMatrix');
     if (!table) return;
-    
+
     const filterValue = categoryFilter ? categoryFilter.value : 'all';
     const rows = table.querySelectorAll('tbody tr');
-    
+
     rows.forEach(row => {
         const rowCategory = row.dataset.category || '';
         row.style.display = (filterValue === 'all' || rowCategory === filterValue) ? '' : 'none';
     });
+
+    recalcEnrollmentTotals(table);
+}
+
+// Recalculate Enrollment Matrix TOTALS based on visible rows
+function recalcEnrollmentTotals(table) {
+    var rows = table.querySelectorAll('tbody tr');
+    var sums = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
+    var nct = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
+
+    rows.forEach(function(row) {
+        if (row.style.display === 'none') return;
+        var isCT = row.dataset.isCt === 'true';
+        for (var i = 0; i < 9; i++) {
+            var val = parseFloat(row.dataset['w' + (i + 1)]) || 0;
+            sums.w[i] += val;
+            if (!isCT) nct.w[i] += val;
+        }
+        var t = parseFloat(row.dataset.total) || 0;
+        var f = parseFloat(row.dataset.fte) || 0;
+        var g = parseFloat(row.dataset.goal) || 0;
+        sums.total += t; sums.fte += f; sums.goal += g;
+        if (!isCT) { nct.total += t; nct.fte += f; nct.goal += g; }
+    });
+
+    for (var i = 1; i <= 9; i++) {
+        setCell('em-totals-w' + i, sums.w[i - 1]);
+        setCell('em-nct-w' + i, nct.w[i - 1]);
+    }
+    setCell('em-totals-total', sums.total);
+    setCell('em-totals-fte', sums.fte.toFixed(2));
+    setCell('em-totals-goal', sums.goal);
+    setCell('em-totals-pct', sums.goal > 0 ? Math.round(sums.fte / sums.goal * 100) + '%' : '0%');
+    setCell('em-nct-total', nct.total);
+    setCell('em-nct-fte', nct.fte.toFixed(2));
+    setCell('em-nct-goal', nct.goal);
+    setCell('em-nct-pct', nct.goal > 0 ? Math.round(nct.fte / nct.goal * 100) + '%' : '0%');
+}
+
+// Filter Old View Stats
+function filterOldView() {
+    var filter = document.getElementById('oldViewCategoryFilter');
+    var table = document.getElementById('oldViewMatrix');
+    if (!table) return;
+
+    var filterValue = filter ? filter.value : 'all';
+    var rows = table.querySelectorAll('tbody tr');
+
+    rows.forEach(function(row) {
+        var cat = row.dataset.category || '';
+        row.style.display = (filterValue === 'all' || cat === filterValue) ? '' : 'none';
+    });
+
+    recalcOldViewTotals(table);
+}
+
+// Recalculate Old View Stats TOTALS based on visible rows
+function recalcOldViewTotals(table) {
+    var rows = table.querySelectorAll('tbody tr');
+    var s26 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
+    var n26 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
+    var s25 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0 };
+    var n25 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0 };
+    var counted25 = {};
+    var countedNct25 = {};
+
+    rows.forEach(function(row) {
+        if (row.style.display === 'none') return;
+        var isCT = row.dataset.isCt === 'true';
+        var p25Name = row.dataset.p25Name || '';
+
+        // 2026
+        for (var i = 0; i < 9; i++) {
+            var v = parseFloat(row.dataset['w' + (i+1) + '-26']) || 0;
+            s26.w[i] += v;
+            if (!isCT) n26.w[i] += v;
+        }
+        var t26 = parseFloat(row.dataset['total-26']) || 0;
+        var f26 = parseFloat(row.dataset.fte26) || 0;
+        var g = parseFloat(row.dataset.goal) || 0;
+        s26.total += t26; s26.fte += f26; s26.goal += g;
+        if (!isCT) { n26.total += t26; n26.fte += f26; n26.goal += g; }
+
+        // 2025 with dedup
+        if (p25Name && !counted25[p25Name]) {
+            counted25[p25Name] = true;
+            for (var i = 0; i < 9; i++) {
+                s25.w[i] += parseFloat(row.dataset['w' + (i+1) + '-25']) || 0;
+            }
+            s25.total += parseFloat(row.dataset['total-25']) || 0;
+            s25.fte += parseFloat(row.dataset.fte25) || 0;
+        }
+        if (!isCT && p25Name && !countedNct25[p25Name]) {
+            countedNct25[p25Name] = true;
+            for (var i = 0; i < 9; i++) {
+                n25.w[i] += parseFloat(row.dataset['w' + (i+1) + '-25']) || 0;
+            }
+            n25.total += parseFloat(row.dataset['total-25']) || 0;
+            n25.fte += parseFloat(row.dataset.fte25) || 0;
+        }
+    });
+
+    // TOTALS row
+    setCell('ov-totals-fte25', s25.fte.toFixed(1));
+    setCell('ov-totals-fte26', s26.fte.toFixed(2));
+    setCell('ov-totals-goal', s26.goal);
+    for (var i = 1; i <= 9; i++) {
+        setCell('ov-totals-w' + i + '-26', s26.w[i-1]);
+        setCell('ov-totals-w' + i + '-25', s25.w[i-1]);
+    }
+    setCell('ov-totals-total-26', s26.total);
+    setCell('ov-totals-total-25', s25.total);
+
+    // TOTALS w/o CT row
+    setCell('ov-nct-fte25', n25.fte.toFixed(1));
+    setCell('ov-nct-fte26', n26.fte.toFixed(2));
+    setCell('ov-nct-goal', n26.goal);
+    for (var i = 1; i <= 9; i++) {
+        setCell('ov-nct-w' + i + '-26', n26.w[i-1]);
+        setCell('ov-nct-w' + i + '-25', n25.w[i-1]);
+    }
+    setCell('ov-nct-total-26', n26.total);
+    setCell('ov-nct-total-25', n25.total);
 }
 
 // Current modal context

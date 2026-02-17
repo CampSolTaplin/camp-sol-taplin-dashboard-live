@@ -485,7 +485,12 @@
                         </thead>
                         <tbody>
                             {% for prog in report.programs %}
-                            <tr data-category="{{ prog.category }}" data-program="{{ prog.program }}">
+                            <tr data-category="{{ prog.category }}" data-program="{{ prog.program }}"
+                                data-is-ct="{{ 'true' if "Children's Trust" in prog.program else 'false' }}"
+                                data-w1="{{ prog.week_1 or 0 }}" data-w2="{{ prog.week_2 or 0 }}" data-w3="{{ prog.week_3 or 0 }}"
+                                data-w4="{{ prog.week_4 or 0 }}" data-w5="{{ prog.week_5 or 0 }}" data-w6="{{ prog.week_6 or 0 }}"
+                                data-w7="{{ prog.week_7 or 0 }}" data-w8="{{ prog.week_8 or 0 }}" data-w9="{{ prog.week_9 or 0 }}"
+                                data-total="{{ prog.total }}" data-fte="{{ prog.fte }}" data-goal="{{ prog.goal }}">
                                 <td class="sticky-col program-name" style="background-color: {{ prog.category_color_light }};">
                                     {{ prog.program }}
                                 </td>
@@ -515,20 +520,20 @@
                             <tr class="totals-row">
                                 <td class="sticky-col program-name" style="background: #2d3748; color: white; font-weight: 700;">TOTALS</td>
                                 {% for w in range(1, 10) %}
-                                <td class="week-cell" style="background: #2d3748; color: white; font-weight: 700;">
+                                <td class="week-cell" id="em-totals-w{{ w }}" style="background: #2d3748; color: white; font-weight: 700;">
                                     {{ report.programs | sum(attribute='week_' ~ w) }}
                                 </td>
                                 {% endfor %}
-                                <td class="total-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                                <td class="total-cell" id="em-totals-total" style="background: #1a202c; color: white; font-weight: 700;">
                                     {{ report.programs | sum(attribute='total') }}
                                 </td>
-                                <td class="fte-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                                <td class="fte-cell" id="em-totals-fte" style="background: #1a202c; color: white; font-weight: 700;">
                                     {{ '%.2f'|format(report.programs | sum(attribute='fte')) }}
                                 </td>
-                                <td class="goal-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                                <td class="goal-cell" id="em-totals-goal" style="background: #1a202c; color: white; font-weight: 700;">
                                     {{ report.programs | sum(attribute='goal') }}
                                 </td>
-                                <td class="percent-cell" style="background: #1a202c; color: white; font-weight: 700;">
+                                <td class="percent-cell" id="em-totals-pct" style="background: #1a202c; color: white; font-weight: 700;">
                                     {% set total_fte = report.programs | sum(attribute='fte') %}
                                     {% set total_goal = report.programs | sum(attribute='goal') %}
                                     {{ '%.0f' | format((total_fte / total_goal * 100) if total_goal > 0 else 0) }}%
@@ -544,20 +549,20 @@
                             <tr class="totals-row">
                                 <td class="sticky-col program-name" style="background: #4a5568; color: white; font-weight: 700;">TOTALS w/o CT</td>
                                 {% for w in range(1, 10) %}
-                                <td class="week-cell" style="background: #4a5568; color: white; font-weight: 700;">
+                                <td class="week-cell" id="em-nct-w{{ w }}" style="background: #4a5568; color: white; font-weight: 700;">
                                     {{ non_ct | sum(attribute='week_' ~ w) }}
                                 </td>
                                 {% endfor %}
-                                <td class="total-cell" style="background: #374151; color: white; font-weight: 700;">
+                                <td class="total-cell" id="em-nct-total" style="background: #374151; color: white; font-weight: 700;">
                                     {{ non_ct | sum(attribute='total') }}
                                 </td>
-                                <td class="fte-cell" style="background: #374151; color: white; font-weight: 700;">
+                                <td class="fte-cell" id="em-nct-fte" style="background: #374151; color: white; font-weight: 700;">
                                     {{ '%.2f'|format(non_ct | sum(attribute='fte')) }}
                                 </td>
-                                <td class="goal-cell" style="background: #374151; color: white; font-weight: 700;">
+                                <td class="goal-cell" id="em-nct-goal" style="background: #374151; color: white; font-weight: 700;">
                                     {{ non_ct | sum(attribute='goal') }}
                                 </td>
-                                <td class="percent-cell" style="background: #374151; color: white; font-weight: 700;">
+                                <td class="percent-cell" id="em-nct-pct" style="background: #374151; color: white; font-weight: 700;">
                                     {% set nct_fte = non_ct | sum(attribute='fte') %}
                                     {% set nct_goal = non_ct | sum(attribute='goal') %}
                                     {{ '%.0f' | format((nct_fte / nct_goal * 100) if nct_goal > 0 else 0) }}%
@@ -646,6 +651,16 @@
                     <p class="section-subtitle">Side-by-side weekly enrollment comparison</p>
                 </div>
 
+                <div class="filter-bar">
+                    <label>Filter by Category:</label>
+                    <select id="oldViewCategoryFilter" onchange="filterOldView()">
+                        <option value="all">All Categories</option>
+                        {% for cat in report.categories %}
+                        <option value="{{ cat.category }}">{{ cat.emoji }} {{ cat.category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div class="detailed-table-container">
                     <table class="enrollment-matrix" id="oldViewMatrix">
                         <thead>
@@ -686,7 +701,19 @@
                             {% for prog in report.programs %}
                             {% set p25_name = name_map.get(prog.program, prog.program) %}
                             {% set p25 = programs_2025_map.get(p25_name, {}) %}
-                            <tr>
+                            <tr data-category="{{ prog.category }}" data-program="{{ prog.program }}"
+                                data-is-ct="{{ 'true' if "Children's Trust" in prog.program else 'false' }}"
+                                data-p25-name="{{ p25_name }}"
+                                data-fte26="{{ prog.fte }}" data-goal="{{ prog.goal }}"
+                                data-fte25="{{ p25.fte if p25.fte is defined else 0 }}"
+                                data-w1-26="{{ prog.week_1 or 0 }}" data-w2-26="{{ prog.week_2 or 0 }}" data-w3-26="{{ prog.week_3 or 0 }}"
+                                data-w4-26="{{ prog.week_4 or 0 }}" data-w5-26="{{ prog.week_5 or 0 }}" data-w6-26="{{ prog.week_6 or 0 }}"
+                                data-w7-26="{{ prog.week_7 or 0 }}" data-w8-26="{{ prog.week_8 or 0 }}" data-w9-26="{{ prog.week_9 or 0 }}"
+                                data-total-26="{{ prog.total }}"
+                                data-w1-25="{{ p25.get('week_1', 0) if p25 else 0 }}" data-w2-25="{{ p25.get('week_2', 0) if p25 else 0 }}" data-w3-25="{{ p25.get('week_3', 0) if p25 else 0 }}"
+                                data-w4-25="{{ p25.get('week_4', 0) if p25 else 0 }}" data-w5-25="{{ p25.get('week_5', 0) if p25 else 0 }}" data-w6-25="{{ p25.get('week_6', 0) if p25 else 0 }}"
+                                data-w7-25="{{ p25.get('week_7', 0) if p25 else 0 }}" data-w8-25="{{ p25.get('week_8', 0) if p25 else 0 }}" data-w9-25="{{ p25.get('week_9', 0) if p25 else 0 }}"
+                                data-total-25="{{ p25.total if p25.total is defined else 0 }}">
                                 <td style="text-align:center;">{{ '%.1f'|format(p25.fte) if p25.fte is defined else '0.0' }}</td>
                                 <td style="text-align:center;">{{ '%.2f'|format(prog.fte) }}</td>
                                 <td style="text-align:center;">{{ prog.goal }}</td>
@@ -717,7 +744,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="totals-row">
-                                <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-totals-fte25" style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
                                     {% set total_2025_fte = [] %}
                                     {% set counted_fte = [] %}
                                     {% for prog in report.programs %}
@@ -732,25 +759,25 @@
                                     {% endfor %}
                                     {{ '%.1f' | format(total_2025_fte | sum) }}
                                 </td>
-                                <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-totals-fte26" style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
                                     {{ '%.2f'|format(report.programs | sum(attribute='fte')) }}
                                 </td>
-                                <td style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-totals-goal" style="background: #2d3748; color: white; font-weight: 700; text-align: center;">
                                     {{ report.programs | sum(attribute='goal') }}
                                 </td>
                                 <td class="sticky-col program-name" style="background: #2d3748; color: white; font-weight: 700;">TOTALS</td>
                                 {# 2026 week totals #}
                                 {% for w in range(1, 10) %}
-                                <td style="background: #1e3a5f; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-totals-w{{ w }}-26" style="background: #1e3a5f; color: white; font-weight: 700; text-align: center;">
                                     {{ report.programs | sum(attribute='week_' ~ w) }}
                                 </td>
                                 {% endfor %}
-                                <td style="background: #142d4c; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-totals-total-26" style="background: #142d4c; color: white; font-weight: 700; text-align: center;">
                                     {{ report.programs | sum(attribute='total') }}
                                 </td>
                                 {# 2025 week totals #}
                                 {% for w in range(1, 10) %}
-                                <td style="background: #5c3d00; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-totals-w{{ w }}-25" style="background: #5c3d00; color: white; font-weight: 700; text-align: center;">
                                     {% set week_sum = [] %}
                                     {% set counted_week = [] %}
                                     {% for prog in report.programs %}
@@ -769,7 +796,7 @@
                                     {{ week_sum | sum }}
                                 </td>
                                 {% endfor %}
-                                <td style="background: #4a3200; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-totals-total-25" style="background: #4a3200; color: white; font-weight: 700; text-align: center;">
                                     {% set total_2025 = [] %}
                                     {% set counted_total = [] %}
                                     {% for prog in report.programs %}
@@ -793,7 +820,7 @@
                                 {% endif %}
                             {% endfor %}
                             <tr class="totals-row">
-                                <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-nct-fte25" style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
                                     {% set nct_2025_fte = [] %}
                                     {% set nct_counted_fte = [] %}
                                     {% for prog in non_ct_ov %}
@@ -808,25 +835,25 @@
                                     {% endfor %}
                                     {{ '%.1f' | format(nct_2025_fte | sum) }}
                                 </td>
-                                <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-nct-fte26" style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
                                     {{ '%.2f'|format(non_ct_ov | sum(attribute='fte')) }}
                                 </td>
-                                <td style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-nct-goal" style="background: #4a5568; color: white; font-weight: 700; text-align: center;">
                                     {{ non_ct_ov | sum(attribute='goal') }}
                                 </td>
                                 <td class="sticky-col program-name" style="background: #4a5568; color: white; font-weight: 700;">TOTALS w/o CT</td>
                                 {# 2026 week totals without CT #}
                                 {% for w in range(1, 10) %}
-                                <td style="background: #2a4a6f; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-nct-w{{ w }}-26" style="background: #2a4a6f; color: white; font-weight: 700; text-align: center;">
                                     {{ non_ct_ov | sum(attribute='week_' ~ w) }}
                                 </td>
                                 {% endfor %}
-                                <td style="background: #1e3d5c; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-nct-total-26" style="background: #1e3d5c; color: white; font-weight: 700; text-align: center;">
                                     {{ non_ct_ov | sum(attribute='total') }}
                                 </td>
                                 {# 2025 week totals without CT #}
                                 {% for w in range(1, 10) %}
-                                <td style="background: #6b4d00; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-nct-w{{ w }}-25" style="background: #6b4d00; color: white; font-weight: 700; text-align: center;">
                                     {% set nct_week_sum = [] %}
                                     {% set nct_counted_week = [] %}
                                     {% for prog in non_ct_ov %}
@@ -845,7 +872,7 @@
                                     {{ nct_week_sum | sum }}
                                 </td>
                                 {% endfor %}
-                                <td style="background: #5a4000; color: white; font-weight: 700; text-align: center;">
+                                <td id="ov-nct-total-25" style="background: #5a4000; color: white; font-weight: 700; text-align: center;">
                                     {% set nct_total_2025 = [] %}
                                     {% set nct_counted_total = [] %}
                                     {% for prog in non_ct_ov %}
