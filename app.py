@@ -18,6 +18,12 @@ import uuid
 from datetime import datetime, timedelta
 from io import BytesIO
 import threading
+import smtplib
+import re as re_module
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
 
 # Import our custom modules
 from parser import CampMinderParser
@@ -1670,30 +1676,20 @@ def download_by_groups(program, week):
         download_name=filename
     )
 
-@app.route('/api/download-multi-program-enrollment', methods=['POST'])
-@login_required
-def download_multi_program_enrollment():
-    """Generate Excel with one sheet per week for selected programs combined.
-    Includes: name, emails, guardian names, phones, siblings.
+def _generate_enrollment_excel(programs):
+    """Generate enrollment Excel workbook for given programs.
+    Returns (BytesIO output, filename string).
+    Raises ValueError if data is unavailable.
     """
     from openpyxl import Workbook
     from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 
-    if not current_user.has_permission('download_excel'):
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    req_data = request.get_json()
-    programs = req_data.get('programs', [])
-    if not programs:
-        return jsonify({'error': 'No programs selected'}), 400
-
     # Get participants data from cache
     data = api_cache.get('data')
     if not data or 'participants' not in data:
-        return jsonify({'error': 'No data available'}), 404
+        raise ValueError('No data available')
 
     # Collect participants per week across all selected programs
-    # week_num -> list of person_ids (may have duplicates across programs)
     week_participants = {}
     for program in programs:
         program_data = data['participants'].get(program, {})
@@ -1705,7 +1701,7 @@ def download_multi_program_enrollment():
                 week_participants[week_num].append(p['person_id'])
 
     if not week_participants:
-        return jsonify({'error': 'No enrollment data found for selected programs'}), 404
+        raise ValueError('No enrollment data found for selected programs')
 
     # Load persons cache and fetch any missing persons
     persons_cache = _load_persons_cache()
@@ -1714,7 +1710,6 @@ def download_multi_program_enrollment():
     for pids in week_participants.values():
         all_pids.update(pids)
 
-    # Fetch PIDs not in cache or missing guardian fields
     pids_to_fetch = [
         pid for pid in all_pids
         if str(pid) not in persons_cache or 'guardian1_name' not in persons_cache.get(str(pid), {})
@@ -1724,7 +1719,6 @@ def download_multi_program_enrollment():
         persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
 
     # Build per-week program lookup for ALL enrolled campers
-    # pid_programs_by_week[week_num][person_id] = [program1, program2, ...]
     all_participants = data.get('participants', {})
     pid_programs_by_week = {}
     for prog_name, prog_weeks in all_participants.items():
@@ -1780,12 +1774,11 @@ def download_multi_program_enrollment():
             sibling_details = info.get('sibling_details', [])
             siblings_raw = info.get('siblings', [])
             if isinstance(siblings_raw, list):
-                sibling_first_names = list(siblings_raw)  # already first names
+                sibling_first_names = list(siblings_raw)
             else:
                 sibling_first_names = [s.strip() for s in str(siblings_raw).split(',') if s.strip()]
 
             # --- Find youngest sibling ---
-            # Include this camper + all siblings to find the true youngest
             camper_dob = info.get('date_of_birth', '')
             family_members = [{'id': pid, 'first_name': info.get('first_name', ''), 'dob': camper_dob}]
             family_members.extend(sibling_details)
@@ -1800,7 +1793,6 @@ def download_multi_program_enrollment():
                     youngest_id = member.get('id')
                     youngest_name = member.get('first_name', '')
 
-            # Mark youngest in siblings display (with * prefix)
             display_siblings = []
             for sname in sibling_first_names:
                 if sname == youngest_name and youngest_id != pid:
@@ -1808,7 +1800,6 @@ def download_multi_program_enrollment():
                 else:
                     display_siblings.append(sname)
 
-            # Youngest sibling's program for this week (only if youngest is NOT this camper)
             youngest_program = ''
             if youngest_id and youngest_id != pid:
                 progs = week_prog_map.get(youngest_id, [])
@@ -1833,13 +1824,10 @@ def download_multi_program_enrollment():
                                      or info.get('share_group_with', '')),
             })
 
-        # Sort by last name, then first name
         campers.sort(key=lambda c: (c['last_name'].lower(), c['first_name'].lower()))
 
-        # Create sheet for this week
         ws = wb.create_sheet(title=f'W{week_num}')
 
-        # Title row with program names
         program_list = ', '.join(programs)
         ws.merge_cells('A1:O1')
         ws['A1'] = f'Week {week_num} — {program_list}'
@@ -1848,7 +1836,6 @@ def download_multi_program_enrollment():
         ws['A2'] = f'Total: {len(campers)} campers'
         ws['A2'].font = Font(italic=True, size=10, color='666666')
 
-        # Headers
         headers = ['#', 'Last Name', 'First Name', 'Grade',
                    'Email 1', 'Email 2', 'Email 3', 'Email 4',
                    'Guardian 1', 'Guardian 1 Phone',
@@ -1862,46 +1849,36 @@ def download_multi_program_enrollment():
             cell.border = thin_border
             cell.alignment = Alignment(horizontal='center', wrap_text=True)
 
-        # Data rows
         for idx, camper in enumerate(campers, 1):
             row = idx + 4
             values = [
-                idx,
-                camper['last_name'],
-                camper['first_name'],
-                camper['grade'],
-                camper['f1p1_email'],
-                camper['f1p1_email2'],
-                camper['f1p2_email'],
-                camper['f1p2_email2'],
-                camper['guardian1_name'],
-                camper['guardian1_phones'],
-                camper['guardian2_name'],
-                camper['guardian2_phones'],
-                camper['siblings'],
-                camper['youngest_program'],
+                idx, camper['last_name'], camper['first_name'], camper['grade'],
+                camper['f1p1_email'], camper['f1p1_email2'],
+                camper['f1p2_email'], camper['f1p2_email2'],
+                camper['guardian1_name'], camper['guardian1_phones'],
+                camper['guardian2_name'], camper['guardian2_phones'],
+                camper['siblings'], camper['youngest_program'],
                 camper['share_group_with'],
             ]
             for col, val in enumerate(values, 1):
                 cell = ws.cell(row=row, column=col, value=val)
                 cell.border = thin_border
 
-        # Column widths
-        ws.column_dimensions['A'].width = 4    # #
-        ws.column_dimensions['B'].width = 16   # Last Name
-        ws.column_dimensions['C'].width = 16   # First Name
-        ws.column_dimensions['D'].width = 10   # Grade
-        ws.column_dimensions['E'].width = 26   # Email 1
-        ws.column_dimensions['F'].width = 26   # Email 2
-        ws.column_dimensions['G'].width = 26   # Email 3
-        ws.column_dimensions['H'].width = 26   # Email 4
-        ws.column_dimensions['I'].width = 22   # Guardian 1
-        ws.column_dimensions['J'].width = 18   # Guardian 1 Phone
-        ws.column_dimensions['K'].width = 22   # Guardian 2
-        ws.column_dimensions['L'].width = 18   # Guardian 2 Phone
-        ws.column_dimensions['M'].width = 24   # Siblings
-        ws.column_dimensions['N'].width = 28   # Youngest Sibling Program
-        ws.column_dimensions['O'].width = 30   # Share Group With
+        ws.column_dimensions['A'].width = 4
+        ws.column_dimensions['B'].width = 16
+        ws.column_dimensions['C'].width = 16
+        ws.column_dimensions['D'].width = 10
+        ws.column_dimensions['E'].width = 26
+        ws.column_dimensions['F'].width = 26
+        ws.column_dimensions['G'].width = 26
+        ws.column_dimensions['H'].width = 26
+        ws.column_dimensions['I'].width = 22
+        ws.column_dimensions['J'].width = 18
+        ws.column_dimensions['K'].width = 22
+        ws.column_dimensions['L'].width = 18
+        ws.column_dimensions['M'].width = 24
+        ws.column_dimensions['N'].width = 28
+        ws.column_dimensions['O'].width = 30
 
         ws.page_setup.orientation = 'landscape'
         ws.page_setup.fitToWidth = 1
@@ -1914,11 +1891,30 @@ def download_multi_program_enrollment():
     wb.save(output)
     output.seek(0)
 
-    # Build a clean filename
     safe_names = '_'.join(p.replace(' ', '')[:15] for p in programs[:3])
     if len(programs) > 3:
         safe_names += f'_and_{len(programs)-3}_more'
     filename = f"Enrollment_{safe_names}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+
+    return output, filename
+
+
+@app.route('/api/download-multi-program-enrollment', methods=['POST'])
+@login_required
+def download_multi_program_enrollment():
+    """Generate and download enrollment Excel for selected programs."""
+    if not current_user.has_permission('download_excel'):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    req_data = request.get_json()
+    programs = req_data.get('programs', [])
+    if not programs:
+        return jsonify({'error': 'No programs selected'}), 400
+
+    try:
+        output, filename = _generate_enrollment_excel(programs)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
 
     return send_file(
         output,
@@ -1926,6 +1922,94 @@ def download_multi_program_enrollment():
         as_attachment=True,
         download_name=filename
     )
+
+
+@app.route('/api/email-enrollment', methods=['POST'])
+@login_required
+def email_enrollment():
+    """Generate enrollment Excel and email it as attachment via SMTP."""
+    if not current_user.has_permission('download_excel'):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    req_data = request.get_json()
+    programs = req_data.get('programs', [])
+    recipients_raw = req_data.get('recipients', '')
+
+    if not programs:
+        return jsonify({'error': 'No programs selected'}), 400
+
+    # Parse recipients (comma, semicolon, newline, or space separated)
+    recipients = [
+        r.strip() for r in re_module.split(r'[,;\n\s]+', recipients_raw)
+        if r.strip() and '@' in r.strip()
+    ]
+    if not recipients:
+        return jsonify({'error': 'No valid email recipients provided'}), 400
+
+    # Check SMTP configuration
+    smtp_server = os.environ.get('SMTP_SERVER')
+    smtp_port = int(os.environ.get('SMTP_PORT', 587))
+    smtp_user = os.environ.get('SMTP_USER')
+    smtp_password = os.environ.get('SMTP_PASSWORD')
+
+    if not all([smtp_server, smtp_user, smtp_password]):
+        return jsonify({'error': 'Email not configured on this server. Contact administrator.'}), 500
+
+    # Generate the Excel
+    try:
+        output, filename = _generate_enrollment_excel(programs)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+
+    # Build email
+    today_str = datetime.now().strftime('%B %d, %Y')
+    program_list = ', '.join(programs)
+    subject = f'Camp Sol Taplin - Enrollment List: {program_list} ({today_str})'
+    if len(subject) > 150:
+        subject = f'Camp Sol Taplin - Enrollment List ({len(programs)} programs, {today_str})'
+
+    body = (
+        f"Hi,\n\n"
+        f"Attached is the enrollment list for:\n"
+        f"{program_list}\n\n"
+        f"Generated on {today_str} by {current_user.id}.\n\n"
+        f"Best regards,\n"
+        f"Camp Sol Taplin Dashboard"
+    )
+
+    msg = MIMEMultipart()
+    msg['From'] = smtp_user
+    msg['To'] = ', '.join(recipients)
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Attach Excel
+    part = MIMEBase('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    part.set_payload(output.getvalue())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+    msg.attach(part)
+
+    # Send via SMTP
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_user, recipients, msg.as_string())
+    except smtplib.SMTPAuthenticationError:
+        return jsonify({'error': 'SMTP authentication failed. Check email credentials.'}), 500
+    except smtplib.SMTPException as e:
+        return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Email error: {str(e)}'}), 500
+
+    return jsonify({
+        'success': True,
+        'message': f'Email sent successfully to {len(recipients)} recipient(s)'
+    })
+
 
 @app.route('/print-by-groups/<program>/<int:week>')
 @login_required

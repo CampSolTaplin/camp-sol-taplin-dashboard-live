@@ -594,7 +594,25 @@
                         <button class="btn btn-primary btn-sm" id="downloadEnrollmentBtn" onclick="downloadMultiProgramEnrollment()" disabled>
                             📥 Download Enrollment List
                         </button>
+                        <button class="btn btn-primary btn-sm" id="emailEnrollmentBtn" onclick="showEmailEnrollmentModal()" disabled style="background:#2563EB;">
+                            📧 Email Enrollment List
+                        </button>
                         <span id="enrollmentDownloadStatus" class="download-status"></span>
+                    </div>
+                    <div id="emailEnrollmentSection" style="display:none; margin-top:12px; padding:12px; background:#F0F7FF; border:1px solid #BFDBFE; border-radius:8px;">
+                        <label style="font-size:13px; font-weight:600; color:#1E40AF; display:block; margin-bottom:6px;">
+                            📧 Email Recipients (one per line, or comma-separated):
+                        </label>
+                        <textarea id="enrollmentEmailRecipients" rows="4"
+                            style="width:100%; max-width:600px; font-size:12px; font-family:'Consolas',monospace; padding:8px; border:1px solid #93C5FD; border-radius:6px; resize:vertical;"
+                            placeholder="email1@example.com&#10;email2@example.com"></textarea>
+                        <div style="margin-top:8px; display:flex; align-items:center; gap:10px;">
+                            <button class="btn btn-primary btn-sm" id="sendEnrollmentEmailBtn" onclick="emailEnrollmentList()" style="background:#2563EB;">
+                                ✉️ Confirm & Send Email
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="hideEmailEnrollmentSection()">Cancel</button>
+                            <span id="enrollmentEmailStatus" class="download-status"></span>
+                        </div>
                     </div>
                     <div class="share-group-upload">
                         <label>Upload "Share Group With" CSV from CampMinder:</label>

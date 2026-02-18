@@ -391,12 +391,23 @@ function clearEnrollmentProgramSelection() {
 
 function updateEnrollmentDownloadButton() {
     var checked = document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]:checked');
+    var count = checked.length;
     var btn = document.getElementById('downloadEnrollmentBtn');
+    var emailBtn = document.getElementById('emailEnrollmentBtn');
     if (btn) {
-        btn.disabled = (checked.length === 0);
-        btn.textContent = checked.length > 0
-            ? '📥 Download Enrollment List (' + checked.length + ' programs)'
+        btn.disabled = (count === 0);
+        btn.textContent = count > 0
+            ? '📥 Download Enrollment List (' + count + ' programs)'
             : '📥 Download Enrollment List';
+    }
+    if (emailBtn) {
+        emailBtn.disabled = (count === 0);
+        emailBtn.textContent = count > 0
+            ? '📧 Email Enrollment List (' + count + ' programs)'
+            : '📧 Email Enrollment List';
+    }
+    if (count === 0) {
+        hideEmailEnrollmentSection();
     }
 }
 
@@ -458,6 +469,119 @@ function downloadMultiProgramEnrollment() {
         checkboxContainer.addEventListener('change', updateEnrollmentDownloadButton);
     }
 })();
+
+// ==================== Email Enrollment List ====================
+
+var DEFAULT_ENROLLMENT_RECIPIENTS = [
+    'campsoltaplin@marjcc.org',
+    'DrorG@marjcc.org',
+    'Alan@marjcc.org',
+    'AriH@marjcc.org',
+    'BeileV@marjcc.org',
+    'IrisK@marjcc.org',
+    'ElisaD@marjcc.org',
+    'nicole@npgcoaching.com',
+    'JWeingardlaw@gmail.com',
+    'MarlenyR@marjcc.org',
+    'CamilaZ@marjcc.org',
+    'DaniaS@marjcc.org',
+    'JeffR@marjcc.org',
+    'TanyaC@marjcc.org',
+    'jweisblum@bellsouth.net',
+    'Moisesb@marjcc.org',
+    'tamarg@mac.com',
+    'michellem@marjcc.org',
+    'amanda@sbblawgroup.com',
+    'DylanH@marjcc.org',
+    'MichaelB@marjcc.org',
+    'NicoleGoyhman@marjcc.org',
+    'mbenmoha@marjcc.org',
+    'roxanam@marjcc.org'
+];
+
+function showEmailEnrollmentModal() {
+    var section = document.getElementById('emailEnrollmentSection');
+    var textarea = document.getElementById('enrollmentEmailRecipients');
+    if (section) {
+        section.style.display = 'block';
+        if (textarea && !textarea.value.trim()) {
+            textarea.value = DEFAULT_ENROLLMENT_RECIPIENTS.join('\n');
+        }
+        if (textarea) textarea.focus();
+    }
+}
+
+function hideEmailEnrollmentSection() {
+    var section = document.getElementById('emailEnrollmentSection');
+    var statusEl = document.getElementById('enrollmentEmailStatus');
+    if (section) section.style.display = 'none';
+    if (statusEl) statusEl.textContent = '';
+}
+
+function emailEnrollmentList() {
+    var selected = [];
+    document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]:checked').forEach(function(cb) {
+        selected.push(cb.value);
+    });
+
+    if (selected.length === 0) {
+        alert('Please select at least one program.');
+        return;
+    }
+
+    var textarea = document.getElementById('enrollmentEmailRecipients');
+    var recipients = textarea ? textarea.value.trim() : '';
+    if (!recipients) {
+        alert('Please enter at least one email recipient.');
+        return;
+    }
+
+    var recipientList = recipients.split(/[,;\n\s]+/).filter(function(r) {
+        return r.trim() && r.indexOf('@') > -1;
+    });
+
+    if (recipientList.length === 0) {
+        alert('No valid email addresses found. Please check the recipients.');
+        return;
+    }
+
+    var confirmMsg = 'Send enrollment list for ' + selected.length + ' program(s) to ' +
+        recipientList.length + ' recipient(s)?\n\nRecipients:\n' +
+        recipientList.slice(0, 5).join('\n') +
+        (recipientList.length > 5 ? '\n... and ' + (recipientList.length - 5) + ' more' : '');
+
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    var statusEl = document.getElementById('enrollmentEmailStatus');
+    var sendBtn = document.getElementById('sendEnrollmentEmailBtn');
+    if (statusEl) { statusEl.textContent = 'Sending...'; statusEl.style.color = ''; }
+    if (sendBtn) sendBtn.disabled = true;
+
+    fetch('/api/email-enrollment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ programs: selected, recipients: recipients })
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) throw new Error(data.error || 'Email failed');
+            return data;
+        });
+    })
+    .then(function(data) {
+        if (statusEl) { statusEl.textContent = data.message; statusEl.style.color = '#16a34a'; }
+        setTimeout(function() { if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; } }, 5000);
+    })
+    .catch(function(err) {
+        if (statusEl) { statusEl.textContent = 'Error: ' + err.message; statusEl.style.color = '#dc2626'; }
+        setTimeout(function() { if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; } }, 8000);
+    })
+    .finally(function() {
+        if (sendBtn) sendBtn.disabled = false;
+    });
+}
 
 // Upload Share Group With CSV
 function uploadShareGroup() {
