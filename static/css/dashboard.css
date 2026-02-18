@@ -1808,6 +1808,45 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .kpi-card.finance-perftc::before { background: #8B5CF6; }
 .kpi-card.finance-discount::before { background: #F59E0B; }
 
+/* Budget KPI accent colors */
+.kpi-card.finance-budget::before { background: #6366F1; }
+.kpi-card.finance-actual::before { background: #F97316; }
+.kpi-card.finance-budgetpct::before { background: #14B8A6; }
+.kpi-card.finance-discbudget::before { background: #EC4899; }
+
+/* Budget variance coloring */
+.variance-positive { color: #10B981; }
+.variance-negative { color: #EF4444; font-weight: 600; }
+.variance-warning { color: #F59E0B; }
+
+/* Budget progress bar (inline) */
+.budget-pct-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: #E5E7EB;
+    overflow: hidden;
+}
+.budget-pct-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+/* Upload PO button */
+.btn-upload-po {
+    font-size: 12px;
+    padding: 4px 10px;
+    background: #6366F1;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-upload-po:hover {
+    background: #4F46E5;
+}
+
 /* Finance Goal Section */
 .finance-goal-section {
     margin-bottom: 24px;
@@ -1963,6 +2002,70 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
+}
+
+/* Discount API Category Badge (broad categories) */
+.discount-cat-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #F3F4F6;
+    color: #374151;
+    border-radius: 8px;
+    font-size: 12px;
+    border: 1px solid #E5E7EB;
+}
+
+/* Discount % of total bar */
+.discount-pct-bar {
+    width: 60px;
+    height: 8px;
+    border-radius: 4px;
+    background: #E5E7EB;
+    overflow: hidden;
+}
+.discount-pct-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: #F59E0B;
+    transition: width 0.6s ease;
+}
+
+/* Discount detail table striping */
+.discount-detail-table tbody tr:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+/* Discount grouped rows */
+.discount-group-row {
+    background: #FAFBFC;
+    transition: background 0.15s;
+}
+.discount-group-row:hover {
+    background: #F0F4F8 !important;
+}
+.disc-expand-icon {
+    display: inline-block;
+    width: 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+.discount-group-row.expanded .disc-expand-icon {
+    transform: rotate(90deg);
+}
+
+/* Sub-rows hidden by default */
+.disc-sub {
+    display: none;
+    background: #FFFFFF;
+    border-left: 3px solid #E5E7EB;
+}
+.disc-sub.disc-sub-visible {
+    display: table-row;
+}
+.disc-sub td {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
 }
 
 /* Finance Chart Container */

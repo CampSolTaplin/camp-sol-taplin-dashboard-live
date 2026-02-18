@@ -1352,6 +1352,7 @@ class FinancialDataProcessor:
         by_payment_method = {}
         by_person = {}
         by_program = {}
+        by_description = {}  # Group discounts by transaction description
         timeline_data = {}
 
         for t in valid_txns:
@@ -1368,6 +1369,14 @@ class FinancialDataProcessor:
                 gross_revenue += amount
             else:
                 total_discounts += abs(amount)
+                # Group discounts by description for detailed breakdown
+                desc_key = (description.strip() or 'No Description')
+                if desc_key not in by_description:
+                    by_description[desc_key] = {'amount': 0, 'count': 0, 'persons': set()}
+                by_description[desc_key]['amount'] += abs(amount)
+                by_description[desc_key]['count'] += 1
+                if person_id:
+                    by_description[desc_key]['persons'].add(person_id)
 
             # By financial category
             cat_name = cat_map.get(fin_cat_id, f'Category {fin_cat_id}') if fin_cat_id else 'Uncategorized'
@@ -1457,6 +1466,100 @@ class FinancialDataProcessor:
 
         discount_categories.sort(key=lambda x: x['amount'], reverse=True)
 
+        # Detailed discount breakdown by description (transaction name)
+        # Filter out generic "Payment" entries — those are payment credits, not discounts
+        payment_keywords = {'payment', 'refund', 'credit applied', 'transfer'}
+        discount_by_description = []
+        for desc, data in by_description.items():
+            desc_lower = desc.strip().lower()
+            # Skip generic payment-type entries (no associated campers = not a discount)
+            if desc_lower in payment_keywords and len(data['persons']) == 0:
+                continue
+            discount_by_description.append({
+                'name': desc,
+                'amount': round(data['amount'], 2),
+                'count': data['count'],
+                'recipients': len(data['persons']),
+                'avg_per_recipient': round(data['amount'] / len(data['persons']), 2) if data['persons'] else 0
+            })
+            # Also detect scholarships from description names
+            if any(kw in desc_lower for kw in ['scholarship', 'financial aid', 'grant', 'subsidy', 'children\'s trust']):
+                scholarship_total += data['amount']
+                scholarship_recipients.update(data['persons'])
+        discount_by_description.sort(key=lambda x: x['amount'], reverse=True)
+
+        # ── Grouped discount categories ──────────────────────────────
+        # Map each description to a logical group; keep Early Bird (S) vs (V) as sub-detail
+        def _classify_discount(name):
+            """Return (group_key, sub_key) for a discount description."""
+            nl = name.strip().lower()
+            if nl in payment_keywords and not any(c.isalpha() and c not in 'payment' for c in nl):
+                return None, None  # skip payments
+            if 'pay in full' in nl or 'pay-in-full' in nl:
+                return 'Pay in Full', name.strip()
+            if 'sibling' in nl:
+                return 'Sibling Discount', name.strip()
+            if 'early bird' in nl:
+                # Keep (S) and (V) as separate sub-groups
+                if '(s)' in nl:
+                    return 'Early Bird', 'Early Bird Discount (S)'
+                elif '(v)' in nl:
+                    return 'Early Bird', 'Early Bird Discount (V)'
+                else:
+                    return 'Early Bird', name.strip()
+            if 'spring' in nl:
+                return 'Spring Discount', name.strip()
+            if 'staff full time' in nl or 'staff fulltime' in nl:
+                return 'Staff Full Time', name.strip()
+            if "children's trust" in nl or 'childrens trust' in nl:
+                return "Children's Trust Scholarship", name.strip()
+            if 'management discount' in nl:
+                return 'Management Discount (COO)', name.strip()
+            if 'efin' in nl:
+                return 'Efinestri Credit', name.strip()
+            if 'scholarship' in nl:
+                return 'Scholarship Discount', name.strip()
+            return 'Other', name.strip()
+
+        grouped = {}  # group_key -> {amount, count, persons, subs: {sub_key -> {...}}}
+        for desc, data in by_description.items():
+            desc_lower = desc.strip().lower()
+            if desc_lower in payment_keywords and len(data['persons']) == 0:
+                continue
+            group_key, sub_key = _classify_discount(desc)
+            if group_key is None:
+                continue
+            if group_key not in grouped:
+                grouped[group_key] = {'amount': 0, 'count': 0, 'persons': set(), 'subs': {}}
+            grouped[group_key]['amount'] += data['amount']
+            grouped[group_key]['count'] += data['count']
+            grouped[group_key]['persons'].update(data['persons'])
+            if sub_key not in grouped[group_key]['subs']:
+                grouped[group_key]['subs'][sub_key] = {'amount': 0, 'count': 0, 'persons': set()}
+            grouped[group_key]['subs'][sub_key]['amount'] += data['amount']
+            grouped[group_key]['subs'][sub_key]['count'] += data['count']
+            grouped[group_key]['subs'][sub_key]['persons'].update(data['persons'])
+
+        discount_grouped = []
+        for gname, gdata in grouped.items():
+            subs_list = []
+            for sname, sdata in sorted(gdata['subs'].items(), key=lambda x: x[1]['amount'], reverse=True):
+                subs_list.append({
+                    'name': sname,
+                    'amount': round(sdata['amount'], 2),
+                    'count': sdata['count'],
+                    'recipients': len(sdata['persons']),
+                })
+            discount_grouped.append({
+                'name': gname,
+                'amount': round(gdata['amount'], 2),
+                'count': gdata['count'],
+                'recipients': len(gdata['persons']),
+                'avg_per_recipient': round(gdata['amount'] / len(gdata['persons']), 2) if gdata['persons'] else 0,
+                'subs': subs_list,
+            })
+        discount_grouped.sort(key=lambda x: x['amount'], reverse=True)
+
         # Also check by_person for anyone with discounts
         for pid, pdata in by_person.items():
             if pdata['discounts'] > 0:
@@ -1540,7 +1643,9 @@ class FinancialDataProcessor:
                     'total': round(scholarship_total, 2),
                     'recipients': len(scholarship_recipients),
                     'avg_per_recipient': round(scholarship_total / len(scholarship_recipients), 2) if scholarship_recipients else 0
-                }
+                },
+                'by_description': discount_by_description,
+                'by_group': discount_grouped,
             },
             'by_category': [{
                 'name': name,

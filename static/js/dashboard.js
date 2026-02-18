@@ -1475,13 +1475,22 @@ let camperDistributionChartInstance = null;
 let financeChartsInitialized = false;
 
 function initFinanceCharts() {
-    if (!window.financeData || financeChartsInitialized) return;
-    financeChartsInitialized = true;
+    if (financeChartsInitialized) return;
 
-    populateFinanceProgramTable();
-    initRevenueTimelineChart();
-    initPaymentMethodChart();
-    initCamperDistributionChart();
+    // CampMinder charts need financeData
+    if (window.financeData) {
+        populateFinanceProgramTable();
+        initRevenueTimelineChart();
+        initPaymentMethodChart();
+        initCamperDistributionChart();
+    }
+
+    // Budget chart works with budgetData (independent of financeData)
+    if (window.budgetData && window.budgetData.po && window.budgetData.po.budget_vs_actual) {
+        initBudgetVsActualChart();
+    }
+
+    financeChartsInitialized = true;
 }
 
 function populateFinanceProgramTable() {
@@ -1723,5 +1732,127 @@ async function refreshFinanceData() {
 function formatNumber(num) {
     if (num === null || num === undefined) return '0';
     return Math.round(num).toLocaleString('en-US');
+}
+
+// ==================== BUDGET VS ACTUAL FUNCTIONS ====================
+
+let budgetVsActualChartInstance = null;
+
+function initBudgetVsActualChart() {
+    var canvas = document.getElementById('budgetVsActualChart');
+    if (!canvas || !window.budgetData || !window.budgetData.po || !window.budgetData.po.budget_vs_actual) return;
+
+    if (budgetVsActualChartInstance) {
+        budgetVsActualChartInstance.destroy();
+    }
+
+    var cats = window.budgetData.po.budget_vs_actual.categories;
+    // Filter to only categories with budget > 0 and exclude Salaries (too large, skews chart)
+    var filtered = cats.filter(function(c) { return c.budgeted > 0 && c.category !== 'Salaries & Benefits'; });
+
+    var labels = filtered.map(function(c) { return c.category; });
+    var budgetAmounts = filtered.map(function(c) { return c.budgeted; });
+    var actualAmounts = filtered.map(function(c) { return c.actual; });
+
+    budgetVsActualChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Budget',
+                    data: budgetAmounts,
+                    backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                    borderColor: '#6366F1',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.7
+                },
+                {
+                    label: 'Actual (PO)',
+                    data: actualAmounts,
+                    backgroundColor: actualAmounts.map(function(a, i) {
+                        var pct = budgetAmounts[i] > 0 ? (a / budgetAmounts[i] * 100) : 0;
+                        if (pct > 100) return 'rgba(239, 68, 68, 0.7)';
+                        if (pct > 80) return 'rgba(245, 158, 11, 0.7)';
+                        return 'rgba(16, 185, 129, 0.7)';
+                    }),
+                    borderColor: actualAmounts.map(function(a, i) {
+                        var pct = budgetAmounts[i] > 0 ? (a / budgetAmounts[i] * 100) : 0;
+                        if (pct > 100) return '#EF4444';
+                        if (pct > 80) return '#F59E0B';
+                        return '#10B981';
+                    }),
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.7
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': $' + formatNumber(ctx.parsed.y);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { font: { size: 11 }, maxRotation: 45 }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + formatNumber(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function uploadPOFile(file) {
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+        showToast('Please upload a .xlsx file', 'error');
+        return;
+    }
+
+    showToast('Uploading PO file...', 'success');
+
+    var formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/api/upload-po', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast(data.message, 'success');
+            // Reload to refresh the full page with new data
+            setTimeout(function() { window.location.reload(); }, 1500);
+        } else {
+            showToast('Error: ' + data.error, 'error');
+        }
+    })
+    .catch(function(error) {
+        showToast('Upload failed: ' + error.message, 'error');
+    });
+
+    // Clear the file input so the same file can be re-uploaded
+    document.getElementById('poFileInput').value = '';
 }
 

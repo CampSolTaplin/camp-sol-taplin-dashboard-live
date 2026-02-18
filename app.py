@@ -22,6 +22,7 @@ import threading
 # Import our custom modules
 from parser import CampMinderParser
 from historical_data import HistoricalDataManager
+from budget_data import BUDGET_FY2026, parse_po_file, build_budget_vs_actual
 
 # Try to import CampMinder API client (optional)
 try:
@@ -40,6 +41,7 @@ CACHE_FILE = os.path.join(DATA_FOLDER, 'api_cache.json')
 ALLOWED_EXTENSIONS = {'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # ==================== DATABASE CONFIG ====================
 from flask_sqlalchemy import SQLAlchemy
@@ -271,6 +273,16 @@ finance_cache = {
 }
 FINANCE_CACHE_TTL_MINUTES = 60
 
+# PO (Purchase Order) data cache — persisted to data/po_data.json
+po_cache = {'data': None, 'uploaded_at': None}
+po_cache_path = os.path.join('data', 'po_data.json')
+if os.path.exists(po_cache_path):
+    try:
+        with open(po_cache_path) as f:
+            po_cache = json.load(f)
+    except Exception:
+        po_cache = {'data': None, 'uploaded_at': None}
+
 # ==================== CAMPMINDER API FUNCTIONS ====================
 
 def is_api_configured() -> bool:
@@ -411,11 +423,18 @@ def fetch_financial_data(force_refresh: bool = False, enrollment_report: dict = 
             pass
 
     if finance_cache.get('is_fetching'):
-        return finance_cache.get('data')
+        # Safety timeout: reset is_fetching if stuck for more than 3 minutes
+        fetch_start = finance_cache.get('fetch_start')
+        if fetch_start and (datetime.now() - fetch_start).total_seconds() > 180:
+            print("WARNING: is_fetching stuck for >3min, resetting", flush=True)
+            finance_cache['is_fetching'] = False
+        else:
+            return finance_cache.get('data')
 
     try:
         finance_cache['is_fetching'] = True
-        print(f"Fetching financial data from CampMinder API (Season {CAMPMINDER_SEASON_ID})...")
+        finance_cache['fetch_start'] = datetime.now()
+        print(f"Fetching financial data from CampMinder API (Season {CAMPMINDER_SEASON_ID})...", flush=True)
 
         client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
 
@@ -425,7 +444,7 @@ def fetch_financial_data(force_refresh: bool = False, enrollment_report: dict = 
         transactions = client.get_transaction_details(CAMPMINDER_SEASON_ID)
 
         print(f"Financial data fetched: {len(transactions)} transactions, "
-              f"{len(categories)} categories, {len(payment_methods)} payment methods")
+              f"{len(categories)} categories, {len(payment_methods)} payment methods", flush=True)
 
         # Process financial data
         processor = FinancialDataProcessor()
@@ -470,12 +489,13 @@ def fetch_financial_data(force_refresh: bool = False, enrollment_report: dict = 
         finance_cache['data'] = finance_data
         finance_cache['fetched_at'] = datetime.now().isoformat()
 
-        print(f"Finance data processed: ${finance_data['summary']['net_revenue']:,.2f} net revenue")
+        print(f"Finance data processed: ${finance_data['summary']['net_revenue']:,.2f} net revenue", flush=True)
         return finance_data
 
     except Exception as e:
-        print(f"Error fetching financial data: {e}")
+        print(f"Error fetching financial data: {e}", flush=True)
         traceback.print_exc()
+        import sys; sys.stderr.flush()
         return finance_cache.get('data')
 
     finally:
@@ -650,9 +670,17 @@ def dashboard():
                     try:
                         fetch_financial_data(enrollment_report=report)
                     except Exception as e:
-                        print(f"Background finance fetch error: {e}")
+                        print(f"Background finance fetch error: {e}", flush=True)
+                        import traceback; traceback.print_exc()
             t = threading.Thread(target=_bg_fetch, args=(app.app_context(), report_data), daemon=True)
             t.start()
+
+    # Budget + PO data for Finance tab
+    budget_context = {
+        'budget': BUDGET_FY2026,
+        'po': po_cache.get('data'),
+        'po_uploaded_at': po_cache.get('uploaded_at'),
+    }
 
     return render_template('dashboard.html',
                          report=report_data,
@@ -672,6 +700,7 @@ def dashboard():
                          ct_daily_2025=ct_daily_2025,
                          programs_2025_map=programs_2025_map,
                          finance_data=finance_data,
+                         budget_data=budget_context,
                          user=current_user)
 
 # ==================== USER MANAGEMENT ROUTES ====================
@@ -2134,6 +2163,48 @@ def api_debug_data():
 
 # ==================== UPLOAD & DATA ROUTES ====================
 
+@app.route('/api/upload-po', methods=['POST'])
+@login_required
+def upload_po():
+    """Upload PO Excel file, parse and store spending data for Budget vs Actual."""
+    if not current_user.has_permission('view_finance'):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'error': 'No file provided'}), 400
+
+    if not file.filename.lower().endswith('.xlsx'):
+        return jsonify({'error': 'Please upload a .xlsx file'}), 400
+
+    try:
+        file_bytes = file.read()
+        categories = parse_po_file(file_bytes)
+        budget_vs_actual = build_budget_vs_actual(categories)
+
+        po_cache['data'] = {
+            'categories': categories,
+            'budget_vs_actual': budget_vs_actual,
+        }
+        po_cache['uploaded_at'] = datetime.now().isoformat()
+
+        # Persist to disk
+        os.makedirs('data', exist_ok=True)
+        with open(po_cache_path, 'w') as f:
+            json.dump(po_cache, f, default=str)
+
+        total_spent = budget_vs_actual['totals']['actual']
+        return jsonify({
+            'success': True,
+            'message': f'PO data loaded: {len(categories)} categories, ${total_spent:,.0f} total spent',
+            'data': po_cache['data'],
+            'uploaded_at': po_cache['uploaded_at']
+        })
+    except Exception as e:
+        import traceback
+        print(f"PO upload error: {traceback.format_exc()}")
+        return jsonify({'error': f'Failed to parse PO file: {str(e)}'}), 500
+
 @app.route('/api/upload-share-group', methods=['POST'])
 @login_required
 def upload_share_group():
@@ -2431,4 +2502,4 @@ if __name__ == '__main__':
     os.makedirs(DATA_FOLDER, exist_ok=True)
     
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=os.environ.get('DEBUG', 'False') == 'True')
+    app.run(host='0.0.0.0', port=port, debug=os.environ.get('DEBUG', 'False') == 'True', threaded=True)

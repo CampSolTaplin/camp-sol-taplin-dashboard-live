@@ -997,10 +997,16 @@
                     <h3>🏷️ Discount Analysis</h3>
                     <p class="section-subtitle">Breakdown of discounts and financial aid</p>
                 </div>
-                <div class="kpi-grid kpi-grid-3">
+                <div class="kpi-grid kpi-grid-4">
                     <div class="kpi-card mini">
                         <div class="kpi-label">Total Discounts</div>
                         <div class="kpi-value">${{ '{:,.0f}'.format(finance_data.discounts.total_amount|abs) }}</div>
+                        <div class="kpi-subtext">{{ finance_data.discounts.by_group|length }} categories</div>
+                    </div>
+                    <div class="kpi-card mini">
+                        <div class="kpi-label">Campers with Discount</div>
+                        <div class="kpi-value">{{ finance_data.discounts.campers_with_discount }}</div>
+                        <div class="kpi-subtext">{{ finance_data.discounts.discount_rate }}% of all campers</div>
                     </div>
                     <div class="kpi-card mini">
                         <div class="kpi-label">Avg Discount/Camper</div>
@@ -1013,28 +1019,70 @@
                     </div>
                 </div>
 
+                <!-- Grouped Discount Types Table -->
+                {% if finance_data.discounts.by_group %}
                 <div class="detailed-table-container" style="margin-top: 16px;">
-                    <table class="finance-table">
+                    <table class="finance-table discount-detail-table">
                         <thead>
                             <tr>
-                                <th>Discount Type</th>
-                                <th>Amount</th>
-                                <th>Recipients</th>
-                                <th>Avg/Recipient</th>
+                                <th>Discount Category</th>
+                                <th style="text-align:right;"># Campers</th>
+                                <th style="text-align:right;"># Txns</th>
+                                <th style="text-align:right;">Amount</th>
+                                <th style="text-align:right;">Avg/Camper</th>
+                                <th style="text-align:right;">% of Total</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for dc in finance_data.discounts.by_category %}
-                            <tr>
-                                <td><span class="discount-badge">{{ dc.name }}</span></td>
-                                <td class="finance-negative">${{ '{:,.0f}'.format(dc.amount|abs) }}</td>
-                                <td>{{ dc.recipients }}</td>
-                                <td>${{ '{:,.0f}'.format(dc.avg_per_recipient|abs) }}</td>
+                            {% for grp in finance_data.discounts.by_group %}
+                            {% set pct = (grp.amount / finance_data.discounts.total_amount * 100) if finance_data.discounts.total_amount > 0 else 0 %}
+                            <tr class="discount-group-row" onclick="this.classList.toggle('expanded'); var subs=this.parentElement.querySelectorAll('.disc-sub-{{ loop.index }}'); subs.forEach(function(s){s.classList.toggle('disc-sub-visible')});" style="cursor:pointer;">
+                                <td>
+                                    <span class="disc-expand-icon">{% if grp.subs|length > 1 %}▸{% endif %}</span>
+                                    <span class="discount-badge" style="font-weight:600;">{{ grp.name }}</span>
+                                    {% if grp.subs|length > 1 %}<span style="color:var(--text-muted); font-size:11px; margin-left:6px;">({{ grp.subs|length }} types)</span>{% endif %}
+                                </td>
+                                <td style="text-align:right; font-weight:600;">{{ grp.recipients }}</td>
+                                <td style="text-align:right; color: var(--text-muted);">{{ grp.count }}</td>
+                                <td style="text-align:right; font-weight:600;" class="finance-negative">${{ '{:,.0f}'.format(grp.amount|abs) }}</td>
+                                <td style="text-align:right;">${{ '{:,.0f}'.format(grp.avg_per_recipient|abs) }}</td>
+                                <td style="text-align:right;">
+                                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+                                        <div class="discount-pct-bar">
+                                            <div class="discount-pct-fill" style="width:{{ [pct, 100] | min }}%;"></div>
+                                        </div>
+                                        <span style="font-size:12px; min-width:38px;">{{ '{:.1f}'.format(pct) }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% if grp.subs|length > 1 %}
+                            {% set grp_idx = loop.index %}
+                            {% for sub in grp.subs %}
+                            {% set sub_pct = (sub.amount / finance_data.discounts.total_amount * 100) if finance_data.discounts.total_amount > 0 else 0 %}
+                            <tr class="disc-sub disc-sub-{{ grp_idx }}">
+                                <td style="padding-left: 40px;"><span style="color:var(--text-muted); font-size:13px;">{{ sub.name }}</span></td>
+                                <td style="text-align:right; color:var(--text-muted); font-size:13px;">{{ sub.recipients }}</td>
+                                <td style="text-align:right; color:var(--text-muted); font-size:13px;">{{ sub.count }}</td>
+                                <td style="text-align:right; color:#EF4444; font-size:13px;">${{ '{:,.0f}'.format(sub.amount|abs) }}</td>
+                                <td style="text-align:right; font-size:13px;">${{ '{:,.0f}'.format((sub.amount / sub.recipients)|abs) if sub.recipients > 0 else 0 }}</td>
+                                <td style="text-align:right; font-size:12px; color:var(--text-muted);">{{ '{:.1f}'.format(sub_pct) }}%</td>
                             </tr>
                             {% endfor %}
+                            {% endif %}
+                            {% endfor %}
+                            <!-- Totals row -->
+                            <tr style="font-weight:700; background:var(--bg); border-top: 2px solid var(--border);">
+                                <td>TOTAL</td>
+                                <td style="text-align:right;">{{ finance_data.discounts.campers_with_discount }}</td>
+                                <td style="text-align:right;">{{ finance_data.discounts.by_group | sum(attribute='count') }}</td>
+                                <td style="text-align:right;" class="finance-negative">${{ '{:,.0f}'.format(finance_data.discounts.total_amount|abs) }}</td>
+                                <td style="text-align:right;">${{ '{:,.0f}'.format(finance_data.discounts.avg_discount|abs) }}</td>
+                                <td style="text-align:right;">100%</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
+                {% endif %}
             </div>
             {% endif %}
 
@@ -1202,6 +1250,136 @@
             })();
             </script>
             {% endif %}
+
+            <!-- ========== BUDGET VS ACTUAL SECTION ========== -->
+            {% if budget_data %}
+            <!-- Budget KPIs Row -->
+            <div class="kpi-grid kpi-grid-4" style="margin-top: 24px;">
+                <div class="kpi-card finance-budget">
+                    <div class="kpi-label">📋 Budgeted Expenses <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Total expenses approved in the FY2026 budget. Includes salaries, program costs, facilities, and administration.</span></span></div>
+                    <div class="kpi-value">${{ '{:,.0f}'.format(budget_data.budget.expenses.total) }}</div>
+                    <div class="kpi-subtext">FY2026 Budget | Net: ${{ '{:,.0f}'.format(budget_data.budget.net) }}</div>
+                </div>
+                <div class="kpi-card finance-actual">
+                    <div class="kpi-label">💸 Actual Expenses (PO) <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Total expenses recorded in the Purchase Order system. Upload the latest PO file to update.</span></span></div>
+                    {% if budget_data.po and budget_data.po.budget_vs_actual %}
+                    <div class="kpi-value">${{ '{:,.0f}'.format(budget_data.po.budget_vs_actual.totals.actual) }}</div>
+                    <div class="kpi-subtext">{{ budget_data.po.budget_vs_actual.totals.pct_used }}% of budget used</div>
+                    {% else %}
+                    <div class="kpi-value" style="font-size: 18px; color: var(--text-muted);">No PO data</div>
+                    <div class="kpi-subtext">Upload PO file to see actuals</div>
+                    {% endif %}
+                </div>
+                <div class="kpi-card finance-budgetpct">
+                    <div class="kpi-label">📊 Budget Remaining <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Amount remaining from total budget after actual PO spending.</span></span></div>
+                    {% if budget_data.po and budget_data.po.budget_vs_actual %}
+                    {% set variance = budget_data.po.budget_vs_actual.totals.variance %}
+                    <div class="kpi-value {% if variance >= 0 %}variance-positive{% else %}variance-negative{% endif %}">${{ '{:,.0f}'.format(variance|abs) }}{% if variance < 0 %} over{% endif %}</div>
+                    <div class="kpi-subtext">
+                        <div class="budget-pct-bar" style="margin-top:4px;">
+                            <div class="budget-pct-fill" style="width: {{ [budget_data.po.budget_vs_actual.totals.pct_used, 100] | min }}%; background: {% if budget_data.po.budget_vs_actual.totals.pct_used > 100 %}#EF4444{% elif budget_data.po.budget_vs_actual.totals.pct_used > 80 %}#F59E0B{% else %}#10B981{% endif %};"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="kpi-value" style="font-size: 18px; color: var(--text-muted);">—</div>
+                    <div class="kpi-subtext">Upload PO file</div>
+                    {% endif %}
+                </div>
+                <div class="kpi-card finance-discbudget">
+                    <div class="kpi-label">🏷️ Discounts: Budget vs Actual <span class="kpi-info"><span class="kpi-info-icon">&#9432;</span><span class="kpi-info-tooltip">Compares budgeted scholarships/discounts ($248K) with actual discounts recorded in CampMinder.</span></span></div>
+                    {% if finance_data and finance_data.discounts %}
+                    {% set disc_budget = budget_data.budget.revenue.discounts_scholarships|abs %}
+                    {% set disc_actual = finance_data.discounts.total_amount|abs %}
+                    {% set disc_diff = disc_budget - disc_actual %}
+                    <div class="kpi-value {% if disc_diff >= 0 %}variance-positive{% else %}variance-negative{% endif %}">${{ '{:,.0f}'.format(disc_actual) }}</div>
+                    <div class="kpi-subtext">Budget: ${{ '{:,.0f}'.format(disc_budget) }} | {{ 'Under' if disc_diff >= 0 else 'Over' }}: ${{ '{:,.0f}'.format(disc_diff|abs) }}</div>
+                    {% else %}
+                    <div class="kpi-value">${{ '{:,.0f}'.format(budget_data.budget.revenue.discounts_scholarships|abs) }}</div>
+                    <div class="kpi-subtext">Budgeted | Waiting for CampMinder data</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Budget vs Actual Table + Chart -->
+            <div class="section-card" style="margin-top: 16px;">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>📋 Budget vs Actual Expenses</h3>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {% if budget_data.po_uploaded_at %}
+                        <span style="font-size: 11px; color: var(--text-muted);">PO updated: {{ budget_data.po_uploaded_at[:10] }}</span>
+                        {% endif %}
+                        <button class="btn btn-sm btn-upload-po" onclick="document.getElementById('poFileInput').click();">📤 Upload PO File</button>
+                        <input type="file" id="poFileInput" accept=".xlsx" style="display:none;" onchange="uploadPOFile(this.files[0])">
+                    </div>
+                </div>
+
+                {% if budget_data.po and budget_data.po.budget_vs_actual %}
+                <!-- Chart -->
+                <div class="finance-chart-container" style="height: 300px; margin-bottom: 20px;">
+                    <canvas id="budgetVsActualChart"></canvas>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table class="finance-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th style="text-align:right;">Budgeted</th>
+                                <th style="text-align:right;">Actual (PO)</th>
+                                <th style="text-align:right;">Variance</th>
+                                <th style="text-align:right;">% Used</th>
+                            </tr>
+                        </thead>
+                        <tbody id="budgetVsActualBody">
+                            {% for cat in budget_data.po.budget_vs_actual.categories %}
+                            <tr>
+                                <td style="font-weight:600;">{{ cat.emoji }} {{ cat.category }}</td>
+                                <td style="text-align:right;">${{ '{:,.0f}'.format(cat.budgeted) }}</td>
+                                <td style="text-align:right; font-weight:600;">${{ '{:,.0f}'.format(cat.actual) }}</td>
+                                <td style="text-align:right;" class="{% if cat.variance >= 0 %}variance-positive{% else %}variance-negative{% endif %}">
+                                    {{ '+' if cat.variance >= 0 else '' }}${{ '{:,.0f}'.format(cat.variance) }}
+                                </td>
+                                <td style="text-align:right;">
+                                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+                                        <div class="budget-pct-bar" style="width:60px;">
+                                            <div class="budget-pct-fill" style="width:{{ [cat.pct_used, 100] | min }}%; background:{% if cat.pct_used > 100 %}#EF4444{% elif cat.pct_used > 80 %}#F59E0B{% else %}#10B981{% endif %};"></div>
+                                        </div>
+                                        <span style="font-size:12px; {% if cat.pct_used > 100 %}color:#EF4444; font-weight:600;{% elif cat.pct_used > 80 %}color:#F59E0B;{% endif %}">{{ cat.pct_used }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <!-- Totals row -->
+                            {% set totals = budget_data.po.budget_vs_actual.totals %}
+                            <tr style="font-weight:700; background:var(--bg); border-top: 2px solid var(--border);">
+                                <td>TOTAL</td>
+                                <td style="text-align:right;">${{ '{:,.0f}'.format(totals.budgeted) }}</td>
+                                <td style="text-align:right;">${{ '{:,.0f}'.format(totals.actual) }}</td>
+                                <td style="text-align:right;" class="{% if totals.variance >= 0 %}variance-positive{% else %}variance-negative{% endif %}">
+                                    {{ '+' if totals.variance >= 0 else '' }}${{ '{:,.0f}'.format(totals.variance) }}
+                                </td>
+                                <td style="text-align:right;">{{ totals.pct_used }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <div style="font-size: 48px; margin-bottom: 12px;">📤</div>
+                    <h3 style="margin-bottom: 8px;">No PO Data Uploaded</h3>
+                    <p style="margin-bottom: 16px;">Upload your <strong>2026 Camp PO.xlsx</strong> file to see Budget vs Actual comparison.</p>
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('poFileInput').click();">📤 Upload PO File</button>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            <!-- End Budget vs Actual Section -->
+
+            <!-- Pass budget data to JS -->
+            <script>
+            window.budgetData = {{ budget_data | tojson if budget_data else '{}' | safe }};
+            </script>
 
         </div>
         {% endif %}
