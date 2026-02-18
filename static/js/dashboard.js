@@ -480,12 +480,56 @@ function emailEnrollmentList() {
         return;
     }
 
-    var programList = selected.join(', ');
-    var subject = 'Camp Sol Taplin - Enrollment Roster';
-    var body = 'Hi,\n\nPlease find attached the enrollment roster for ' + programList + '.\n\nBest regards,\nCamp Sol Taplin';
+    var statusEl = document.getElementById('enrollmentDownloadStatus');
+    var emailBtn = document.getElementById('emailEnrollmentBtn');
+    if (statusEl) statusEl.textContent = 'Generating...';
+    if (emailBtn) emailBtn.disabled = true;
 
-    var mailtoUrl = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    window.location.href = mailtoUrl;
+    // Step 1: Download the Excel file
+    fetch('/api/download-multi-program-enrollment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ programs: selected })
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            return response.json().then(function(err) { throw new Error(err.error || 'Download failed'); });
+        }
+        return response.blob();
+    })
+    .then(function(blob) {
+        // Trigger file download
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        var namesPart = selected.map(function(s) { return s.replace(/\s+/g, ''); }).join('_');
+        if (namesPart.length > 80) namesPart = namesPart.substring(0, 80);
+        a.download = 'Enrollment_' + namesPart + '.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        if (statusEl) statusEl.textContent = 'Downloaded!';
+        setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 3000);
+
+        // Step 2: Open mailto with pre-filled subject and body
+        var programList = selected.join(', ');
+        var subject = 'Camp Sol Taplin - Enrollment Roster';
+        var body = 'Hi,\n\nPlease find attached the enrollment roster for ' + programList + '.\n\nBest regards,\nCamp Sol Taplin';
+        var mailtoUrl = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+
+        setTimeout(function() {
+            window.location.href = mailtoUrl;
+        }, 500);
+    })
+    .catch(function(err) {
+        if (statusEl) statusEl.textContent = 'Error: ' + err.message;
+        setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 5000);
+    })
+    .finally(function() {
+        updateEnrollmentDownloadButton();
+    });
 }
 
 // Upload Share Group With CSV
