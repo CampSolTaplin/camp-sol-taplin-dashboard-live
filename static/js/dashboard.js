@@ -26,9 +26,6 @@ function switchView(viewName) {
     if (viewName === 'finance') {
         setTimeout(initFinanceCharts, 100);
     }
-    if (viewName === 'insights') {
-        setTimeout(initInsights, 100);
-    }
 }
 
 // Filter by category
@@ -1728,28 +1725,3 @@ function formatNumber(num) {
     return Math.round(num).toLocaleString('en-US');
 }
 
-// ==================== INSIGHTS TAB ====================
-var insightsInitialized = false;
-
-function initInsights() {
-    if (insightsInitialized) return;
-    insightsInitialized = true;
-
-    // Fetch retention data for the insights retention card
-    fetch('/api/retention')
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            var rateEl = document.getElementById('insightRetentionRate');
-            var retEl = document.getElementById('insightReturning');
-            var newEl = document.getElementById('insightNew');
-            var lostEl = document.getElementById('insightLost');
-            if (rateEl) rateEl.textContent = data.retention_rate ? data.retention_rate.toFixed(1) + '%' : '—';
-            if (retEl) retEl.textContent = data.returning_campers || '—';
-            if (newEl) newEl.textContent = data.new_campers || '—';
-            if (lostEl) lostEl.textContent = data.lost_campers || '—';
-        })
-        .catch(function(err) {
-            var rateEl = document.getElementById('insightRetentionRate');
-            if (rateEl) rateEl.textContent = 'N/A';
-        });
-}
