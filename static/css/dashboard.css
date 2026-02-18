@@ -775,8 +775,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 }
 
 #downloadEnrollmentBtn:disabled,
-#emailEnrollmentBtn:disabled,
-#sendEnrollmentEmailBtn:disabled {
+#emailEnrollmentBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }

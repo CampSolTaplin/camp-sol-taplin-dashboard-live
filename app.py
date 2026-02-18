@@ -18,12 +18,6 @@ import uuid
 from datetime import datetime, timedelta
 from io import BytesIO
 import threading
-import smtplib
-import re as re_module
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
-from email import encoders
 
 # Import our custom modules
 from parser import CampMinderParser
@@ -1922,93 +1916,6 @@ def download_multi_program_enrollment():
         as_attachment=True,
         download_name=filename
     )
-
-
-@app.route('/api/email-enrollment', methods=['POST'])
-@login_required
-def email_enrollment():
-    """Generate enrollment Excel and email it as attachment via SMTP."""
-    if not current_user.has_permission('download_excel'):
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    req_data = request.get_json()
-    programs = req_data.get('programs', [])
-    recipients_raw = req_data.get('recipients', '')
-
-    if not programs:
-        return jsonify({'error': 'No programs selected'}), 400
-
-    # Parse recipients (comma, semicolon, newline, or space separated)
-    recipients = [
-        r.strip() for r in re_module.split(r'[,;\n\s]+', recipients_raw)
-        if r.strip() and '@' in r.strip()
-    ]
-    if not recipients:
-        return jsonify({'error': 'No valid email recipients provided'}), 400
-
-    # Check SMTP configuration
-    smtp_server = os.environ.get('SMTP_SERVER')
-    smtp_port = int(os.environ.get('SMTP_PORT', 587))
-    smtp_user = os.environ.get('SMTP_USER')
-    smtp_password = os.environ.get('SMTP_PASSWORD')
-
-    if not all([smtp_server, smtp_user, smtp_password]):
-        return jsonify({'error': 'Email not configured on this server. Contact administrator.'}), 500
-
-    # Generate the Excel
-    try:
-        output, filename = _generate_enrollment_excel(programs)
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 404
-
-    # Build email
-    today_str = datetime.now().strftime('%B %d, %Y')
-    program_list = ', '.join(programs)
-    subject = f'Camp Sol Taplin - Enrollment List: {program_list} ({today_str})'
-    if len(subject) > 150:
-        subject = f'Camp Sol Taplin - Enrollment List ({len(programs)} programs, {today_str})'
-
-    body = (
-        f"Hi,\n\n"
-        f"Attached is the enrollment list for:\n"
-        f"{program_list}\n\n"
-        f"Generated on {today_str} by {current_user.id}.\n\n"
-        f"Best regards,\n"
-        f"Camp Sol Taplin Dashboard"
-    )
-
-    msg = MIMEMultipart()
-    msg['From'] = smtp_user
-    msg['To'] = ', '.join(recipients)
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
-
-    # Attach Excel
-    part = MIMEBase('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    part.set_payload(output.getvalue())
-    encoders.encode_base64(part)
-    part.add_header('Content-Disposition', f'attachment; filename="{filename}"')
-    msg.attach(part)
-
-    # Send via SMTP
-    try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(smtp_user, smtp_password)
-            server.sendmail(smtp_user, recipients, msg.as_string())
-    except smtplib.SMTPAuthenticationError:
-        return jsonify({'error': 'SMTP authentication failed. Check email credentials.'}), 500
-    except smtplib.SMTPException as e:
-        return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
-    except Exception as e:
-        return jsonify({'error': f'Email error: {str(e)}'}), 500
-
-    return jsonify({
-        'success': True,
-        'message': f'Email sent successfully to {len(recipients)} recipient(s)'
-    })
 
 
 @app.route('/print-by-groups/<program>/<int:week>')
