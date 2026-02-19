@@ -1682,15 +1682,12 @@ def download_by_groups(program, week):
     program_data = data['participants'].get(program, {})
     participants = program_data.get(str(week), [])
 
-    # Load persons cache
-    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
-    persons_cache = {}
-    try:
-        if os.path.exists(persons_cache_file):
-            with open(persons_cache_file, 'r') as f:
-                persons_cache = json.load(f)
-    except Exception:
-        pass
+    # Load persons cache, auto-fetch missing ones from API
+    persons_cache = _load_persons_cache()
+    all_pids = [str(p['person_id']) for p in participants]
+    pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_cache]
+    if pids_to_fetch and is_api_configured():
+        persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
 
     # Load group assignments from DB
     ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
@@ -2062,14 +2059,11 @@ def print_by_groups(program, week):
     program_data = data['participants'].get(program, {})
     participants = program_data.get(str(week), [])
 
-    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
-    persons_cache = {}
-    try:
-        if os.path.exists(persons_cache_file):
-            with open(persons_cache_file, 'r') as f:
-                persons_cache = json.load(f)
-    except Exception:
-        pass
+    persons_cache = _load_persons_cache()
+    all_pids = [str(p['person_id']) for p in participants]
+    pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_cache]
+    if pids_to_fetch and is_api_configured():
+        persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
 
     ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
     group_map = {ga.person_id: ga.group_number for ga in ga_rows}
@@ -2676,15 +2670,13 @@ def attendance_campers(program, week):
         if program in participants and week_str in participants[program]:
             campers = participants[program][week_str]
 
-    # Load person names from cache
-    persons_map = {}
-    persons_cache_path = os.path.join(DATA_FOLDER, 'persons_cache.json')
-    if os.path.exists(persons_cache_path):
-        try:
-            with open(persons_cache_path, 'r') as f:
-                persons_map = json.load(f)
-        except Exception:
-            pass
+    # Load person names from cache, auto-fetch missing ones from API
+    persons_map = _load_persons_cache()
+    # Collect all person IDs from campers to check which are missing
+    all_pids = [str(c.get('personId') or c.get('person_id', '')) for c in campers]
+    pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_map]
+    if pids_to_fetch and is_api_configured():
+        persons_map = _fetch_and_cache_persons(pids_to_fetch, persons_map)
 
     # Get attendance records for specified date + program
     records = AttendanceRecord.query.filter_by(
@@ -3052,15 +3044,12 @@ def attendance_detail(program):
             if program in participants and week_str in participants[program]:
                 campers = participants[program][week_str]
 
-    # Load person names
-    persons_map = {}
-    persons_cache_path = os.path.join(DATA_FOLDER, 'persons_cache.json')
-    if os.path.exists(persons_cache_path):
-        try:
-            with open(persons_cache_path, 'r') as f:
-                persons_map = json.load(f)
-        except Exception:
-            pass
+    # Load person names from cache, auto-fetch missing ones from API
+    persons_map = _load_persons_cache()
+    all_pids = [str(c.get('personId') or c.get('person_id', '')) for c in campers]
+    pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_map]
+    if pids_to_fetch and is_api_configured():
+        persons_map = _fetch_and_cache_persons(pids_to_fetch, persons_map)
 
     # Get records
     records = AttendanceRecord.query.filter_by(
