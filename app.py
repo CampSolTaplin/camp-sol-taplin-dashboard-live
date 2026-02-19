@@ -1684,7 +1684,7 @@ def download_by_groups(program, week):
 
     # Load persons cache, auto-fetch missing ones from API
     persons_cache = _load_persons_cache()
-    all_pids = [str(p['person_id']) for p in participants]
+    all_pids = [p['person_id'] for p in participants]
     pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_cache]
     if pids_to_fetch and is_api_configured():
         persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
@@ -2060,7 +2060,7 @@ def print_by_groups(program, week):
     participants = program_data.get(str(week), [])
 
     persons_cache = _load_persons_cache()
-    all_pids = [str(p['person_id']) for p in participants]
+    all_pids = [p['person_id'] for p in participants]
     pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_cache]
     if pids_to_fetch and is_api_configured():
         persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
@@ -2672,8 +2672,8 @@ def attendance_campers(program, week):
 
     # Load person names from cache, auto-fetch missing ones from API
     persons_map = _load_persons_cache()
-    # Collect all person IDs from campers to check which are missing
-    all_pids = [str(c.get('personId') or c.get('person_id', '')) for c in campers]
+    # Collect all person IDs (as ints) from campers to check which are missing
+    all_pids = [c.get('personId') or c.get('person_id') for c in campers]
     pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_map]
     if pids_to_fetch and is_api_configured():
         persons_map = _fetch_and_cache_persons(pids_to_fetch, persons_map)
@@ -3046,7 +3046,7 @@ def attendance_detail(program):
 
     # Load person names from cache, auto-fetch missing ones from API
     persons_map = _load_persons_cache()
-    all_pids = [str(c.get('personId') or c.get('person_id', '')) for c in campers]
+    all_pids = [c.get('personId') or c.get('person_id') for c in campers]
     pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_map]
     if pids_to_fetch and is_api_configured():
         persons_map = _fetch_and_cache_persons(pids_to_fetch, persons_map)
