@@ -212,6 +212,12 @@ with app.app_context():
             default_perms = ROLE_DEFAULT_PERMISSIONS.get(u.role, [])
             u.permissions = json.dumps(default_perms)
     db.session.commit()
+    # Ensure admin users always have ALL current permissions (catches newly added ones)
+    for u in UserAccount.query.filter_by(role='admin').all():
+        current_perms = u.get_permissions()
+        if set(current_perms) != set(ALL_PERMISSIONS):
+            u.permissions = json.dumps(list(ALL_PERMISSIONS))
+    db.session.commit()
     # Create default users if they don't exist
     if not UserAccount.query.filter_by(username='campsoltaplin@marjcc.org').first():
         db.session.add(UserAccount(
