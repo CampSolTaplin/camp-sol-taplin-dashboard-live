@@ -3114,6 +3114,88 @@ def attendance_summary():
         'checkpoints': [{'id': c.id, 'name': c.name, 'time_label': c.time_label} for c in checkpoints]
     })
 
+@app.route('/api/attendance/trends')
+@login_required
+def attendance_trends():
+    """Admin: attendance trend data across all programs, grouped by date."""
+    _ensure_enrollment_cache()
+    from datetime import date as _date, timedelta
+    start_str = request.args.get('start')
+    end_str = request.args.get('end')
+    today = _date.today()
+
+    # Defaults: current camp week, or last 7 days
+    if not start_str or not end_str:
+        cw = get_current_camp_week(today)
+        if cw and cw in CAMP_WEEK_DATES:
+            start_date = _date.fromisoformat(CAMP_WEEK_DATES[cw][0])
+            end_date = today
+        else:
+            start_date = today - timedelta(days=6)
+            end_date = today
+    else:
+        try:
+            start_date = _date.fromisoformat(start_str)
+            end_date = _date.fromisoformat(end_str)
+        except ValueError:
+            start_date = today - timedelta(days=6)
+            end_date = today
+
+    # Query checkpoint_id=1 (Morning) only to avoid double-counting KC
+    records = AttendanceRecord.query.filter(
+        AttendanceRecord.checkpoint_id == 1,
+        AttendanceRecord.date >= start_date,
+        AttendanceRecord.date <= end_date
+    ).all()
+
+    # Group by date
+    by_date = {}
+    for r in records:
+        d = r.date.isoformat()
+        if d not in by_date:
+            by_date[d] = {'present': 0, 'absent': 0, 'late': 0, 'early_pickup': 0}
+        if r.status in by_date[d]:
+            by_date[d][r.status] += 1
+
+    # Calculate total enrolled per date (sum across all programs for that date's week)
+    participants = {}
+    if api_cache.get('data') and api_cache['data'].get('participants'):
+        participants = api_cache['data']['participants']
+
+    dates_result = []
+    current = start_date
+    while current <= end_date:
+        # Skip weekends
+        if current.weekday() < 5:
+            d_str = current.isoformat()
+            counts = by_date.get(d_str, {'present': 0, 'absent': 0, 'late': 0, 'early_pickup': 0})
+            # Calculate total enrolled for this date's week
+            wk = get_current_camp_week(current)
+            total_enrolled = 0
+            if wk and participants:
+                wk_str = str(wk)
+                for prog_name, weeks in participants.items():
+                    if wk_str in weeks:
+                        total_enrolled += len(weeks[wk_str])
+            attended = counts['present'] + counts['late']
+            rate = round(attended / total_enrolled * 100, 1) if total_enrolled > 0 else 0
+            dates_result.append({
+                'date': d_str,
+                'present': counts['present'],
+                'absent': counts['absent'],
+                'late': counts['late'],
+                'early_pickup': counts['early_pickup'],
+                'total_enrolled': total_enrolled,
+                'rate': rate
+            })
+        current += timedelta(days=1)
+
+    return jsonify({
+        'start': start_date.isoformat(),
+        'end': end_date.isoformat(),
+        'dates': dates_result
+    })
+
 @app.route('/api/attendance/detail/<program>')
 @login_required
 def attendance_detail(program):

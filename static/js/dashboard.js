@@ -2,6 +2,7 @@
 
 // Global chart instances
 let cumulativeChartInstance = null;
+let attendanceTrendChartInstance = null;
 
 // View Switching
 function switchView(viewName) {
@@ -1893,6 +1894,9 @@ function initAttendanceView() {
 
     // Load unit leader assignments
     loadAssignments();
+
+    // Load attendance trend chart
+    loadAttendanceTrends();
 }
 
 function loadAttendanceSummary() {
@@ -2121,6 +2125,262 @@ function removeAssignment(username, program) {
         if (data.success) {
             showToast('Assignment removed');
             loadAssignments();
+        }
+    });
+}
+
+// ==================== ATTENDANCE TREND CHART ====================
+
+var CAMP_WEEK_DATES_JS = {
+    1: ['2026-06-08', '2026-06-12'],
+    2: ['2026-06-15', '2026-06-19'],
+    3: ['2026-06-22', '2026-06-26'],
+    4: ['2026-06-29', '2026-07-03'],
+    5: ['2026-07-06', '2026-07-10'],
+    6: ['2026-07-13', '2026-07-17'],
+    7: ['2026-07-20', '2026-07-24'],
+    8: ['2026-07-27', '2026-07-31'],
+    9: ['2026-08-03', '2026-08-07']
+};
+
+function getCurrentCampWeekJS() {
+    var today = new Date().toISOString().split('T')[0];
+    for (var wk in CAMP_WEEK_DATES_JS) {
+        if (today >= CAMP_WEEK_DATES_JS[wk][0] && today <= CAMP_WEEK_DATES_JS[wk][1]) {
+            return parseInt(wk);
+        }
+    }
+    return null;
+}
+
+function setTrendRange(preset) {
+    var startInput = document.getElementById('att-trend-start');
+    var endInput = document.getElementById('att-trend-end');
+    if (!startInput || !endInput) return;
+
+    var today = new Date().toISOString().split('T')[0];
+    var cw = getCurrentCampWeekJS();
+
+    if (preset === 'this_week') {
+        if (cw && CAMP_WEEK_DATES_JS[cw]) {
+            startInput.value = CAMP_WEEK_DATES_JS[cw][0];
+            endInput.value = today;
+        } else {
+            // Fallback: last 5 days
+            var d = new Date();
+            d.setDate(d.getDate() - 4);
+            startInput.value = d.toISOString().split('T')[0];
+            endInput.value = today;
+        }
+    } else if (preset === 'last_week') {
+        var prevWk = cw ? cw - 1 : null;
+        if (prevWk && CAMP_WEEK_DATES_JS[prevWk]) {
+            startInput.value = CAMP_WEEK_DATES_JS[prevWk][0];
+            endInput.value = CAMP_WEEK_DATES_JS[prevWk][1];
+        } else {
+            var d2 = new Date();
+            d2.setDate(d2.getDate() - 11);
+            var d3 = new Date();
+            d3.setDate(d3.getDate() - 7);
+            startInput.value = d2.toISOString().split('T')[0];
+            endInput.value = d3.toISOString().split('T')[0];
+        }
+    } else if (preset === 'all_season') {
+        startInput.value = CAMP_WEEK_DATES_JS[1][0]; // First day of season
+        endInput.value = CAMP_WEEK_DATES_JS[9][1];   // Last day of season
+    }
+
+    // Highlight active button
+    document.querySelectorAll('.att-trend-quick-btn').forEach(function(btn) {
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.fontWeight = '';
+    });
+    var activeBtn = document.querySelector('.att-trend-quick-btn[onclick*="' + preset + '"]');
+    if (activeBtn) {
+        activeBtn.style.background = '#0D9488';
+        activeBtn.style.color = 'white';
+        activeBtn.style.fontWeight = '600';
+    }
+
+    loadAttendanceTrends();
+}
+
+function loadAttendanceTrends() {
+    var startInput = document.getElementById('att-trend-start');
+    var endInput = document.getElementById('att-trend-end');
+    var start = startInput ? startInput.value : '';
+    var end = endInput ? endInput.value : '';
+
+    var url = '/api/attendance/trends';
+    var params = [];
+    if (start) params.push('start=' + start);
+    if (end) params.push('end=' + end);
+    if (params.length) url += '?' + params.join('&');
+
+    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        // Update date inputs with server response
+        if (startInput && data.start) startInput.value = data.start;
+        if (endInput && data.end) endInput.value = data.end;
+
+        var emptyEl = document.getElementById('att-trend-empty');
+        var canvas = document.getElementById('attendanceTrendChart');
+
+        if (!data.dates || data.dates.length === 0) {
+            if (canvas) canvas.style.display = 'none';
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+
+        if (canvas) canvas.style.display = 'block';
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        renderAttendanceTrendChart(data.dates);
+    }).catch(function(err) {
+        console.error('Load attendance trends error:', err);
+    });
+}
+
+function renderAttendanceTrendChart(dates) {
+    var canvas = document.getElementById('attendanceTrendChart');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+
+    if (attendanceTrendChartInstance) {
+        attendanceTrendChartInstance.destroy();
+    }
+
+    // Format labels as "Mon 6/8"
+    var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var labels = dates.map(function(d) {
+        var dt = new Date(d.date + 'T12:00:00');
+        var dayName = dayNames[dt.getDay()];
+        return dayName + ' ' + (dt.getMonth() + 1) + '/' + dt.getDate();
+    });
+
+    var presentData = dates.map(function(d) { return d.present; });
+    var lateData = dates.map(function(d) { return d.late; });
+    var absentData = dates.map(function(d) { return d.absent; });
+    var rateData = dates.map(function(d) { return d.rate; });
+
+    attendanceTrendChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Present',
+                    data: presentData,
+                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                    borderColor: '#22C55E',
+                    borderWidth: 1,
+                    stack: 'counts',
+                    order: 2
+                },
+                {
+                    label: 'Late',
+                    data: lateData,
+                    backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                    borderColor: '#F59E0B',
+                    borderWidth: 1,
+                    stack: 'counts',
+                    order: 2
+                },
+                {
+                    label: 'Absent',
+                    data: absentData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: '#EF4444',
+                    borderWidth: 1,
+                    stack: 'counts',
+                    order: 2
+                },
+                {
+                    label: 'Attendance Rate %',
+                    data: rateData,
+                    type: 'line',
+                    borderColor: '#0D9488',
+                    backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#0D9488',
+                    tension: 0.3,
+                    fill: false,
+                    yAxisID: 'yRate',
+                    order: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 16,
+                        font: { family: "'DM Sans', sans-serif", size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleFont: { family: "'DM Sans', sans-serif", weight: '600' },
+                    bodyFont: { family: "'DM Sans', sans-serif" },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        afterBody: function(context) {
+                            var idx = context[0].dataIndex;
+                            var d = dates[idx];
+                            return 'Total Enrolled: ' + d.total_enrolled;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { family: "'DM Sans', sans-serif", size: 11 },
+                        maxRotation: 45
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Campers',
+                        font: { family: "'DM Sans', sans-serif", weight: 'bold', size: 12 }
+                    },
+                    ticks: {
+                        font: { family: "'DM Sans', sans-serif", size: 11 },
+                        precision: 0
+                    },
+                    grid: { color: 'rgba(0,0,0,0.06)' }
+                },
+                yRate: {
+                    position: 'right',
+                    min: 0,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Rate %',
+                        font: { family: "'DM Sans', sans-serif", weight: 'bold', size: 12 }
+                    },
+                    ticks: {
+                        font: { family: "'DM Sans', sans-serif", size: 11 },
+                        callback: function(val) { return val + '%'; }
+                    },
+                    grid: { drawOnChartArea: false }
+                }
+            }
         }
     });
 }

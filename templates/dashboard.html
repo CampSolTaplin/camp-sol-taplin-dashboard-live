@@ -1431,6 +1431,27 @@
                 </div>
             </div>
 
+            <!-- Attendance Trend Chart -->
+            <div class="card" style="margin-top:20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                    <h3 style="font-family:'Outfit',sans-serif; font-weight:600; margin:0; font-size:16px;">📊 Attendance Trends</h3>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button class="btn btn-secondary att-trend-quick-btn" onclick="setTrendRange('this_week')" style="padding:5px 12px; font-size:12px; border-radius:6px;">This Week</button>
+                        <button class="btn btn-secondary att-trend-quick-btn" onclick="setTrendRange('last_week')" style="padding:5px 12px; font-size:12px; border-radius:6px;">Last Week</button>
+                        <button class="btn btn-secondary att-trend-quick-btn" onclick="setTrendRange('all_season')" style="padding:5px 12px; font-size:12px; border-radius:6px;">All Season</button>
+                        <input type="date" id="att-trend-start" class="att-admin-date-input" onchange="loadAttendanceTrends()" style="font-size:12px; padding:5px 8px;">
+                        <span style="color:#6B7280; font-size:12px;">to</span>
+                        <input type="date" id="att-trend-end" class="att-admin-date-input" onchange="loadAttendanceTrends()" style="font-size:12px; padding:5px 8px;">
+                    </div>
+                </div>
+                <div style="position:relative; height:340px;">
+                    <canvas id="attendanceTrendChart"></canvas>
+                </div>
+                <div id="att-trend-empty" style="display:none; text-align:center; padding:40px; color:#6B7280; font-family:'DM Sans',sans-serif;">
+                    No attendance data for selected range.
+                </div>
+            </div>
+
             <!-- Programs × Checkpoints Grid -->
             <div class="card" style="margin-top:20px; overflow-x:auto;">
                 <table class="att-admin-grid" id="att-admin-grid">
