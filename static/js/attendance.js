@@ -18,6 +18,8 @@
     // KC checkpoint IDs: 4 = KC Before, 5 = KC After
     const KC_BEFORE_CP = '4';
     const KC_AFTER_CP  = '5';
+    // Early Pickup checkpoint ID = 6 (independent toggle, combinable with Present/Late)
+    const EP_CP = '6';
 
     // ---- Init ----
     document.addEventListener('DOMContentLoaded', init);
@@ -92,10 +94,12 @@
         var lockBadge = document.getElementById('att-lock-badge');
         var lockedBanner = document.getElementById('att-locked-banner');
         var markAllBtn = document.getElementById('mark-all-btn');
+        var unmarkAllBtn = document.getElementById('unmark-all-btn');
 
         if (lockBadge) lockBadge.style.display = isDayLocked ? 'inline-flex' : 'none';
         if (lockedBanner) lockedBanner.style.display = isDayLocked ? 'flex' : 'none';
         if (markAllBtn) markAllBtn.style.display = isDayLocked ? 'none' : 'inline-flex';
+        if (unmarkAllBtn) unmarkAllBtn.style.display = isDayLocked ? 'none' : 'inline-flex';
     }
 
     window.onDateChange = function() {
@@ -205,8 +209,16 @@
         list.innerHTML = campers.map(function(c) {
             var att = (c.attendance && c.attendance[DAILY_CP]) || {};
             var currentStatus = att.status || '';
+
+            // EP is now an independent flag stored on checkpoint 6
+            var epAtt = (c.attendance && c.attendance[EP_CP]) || {};
+            var hasEP = epAtt.status === 'early_pickup';
+
+            // Border class — show EP combined indicator
             var borderClass = '';
-            if (currentStatus === 'present') borderClass = 'marked';
+            if (currentStatus === 'present' && hasEP) borderClass = 'marked-present-ep';
+            else if (currentStatus === 'late' && hasEP) borderClass = 'marked-late-ep';
+            else if (currentStatus === 'present') borderClass = 'marked';
             else if (currentStatus) borderClass = 'marked-' + currentStatus;
 
             var hasKC = !!c.has_kc;
@@ -216,7 +228,18 @@
             var kcAfterStatus  = kcAfterAtt.status || '';
 
             var html = '<div class="camper-row ' + borderClass + '" id="row-' + c.person_id + '" data-pid="' + c.person_id + '">';
+
+            // Camper info area (name + optional sibling)
+            html += '<div class="camper-info">';
             html += '<span class="camper-name">' + escHTML(c.name) + '</span>';
+            if (c.youngest_sibling) {
+                html += '<span class="camper-sibling">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> ' +
+                    escHTML(c.youngest_sibling.name) + ' <span class="sibling-program">(' + escHTML(c.youngest_sibling.program) + ')</span>' +
+                '</span>';
+            }
+            html += '</div>';
+
             html += '<div class="status-buttons">';
 
             // KC Before (only if camper has KC)
@@ -226,7 +249,7 @@
                     ' title="Kid Connection - Before Care"' + disabledAttr + '>KC</button>';
             }
 
-            // Main attendance buttons
+            // Main attendance buttons (Present, Absent, Late)
             html += '<button class="status-btn present ' + (currentStatus === 'present' ? 'active' : '') + '"' +
                 ' onclick="setStatus(\'' + c.person_id + '\', \'present\', this)"' +
                 ' title="Present"' + disabledAttr + '>&#10003;</button>';
@@ -236,9 +259,11 @@
             html += '<button class="status-btn late ' + (currentStatus === 'late' ? 'active' : '') + '"' +
                 ' onclick="setStatus(\'' + c.person_id + '\', \'late\', this)"' +
                 ' title="Late Arrival"' + disabledAttr + '>LA</button>';
-            html += '<button class="status-btn early_pickup ' + (currentStatus === 'early_pickup' ? 'active' : '') + '"' +
-                ' onclick="setStatus(\'' + c.person_id + '\', \'early_pickup\', this)"' +
-                ' title="Early Pickup"' + disabledAttr + '>EP</button>';
+
+            // EP is now an independent toggle button (can combine with Present or Late)
+            html += '<button class="status-btn early_pickup ' + (hasEP ? 'active' : '') + '"' +
+                ' onclick="toggleEP(\'' + c.person_id + '\', this)"' +
+                ' title="Early Pickup (combinable with Present/Late)"' + disabledAttr + '>EP</button>';
 
             // KC After (only if camper has KC)
             if (hasKC) {
@@ -254,29 +279,60 @@
         updateProgress();
     }
 
-    // ---- Set Status (single camper — main attendance) ----
+    // ---- Set Status (single camper — main attendance: Present/Absent/Late) ----
+    // Clicking the same status again toggles it OFF (unmarks the camper)
     window.setStatus = function(personId, status, btnEl) {
         if (isDayLocked) {
             showToast('Day is locked — cannot modify', 'error');
             return;
         }
 
-        // Update local state
         var camper = campers.find(function(c) { return c.person_id === personId; });
-        if (camper) {
-            if (!camper.attendance) camper.attendance = {};
-            camper.attendance[DAILY_CP] = { status: status };
+        if (!camper) return;
+        if (!camper.attendance) camper.attendance = {};
+
+        // Toggle off: if clicking the same status that's already active, clear it
+        var currentStatus = (camper.attendance[DAILY_CP] && camper.attendance[DAILY_CP].status) || '';
+        var isUnmarking = (currentStatus === status);
+        var newStatus = isUnmarking ? 'absent' : status;
+
+        camper.attendance[DAILY_CP] = isUnmarking ? {} : { status: status };
+
+        // If unmarking or setting Absent, also clear EP
+        if (isUnmarking || status === 'absent') {
+            camper.attendance[EP_CP] = {};
+            var epTimerKey = personId + '_ep';
+            if (saveTimers[epTimerKey]) clearTimeout(saveTimers[epTimerKey]);
+            saveTimers[epTimerKey] = setTimeout(function() {
+                saveSingleRecord(personId, 'absent', EP_CP);
+            }, 300);
         }
 
         // Update UI
         var row = document.getElementById('row-' + personId);
         if (row) {
+            var epAtt = (camper.attendance[EP_CP]) || {};
+            var hasEP = epAtt.status === 'early_pickup';
+
             row.className = 'camper-row';
-            if (status === 'present') row.classList.add('marked');
-            else row.classList.add('marked-' + status);
-            // Update only main buttons (not KC)
-            row.querySelectorAll('.status-btn:not(.kc_btn)').forEach(function(btn) { btn.classList.remove('active'); });
-            if (btnEl) btnEl.classList.add('active');
+            if (!isUnmarking) {
+                if (status === 'present' && hasEP) row.classList.add('marked-present-ep');
+                else if (status === 'late' && hasEP) row.classList.add('marked-late-ep');
+                else if (status === 'present') row.classList.add('marked');
+                else if (status) row.classList.add('marked-' + status);
+            }
+
+            // Update only main buttons (not KC, not EP)
+            row.querySelectorAll('.status-btn.present, .status-btn.absent, .status-btn.late').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            if (!isUnmarking && btnEl) btnEl.classList.add('active');
+
+            // If unmarking or absent, also deactivate EP button
+            if (isUnmarking || status === 'absent') {
+                var epBtn = row.querySelector('.status-btn.early_pickup');
+                if (epBtn) epBtn.classList.remove('active');
+            }
         }
 
         updateProgress();
@@ -285,7 +341,59 @@
         var timerKey = personId + '_main';
         if (saveTimers[timerKey]) clearTimeout(saveTimers[timerKey]);
         saveTimers[timerKey] = setTimeout(function() {
-            saveSingleRecord(personId, status, DAILY_CP);
+            saveSingleRecord(personId, newStatus, DAILY_CP);
+        }, 300);
+    };
+
+    // ---- Toggle EP (Early Pickup — independent toggle, combinable with Present/Late) ----
+    window.toggleEP = function(personId, btnEl) {
+        if (isDayLocked) {
+            showToast('Day is locked — cannot modify', 'error');
+            return;
+        }
+
+        var camper = campers.find(function(c) { return c.person_id === personId; });
+        if (!camper) return;
+
+        // Check main status — EP can only be set if Present or Late
+        var mainAtt = (camper.attendance && camper.attendance[DAILY_CP]) || {};
+        var mainStatus = mainAtt.status || '';
+        if (mainStatus !== 'present' && mainStatus !== 'late') {
+            showToast('Mark Present or Late first, then toggle EP', 'error');
+            return;
+        }
+
+        if (!camper.attendance) camper.attendance = {};
+        var currentEP = (camper.attendance[EP_CP] && camper.attendance[EP_CP].status) || '';
+        var isTogglingOn = currentEP !== 'early_pickup';
+
+        if (isTogglingOn) {
+            camper.attendance[EP_CP] = { status: 'early_pickup' };
+            if (btnEl) btnEl.classList.add('active');
+        } else {
+            camper.attendance[EP_CP] = {};
+            if (btnEl) btnEl.classList.remove('active');
+        }
+
+        // Update row border to reflect combination
+        var row = document.getElementById('row-' + personId);
+        if (row) {
+            row.className = 'camper-row';
+            if (mainStatus === 'present' && isTogglingOn) row.classList.add('marked-present-ep');
+            else if (mainStatus === 'late' && isTogglingOn) row.classList.add('marked-late-ep');
+            else if (mainStatus === 'present') row.classList.add('marked');
+            else if (mainStatus) row.classList.add('marked-' + mainStatus);
+        }
+
+        // Debounced save
+        var timerKey = personId + '_ep';
+        if (saveTimers[timerKey]) clearTimeout(saveTimers[timerKey]);
+        saveTimers[timerKey] = setTimeout(function() {
+            if (isTogglingOn) {
+                saveSingleRecord(personId, 'early_pickup', EP_CP);
+            } else {
+                saveSingleRecord(personId, 'absent', EP_CP);  // Clear EP
+            }
         }, 300);
     };
 
@@ -401,6 +509,72 @@
         });
     };
 
+    // ---- Unmark All ----
+    window.unmarkAll = function() {
+        if (isDayLocked) {
+            showToast('Day is locked', 'error');
+            return;
+        }
+
+        var marked = campers.filter(function(c) {
+            var att = (c.attendance && c.attendance[DAILY_CP]) || {};
+            return !!att.status;
+        });
+
+        if (marked.length === 0) {
+            showToast('No campers are marked');
+            return;
+        }
+
+        // Update local state: clear main status + EP for all
+        marked.forEach(function(c) {
+            if (!c.attendance) c.attendance = {};
+            c.attendance[DAILY_CP] = {};
+            c.attendance[EP_CP] = {};
+        });
+        renderCamperList();
+
+        // Batch save as absent for main checkpoint
+        var btn = document.getElementById('unmark-all-btn');
+        btn.disabled = true;
+        btn.textContent = 'Clearing...';
+
+        var personIds = marked.map(function(c) { return c.person_id; });
+
+        // Clear main status
+        fetch('/api/attendance/record-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                program_name: selectedProgram,
+                checkpoint_id: parseInt(DAILY_CP),
+                status: 'absent',
+                person_ids: personIds,
+                date: selectedDate
+            })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            // Also clear EP for all
+            return fetch('/api/attendance/record-batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    program_name: selectedProgram,
+                    checkpoint_id: parseInt(EP_CP),
+                    status: 'absent',
+                    person_ids: personIds,
+                    date: selectedDate
+                })
+            });
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            showToast(marked.length + ' campers unmarked', 'success');
+        }).catch(function(err) {
+            showToast('Network error', 'error');
+        }).finally(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Unmark All';
+        });
+    };
+
     // ---- Update Progress ----
     function updateProgress() {
         var total = campers.length;
@@ -416,8 +590,11 @@
 
         document.getElementById('progress-text').textContent = marked + '/' + total + ' marked';
 
-        var btn = document.getElementById('mark-all-btn');
-        if (btn && !isDayLocked) btn.disabled = (marked >= total);
+        var markBtn = document.getElementById('mark-all-btn');
+        if (markBtn && !isDayLocked) markBtn.disabled = (marked >= total);
+
+        var unmarkBtn = document.getElementById('unmark-all-btn');
+        if (unmarkBtn && !isDayLocked) unmarkBtn.disabled = (marked === 0);
     }
 
     // ---- Toast ----

@@ -273,6 +273,9 @@ with app.app_context():
             db.session.add(AttendanceCheckpoint(name='KC Before', sort_order=4, time_label='7:30 AM', active=True))
         if not AttendanceCheckpoint.query.filter_by(name='KC After').first():
             db.session.add(AttendanceCheckpoint(name='KC After', sort_order=5, time_label='4:00 PM', active=True))
+    # Ensure Early Pickup checkpoint exists (stores EP flag independently of main status)
+    if not AttendanceCheckpoint.query.filter_by(name='Early Pickup').first():
+        db.session.add(AttendanceCheckpoint(name='Early Pickup', sort_order=6, time_label='', active=True))
     db.session.commit()
 
 # ==================== CAMP WEEK UTILITIES ====================
@@ -2715,6 +2718,54 @@ def attendance_campers(program, week):
             return True
         return False
 
+    # Build reverse lookup: all enrolled person_ids by program+week for sibling matching
+    enrolled_by_program = {}  # {program_name: set_of_person_ids}
+    if api_cache.get('data') and api_cache['data'].get('participants'):
+        all_participants = api_cache['data']['participants']
+        for prog_name, weeks_data in all_participants.items():
+            if str(week) in weeks_data:
+                for c in weeks_data[str(week)]:
+                    pid = str(c.get('personId') or c.get('person_id', ''))
+                    if pid:
+                        enrolled_by_program.setdefault(prog_name, set()).add(pid)
+    def _find_youngest_enrolled_sibling(person_id):
+        """Find the youngest sibling (younger than camper) enrolled this week."""
+        entry = persons_map.get(str(person_id))
+        if not isinstance(entry, dict):
+            return None
+        sibling_details = entry.get('sibling_details')
+        if not sibling_details or not isinstance(sibling_details, list):
+            return None
+        # Get camper's own DOB to compare
+        camper_dob = entry.get('date_of_birth', '')
+        # Find siblings that are enrolled this week in any program
+        enrolled_siblings = []
+        for sib in sibling_details:
+            sib_id = str(sib.get('id', ''))
+            if not sib_id:
+                continue
+            sib_dob = sib.get('dob', '')
+            # Only include siblings younger than the camper (more recent DOB)
+            if camper_dob and sib_dob and sib_dob <= camper_dob:
+                continue  # Sibling is same age or older, skip
+            # Check if this sibling is enrolled in any program this week
+            for prog_name, enrolled_ids in enrolled_by_program.items():
+                if sib_id in enrolled_ids:
+                    sib_name = _person_name(sib_id, sib.get('first_name', ''))
+                    enrolled_siblings.append({
+                        'id': sib_id,
+                        'name': sib_name,
+                        'program': prog_name,
+                        'dob': sib_dob
+                    })
+                    break  # Found one program for this sibling, enough
+        if not enrolled_siblings:
+            return None
+        # Return the youngest (most recent dob)
+        enrolled_siblings.sort(key=lambda s: s.get('dob', ''), reverse=True)
+        youngest = enrolled_siblings[0]
+        return {'name': youngest['name'], 'program': youngest['program']}
+
     # Build camper list with attendance data
     camper_list = []
     for camper in campers:
@@ -2730,6 +2781,10 @@ def attendance_campers(program, week):
         for key, val in attendance_map.items():
             if key[0] == str(person_id):
                 camper_data['attendance'][str(key[1])] = val
+        # Youngest enrolled sibling
+        sib = _find_youngest_enrolled_sibling(person_id)
+        if sib:
+            camper_data['youngest_sibling'] = sib
         camper_list.append(camper_data)
 
     # Sort by last name

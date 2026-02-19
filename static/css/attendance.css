@@ -392,6 +392,12 @@ body {
     color: var(--text-light);
 }
 
+.att-bulk-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .att-mark-all {
     display: inline-flex;
     align-items: center;
@@ -418,6 +424,36 @@ body {
     height: 16px;
 }
 .att-mark-all:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.att-unmark-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--card);
+    color: var(--danger);
+    border: 2px solid var(--danger);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.att-unmark-all:active {
+    transform: scale(0.97);
+    background: var(--danger-light);
+}
+.att-unmark-all svg {
+    width: 16px;
+    height: 16px;
+}
+.att-unmark-all:disabled {
     opacity: 0.5;
     cursor: default;
 }
@@ -451,19 +487,56 @@ body {
 .camper-row.marked-late {
     border-left: 4px solid var(--warning);
 }
-.camper-row.marked-early {
+.camper-row.marked-early_pickup {
     border-left: 4px solid var(--early);
+}
+/* Combined statuses: Present + EP */
+.camper-row.marked-present-ep {
+    border-left: 4px solid var(--early);
+    background: linear-gradient(to right, var(--early-light) 0%, var(--card) 30%);
+}
+/* Combined statuses: Late + EP */
+.camper-row.marked-late-ep {
+    border-left: 4px solid var(--early);
+    background: linear-gradient(to right, var(--warning-light) 0%, var(--card) 30%);
+}
+
+/* ==================== CAMPER INFO (name + sibling) ==================== */
+
+.camper-info {
+    flex: 1;
+    min-width: 0;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .camper-name {
     font-size: 15px;
     font-weight: 500;
-    flex: 1;
-    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding-right: 10px;
+}
+
+.camper-sibling {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-light);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.camper-sibling svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+.sibling-program {
+    color: var(--teal-dark);
+    font-weight: 500;
 }
 
 .status-buttons {
