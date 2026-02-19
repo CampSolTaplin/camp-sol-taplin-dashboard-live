@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Camp Sol Taplin - Attendance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/attendance.css') }}">
+</head>
+<body>
+
+    <!-- Fixed Header -->
+    <header class="att-header">
+        <div class="att-header-left">
+            <svg class="att-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            <div>
+                <div class="att-title">Attendance</div>
+                <div class="att-date" id="att-date"></div>
+            </div>
+        </div>
+        <div class="att-header-right">
+            <span class="att-user">{{ current_user.id }}</span>
+            <a href="{{ url_for('logout') }}" class="att-logout" title="Logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="att-main">
+
+        <!-- Step 1: Program Selector -->
+        <section id="program-selector" class="att-section active">
+            <h2 class="att-section-title">Select Program</h2>
+            <div class="att-week-info" id="week-info"></div>
+
+            <!-- Date Picker -->
+            <div class="att-date-picker-row">
+                <label for="att-date-input">Date:</label>
+                <input type="date" id="att-date-input" class="att-date-input" onchange="onDateChange()">
+                <span class="att-lock-badge" id="att-lock-badge" style="display:none;">Locked (past 5 PM)</span>
+            </div>
+
+            <div class="program-grid" id="program-grid">
+                <!-- Populated by JS -->
+            </div>
+            <div class="att-empty" id="no-programs" style="display:none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <p>No programs assigned to your account.</p>
+                <p class="att-empty-sub">Contact an administrator to get assigned.</p>
+            </div>
+        </section>
+
+        <!-- Step 2: Camper List (hidden initially) -->
+        <section id="camper-section" class="att-section">
+            <!-- Back Button -->
+            <button class="att-back" onclick="goBack()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Programs
+            </button>
+
+            <div class="att-program-header">
+                <h2 class="att-program-name" id="selected-program-name"></h2>
+                <div class="att-program-meta">
+                    <span class="att-camper-count" id="camper-count"></span>
+                    <span class="att-selected-date" id="att-selected-date-label"></span>
+                </div>
+            </div>
+
+            <!-- Locked Banner -->
+            <div class="att-locked-banner" id="att-locked-banner" style="display:none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                This day is locked (past 5:00 PM). Attendance is read-only.
+            </div>
+
+            <!-- Legend -->
+            <div class="att-legend">
+                <span class="att-legend-item"><span class="att-legend-dot present"></span> &#10003; = Present</span>
+                <span class="att-legend-item"><span class="att-legend-dot absent"></span> &#10007; = Absent</span>
+                <span class="att-legend-item"><span class="att-legend-dot late"></span> LA = Late Arrival</span>
+                <span class="att-legend-item"><span class="att-legend-dot early"></span> EP = Early Pickup</span>
+                <span class="att-legend-item"><span class="att-legend-dot kc"></span> KC = Kid Connection</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="att-progress-wrap">
+                <div class="att-progress-bar">
+                    <div class="att-progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="att-progress-text">
+                    <span id="progress-text">0/0 marked</span>
+                    <button class="att-mark-all" id="mark-all-btn" onclick="markAllPresent()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        Mark All Present
+                    </button>
+                </div>
+            </div>
+
+            <!-- Camper List -->
+            <div class="camper-list" id="camper-list">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast notification -->
+    <div class="att-toast" id="att-toast"></div>
+
+    <script>
+        const CURRENT_USER = "{{ current_user.id }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+</body>
+</html>

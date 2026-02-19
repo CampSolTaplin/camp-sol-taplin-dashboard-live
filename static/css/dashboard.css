@@ -2146,3 +2146,169 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     }
 }
 
+/* ==================== ADMIN ATTENDANCE DASHBOARD ==================== */
+
+.att-admin-date-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.att-auto-refresh-badge {
+    font-size: 11px;
+    color: var(--teal);
+    background: var(--teal-light);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* Programs × Checkpoints Grid */
+.att-admin-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.att-admin-grid th {
+    background: #F8FAFB;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6B7280;
+    border-bottom: 2px solid var(--border);
+}
+
+.att-admin-grid td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #F0F0F0;
+}
+
+.att-admin-grid tbody tr:hover td {
+    background: #FAFBFC;
+}
+
+/* Cell status colors */
+.att-cell { border-radius: 6px; padding: 8px !important; }
+.att-cell.complete { background: #D1FAE5; }
+.att-cell.partial { background: #FEF3C7; }
+.att-cell.empty { background: #F3F4F6; }
+
+.att-cell-pct {
+    font-weight: 700;
+    font-size: 15px;
+}
+.att-cell.complete .att-cell-pct { color: #16A34A; }
+.att-cell.partial .att-cell-pct { color: #D97706; }
+.att-cell.empty .att-cell-pct { color: #9CA3AF; }
+
+.att-cell-count {
+    font-size: 11px;
+    color: #6B7280;
+    margin-top: 2px;
+}
+
+/* Detail table */
+.att-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.att-detail-table th {
+    background: #F8FAFB;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6B7280;
+    border-bottom: 2px solid var(--border);
+}
+.att-detail-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #F0F0F0;
+}
+
+/* Status badges */
+.att-status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.att-status-badge.present {
+    background: #D1FAE5;
+    color: #16A34A;
+}
+.att-status-badge.absent {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+.att-status-badge.late {
+    background: #FEF3C7;
+    color: #D97706;
+}
+.att-status-badge.early {
+    background: #FBE9E7;
+    color: #E64A19;
+}
+.att-status-badge.kc {
+    background: #EDE9FE;
+    color: #7C3AED;
+}
+
+/* Assignment management */
+.att-assign-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.att-assign-row {
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid #F0F0F0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+.att-assign-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.att-assign-remove {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 0 2px;
+    line-height: 1;
+}
+
+.att-admin-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    min-width: 180px;
+}
+

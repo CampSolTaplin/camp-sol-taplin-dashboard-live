@@ -56,6 +56,12 @@
                 <span>Finance</span>
             </div>
             {% endif %}
+            {% if user.has_permission('view_attendance') %}
+            <div class="nav-item" data-view="attendance" onclick="switchView('attendance')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                <span>Attendance</span>
+            </div>
+            {% endif %}
             {% if user.has_permission('upload_csv') %}
             <div class="nav-item" id="uploadBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -1385,6 +1391,79 @@
         {% endif %}
 
         {% endif %}
+
+        <!-- ATTENDANCE VIEW (Admin) -->
+        {% if user.has_permission('view_attendance') %}
+        <div id="attendance-view" class="view-content">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <h2 style="font-family:'Outfit',sans-serif; font-size:22px; font-weight:700; margin:0;">Live Attendance</h2>
+                    <a href="{{ url_for('attendance_page') }}" target="_blank"
+                       style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:#0D9488; color:white; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none; font-family:'DM Sans',sans-serif; transition:background 0.2s;"
+                       onmouseover="this.style.background='#0F766E'" onmouseout="this.style.background='#0D9488'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Unit Leader View
+                    </a>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <input type="date" id="att-admin-date" class="att-admin-date-input" onchange="loadAttendanceSummary()">
+                    <span class="att-auto-refresh-badge" id="att-refresh-badge">Auto-refresh: 30s</span>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid kpi-grid-4" id="att-admin-kpis">
+                <div class="kpi-card" style="border-top:3px solid #22C55E;">
+                    <div class="kpi-label">Present</div>
+                    <div class="kpi-value" id="att-kpi-present">-</div>
+                </div>
+                <div class="kpi-card" style="border-top:3px solid #EF4444;">
+                    <div class="kpi-label">Absent</div>
+                    <div class="kpi-value" id="att-kpi-absent">-</div>
+                </div>
+                <div class="kpi-card" style="border-top:3px solid #F59E0B;">
+                    <div class="kpi-label">Late Arrival</div>
+                    <div class="kpi-value" id="att-kpi-late">-</div>
+                </div>
+                <div class="kpi-card" style="border-top:3px solid #FF7043;">
+                    <div class="kpi-label">Early Pickup</div>
+                    <div class="kpi-value" id="att-kpi-early">-</div>
+                </div>
+            </div>
+
+            <!-- Programs × Checkpoints Grid -->
+            <div class="card" style="margin-top:20px; overflow-x:auto;">
+                <table class="att-admin-grid" id="att-admin-grid">
+                    <thead><tr><th>Program</th><th>Enrolled</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="att-admin-empty" id="att-admin-empty" style="display:none; text-align:center; padding:40px; color:#6B7280;">
+                    No attendance data for this date.
+                </div>
+            </div>
+
+            <!-- Detail Drill-down (hidden initially) -->
+            <div class="card" id="att-admin-detail" style="margin-top:20px; display:none;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                    <h3 id="att-detail-title" style="font-family:'Outfit',sans-serif; font-weight:600; margin:0;"></h3>
+                    <button onclick="document.getElementById('att-admin-detail').style.display='none'" style="background:none; border:none; font-size:20px; cursor:pointer; color:#6B7280;">&times;</button>
+                </div>
+                <div id="att-detail-body"></div>
+            </div>
+
+            <!-- Unit Leader Assignment Management -->
+            <div class="card" style="margin-top:20px;">
+                <h3 style="font-family:'Outfit',sans-serif; font-weight:600; margin-bottom:12px;">Unit Leader Assignments</h3>
+                <div id="att-assignments-body" style="margin-bottom:12px;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <select id="att-assign-user" class="att-admin-select"><option value="">Select user...</option></select>
+                    <select id="att-assign-program" class="att-admin-select"><option value="">Select program...</option></select>
+                    <button class="btn btn-primary" onclick="addAssignment()" style="padding:8px 16px; font-size:13px;">Assign</button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
     </main>
 
     <!-- Upload Modal -->

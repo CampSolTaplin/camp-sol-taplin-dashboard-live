@@ -81,6 +81,7 @@ ALL_PERMISSIONS = [
     'view_campcomparison', 'view_detailed', 'view_finance',
     'edit_groups', 'download_excel', 'upload_csv',
     'manage_users', 'manage_settings',
+    'take_attendance', 'view_attendance',
 ]
 
 PERMISSION_LABELS = {
@@ -95,6 +96,8 @@ PERMISSION_LABELS = {
     'upload_csv': 'Upload CSV',
     'manage_users': 'Manage Users',
     'manage_settings': 'Settings',
+    'take_attendance': 'Take Attendance',
+    'view_attendance': 'View Attendance (Admin)',
 }
 
 ROLE_DEFAULT_PERMISSIONS = {
@@ -105,6 +108,7 @@ ROLE_DEFAULT_PERMISSIONS = {
     ],
     'unit_leader': [
         'view_campcomparison', 'view_detailed', 'edit_groups',
+        'take_attendance',
     ],
 }
 
@@ -155,6 +159,40 @@ class GlobalSetting(db.Model):
     __tablename__ = 'global_settings'
     key = db.Column(db.String(50), primary_key=True)
     value = db.Column(db.String(200), nullable=False)
+
+# ==================== ATTENDANCE MODELS ====================
+
+class UnitLeaderAssignment(db.Model):
+    __tablename__ = 'unit_leader_assignments'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(120), db.ForeignKey('users.username'), nullable=False)
+    program_name = db.Column(db.String(100), nullable=False)
+    __table_args__ = (db.UniqueConstraint('username', 'program_name'),)
+
+class AttendanceCheckpoint(db.Model):
+    __tablename__ = 'attendance_checkpoints'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    time_label = db.Column(db.String(20), nullable=True)
+    active = db.Column(db.Boolean, nullable=False, default=True)
+
+class AttendanceRecord(db.Model):
+    __tablename__ = 'attendance_records'
+    id = db.Column(db.Integer, primary_key=True)
+    person_id = db.Column(db.String(20), nullable=False)
+    program_name = db.Column(db.String(100), nullable=False)
+    week = db.Column(db.Integer, nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    checkpoint_id = db.Column(db.Integer, db.ForeignKey('attendance_checkpoints.id'), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='present')
+    recorded_by = db.Column(db.String(120), nullable=False)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    notes = db.Column(db.String(500), nullable=True)
+    __table_args__ = (
+        db.UniqueConstraint('person_id', 'program_name', 'date', 'checkpoint_id'),
+        db.Index('idx_attendance_date_program', 'date', 'program_name'),
+    )
 
 # ==================== INIT DB & DEFAULT USERS ====================
 
@@ -222,7 +260,59 @@ with app.app_context():
         db.session.add(GlobalSetting(key='total_goal', value='750'))
     if not GlobalSetting.query.filter_by(key='revenue_goal').first():
         db.session.add(GlobalSetting(key='revenue_goal', value='0'))
+    # Seed default attendance checkpoints
+    if AttendanceCheckpoint.query.count() == 0:
+        db.session.add(AttendanceCheckpoint(name='Morning', sort_order=1, time_label='9:00 AM', active=True))
+        db.session.add(AttendanceCheckpoint(name='After Lunch', sort_order=2, time_label='1:00 PM', active=True))
+        db.session.add(AttendanceCheckpoint(name='Departure', sort_order=3, time_label='3:30 PM', active=True))
+        db.session.add(AttendanceCheckpoint(name='KC Before', sort_order=4, time_label='7:30 AM', active=True))
+        db.session.add(AttendanceCheckpoint(name='KC After', sort_order=5, time_label='4:00 PM', active=True))
+    else:
+        # Ensure KC checkpoints exist (for existing databases)
+        if not AttendanceCheckpoint.query.filter_by(name='KC Before').first():
+            db.session.add(AttendanceCheckpoint(name='KC Before', sort_order=4, time_label='7:30 AM', active=True))
+        if not AttendanceCheckpoint.query.filter_by(name='KC After').first():
+            db.session.add(AttendanceCheckpoint(name='KC After', sort_order=5, time_label='4:00 PM', active=True))
     db.session.commit()
+
+# ==================== CAMP WEEK UTILITIES ====================
+
+# Week date ranges for Camp Sol Taplin 2026
+CAMP_WEEK_DATES = {
+    1: ('2026-06-08', '2026-06-12'),
+    2: ('2026-06-15', '2026-06-19'),
+    3: ('2026-06-22', '2026-06-26'),
+    4: ('2026-06-29', '2026-07-03'),
+    5: ('2026-07-06', '2026-07-10'),
+    6: ('2026-07-13', '2026-07-17'),
+    7: ('2026-07-20', '2026-07-24'),
+    8: ('2026-07-27', '2026-07-31'),
+    9: ('2026-08-03', '2026-08-07'),
+}
+
+def get_current_camp_week(today=None):
+    """Return current camp week number (1-9) or None if not during camp."""
+    if today is None:
+        today = datetime.now().date()
+    elif isinstance(today, datetime):
+        today = today.date()
+    from datetime import date as _date
+    for week_num, (start_str, end_str) in CAMP_WEEK_DATES.items():
+        start = _date.fromisoformat(start_str)
+        end = _date.fromisoformat(end_str)
+        if start <= today <= end:
+            return week_num
+    return None
+
+def is_camp_day(today=None):
+    """Return True if today is a weekday within a camp week."""
+    if today is None:
+        today = datetime.now().date()
+    elif isinstance(today, datetime):
+        today = today.date()
+    if today.weekday() >= 5:  # Saturday=5, Sunday=6
+        return False
+    return get_current_camp_week(today) is not None
 
 class User(UserMixin):
     def __init__(self, username, role, permissions):
@@ -507,6 +597,8 @@ def fetch_financial_data(force_refresh: bool = False, enrollment_report: dict = 
 @app.route('/')
 def index():
     if current_user.is_authenticated:
+        if hasattr(current_user, 'role') and current_user.role == 'unit_leader':
+            return redirect(url_for('attendance_page'))
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
@@ -525,6 +617,9 @@ def login():
         if u and check_password_hash(u.password_hash, password):
             user = User(u.username, u.role, u.get_permissions())
             login_user(user)
+            # Unit leaders go directly to attendance page
+            if u.role == 'unit_leader':
+                return redirect(url_for('attendance_page'))
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid username or password', 'error')
@@ -2484,6 +2579,656 @@ def download_excel():
     except Exception as e:
         flash(f'Error generating Excel: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
+
+# ==================== ATTENDANCE ROUTES ====================
+
+def _ensure_enrollment_cache():
+    """Ensure enrollment data is loaded in api_cache (from file if needed).
+    Unlike load_api_cache(), this ignores TTL — we always want enrollment data available.
+    """
+    global api_cache
+    if not api_cache.get('data') or not api_cache['data'].get('participants'):
+        # Try load_api_cache first (respects TTL)
+        cached = load_api_cache()
+        if cached and cached.get('data'):
+            api_cache['data'] = cached['data']
+            api_cache['fetched_at'] = cached.get('fetched_at')
+        else:
+            # Force-load from file ignoring TTL (for attendance — always need enrollment data)
+            if os.path.exists(CACHE_FILE):
+                try:
+                    with open(CACHE_FILE, 'r') as f:
+                        cached = json.load(f)
+                    if cached and cached.get('data'):
+                        api_cache['data'] = cached['data']
+                        api_cache['fetched_at'] = cached.get('fetched_at')
+                except Exception as e:
+                    print(f"Error force-loading enrollment cache: {e}")
+
+@app.route('/attendance')
+@login_required
+def attendance_page():
+    """Standalone mobile-first attendance page for unit leaders."""
+    return render_template('attendance.html')
+
+@app.route('/api/attendance/my-programs')
+@login_required
+def attendance_my_programs():
+    """Return programs assigned to the current unit leader."""
+    _ensure_enrollment_cache()
+    if current_user.role == 'admin':
+        # Admin sees all programs from enrollment data
+        programs = []
+        if api_cache.get('data') and api_cache['data'].get('participants'):
+            programs = sorted(api_cache['data']['participants'].keys())
+        return jsonify({'programs': programs})
+    # Unit leader: return only assigned programs
+    assignments = UnitLeaderAssignment.query.filter_by(username=current_user.id).all()
+    programs = [a.program_name for a in assignments]
+    return jsonify({'programs': sorted(programs)})
+
+@app.route('/api/attendance/checkpoints')
+@login_required
+def attendance_checkpoints():
+    """Return active checkpoints."""
+    checkpoints = AttendanceCheckpoint.query.filter_by(active=True).order_by(AttendanceCheckpoint.sort_order).all()
+    return jsonify({'checkpoints': [
+        {'id': c.id, 'name': c.name, 'time_label': c.time_label, 'sort_order': c.sort_order}
+        for c in checkpoints
+    ]})
+
+@app.route('/api/attendance/campers/<program>/<int:week>')
+@login_required
+def attendance_campers(program, week):
+    """Return camper list for a program/week with attendance for a specific date."""
+    # Check access: admin can see all, unit_leader only assigned programs
+    if current_user.role != 'admin':
+        assignment = UnitLeaderAssignment.query.filter_by(
+            username=current_user.id, program_name=program
+        ).first()
+        if not assignment:
+            return jsonify({'error': 'Not authorized for this program'}), 403
+
+    _ensure_enrollment_cache()
+
+    # Parse date from query param (default to today)
+    from datetime import date as _date
+    date_str = request.args.get('date', _date.today().isoformat())
+    try:
+        target_date = _date.fromisoformat(date_str)
+    except ValueError:
+        target_date = _date.today()
+
+    # Get campers from enrollment data
+    campers = []
+    if api_cache.get('data') and api_cache['data'].get('participants'):
+        participants = api_cache['data']['participants']
+        week_str = str(week)
+        if program in participants and week_str in participants[program]:
+            campers = participants[program][week_str]
+
+    # Load person names from cache
+    persons_map = {}
+    persons_cache_path = os.path.join(DATA_FOLDER, 'persons_cache.json')
+    if os.path.exists(persons_cache_path):
+        try:
+            with open(persons_cache_path, 'r') as f:
+                persons_map = json.load(f)
+        except Exception:
+            pass
+
+    # Get attendance records for specified date + program
+    records = AttendanceRecord.query.filter_by(
+        program_name=program, date=target_date
+    ).all()
+    # Build lookup: (person_id, checkpoint_id) → status
+    attendance_map = {}
+    for r in records:
+        attendance_map[(r.person_id, r.checkpoint_id)] = {
+            'status': r.status,
+            'notes': r.notes,
+            'recorded_at': r.recorded_at.isoformat() if r.recorded_at else None
+        }
+
+    # Helper to extract name from persons_cache entry (dict with first_name/last_name)
+    def _person_name(person_id, fallback=''):
+        entry = persons_map.get(str(person_id))
+        if isinstance(entry, dict):
+            fn = entry.get('first_name', '')
+            ln = entry.get('last_name', '')
+            return f'{fn} {ln}'.strip() or fallback
+        elif isinstance(entry, str):
+            return entry or fallback
+        return fallback
+
+    # Determine KC (Kid Connection / Before & After Care) eligibility per camper
+    # Primary source: 'bac_weeks' list in persons_cache (synced from CampMinder financial API + ECA sessions)
+    # Fallback: legacy fields for backward compatibility
+
+    def _has_kc(person_id):
+        entry = persons_map.get(str(person_id))
+        if not isinstance(entry, dict):
+            return False
+        # Primary: check bac_weeks list (populated by /api/attendance/sync-bac)
+        bac_weeks = entry.get('bac_weeks')
+        if isinstance(bac_weeks, list) and week in bac_weeks:
+            return True
+        return False
+
+    # Build camper list with attendance data
+    camper_list = []
+    for camper in campers:
+        person_id = camper.get('personId') or camper.get('person_id', '')
+        name = _person_name(person_id, camper.get('name', f'Camper {person_id}'))
+        camper_data = {
+            'person_id': str(person_id),
+            'name': name,
+            'has_kc': _has_kc(person_id),
+            'attendance': {}
+        }
+        # Fill in attendance per checkpoint
+        for key, val in attendance_map.items():
+            if key[0] == str(person_id):
+                camper_data['attendance'][str(key[1])] = val
+        camper_list.append(camper_data)
+
+    # Sort by last name
+    camper_list.sort(key=lambda c: c['name'].split()[-1] if c['name'] else '')
+
+    return jsonify({
+        'program': program,
+        'week': week,
+        'date': target_date.isoformat(),
+        'campers': camper_list,
+        'total': len(camper_list)
+    })
+
+@app.route('/api/attendance/record', methods=['POST'])
+@login_required
+def attendance_record():
+    """Save a single attendance record (debounced from UI)."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    person_id = data.get('person_id')
+    program_name = data.get('program_name')
+    checkpoint_id = data.get('checkpoint_id')
+    status = data.get('status', 'present')
+    notes = data.get('notes', '')
+
+    if not all([person_id, program_name, checkpoint_id]):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    if status not in ('present', 'absent', 'late', 'early_pickup'):
+        return jsonify({'error': 'Invalid status'}), 400
+
+    # Check access
+    if current_user.role != 'admin':
+        assignment = UnitLeaderAssignment.query.filter_by(
+            username=current_user.id, program_name=program_name
+        ).first()
+        if not assignment:
+            return jsonify({'error': 'Not authorized'}), 403
+
+    # Parse target date from request (default to today)
+    from datetime import date as _date
+    date_str = data.get('date', _date.today().isoformat())
+    try:
+        target_date = _date.fromisoformat(date_str)
+    except ValueError:
+        target_date = _date.today()
+
+    # Server-side 5 PM lock enforcement
+    now = datetime.now()
+    today = _date.today()
+    if target_date < today:
+        return jsonify({'error': 'Cannot modify attendance for past days'}), 403
+    if target_date == today and now.hour >= 17:
+        return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
+
+    current_week = get_current_camp_week(target_date)
+    if current_week is None:
+        # Allow recording even outside camp weeks (for testing/flexibility)
+        current_week = 0
+
+    # Upsert: update if exists, insert if not
+    existing = AttendanceRecord.query.filter_by(
+        person_id=str(person_id),
+        program_name=program_name,
+        date=target_date,
+        checkpoint_id=int(checkpoint_id)
+    ).first()
+
+    if existing:
+        existing.status = status
+        existing.notes = notes
+        existing.recorded_by = current_user.id
+        existing.recorded_at = datetime.utcnow()
+    else:
+        record = AttendanceRecord(
+            person_id=str(person_id),
+            program_name=program_name,
+            week=current_week,
+            date=target_date,
+            checkpoint_id=int(checkpoint_id),
+            status=status,
+            recorded_by=current_user.id,
+            notes=notes
+        )
+        db.session.add(record)
+
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'status': status})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/attendance/record-batch', methods=['POST'])
+@login_required
+def attendance_record_batch():
+    """Batch save attendance records (Mark All Present)."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    program_name = data.get('program_name')
+    checkpoint_id = data.get('checkpoint_id')
+    status = data.get('status', 'present')
+    person_ids = data.get('person_ids', [])
+
+    if not all([program_name, checkpoint_id, person_ids]):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    # Check access
+    if current_user.role != 'admin':
+        assignment = UnitLeaderAssignment.query.filter_by(
+            username=current_user.id, program_name=program_name
+        ).first()
+        if not assignment:
+            return jsonify({'error': 'Not authorized'}), 403
+
+    # Parse target date from request (default to today)
+    from datetime import date as _date
+    date_str = data.get('date', _date.today().isoformat())
+    try:
+        target_date = _date.fromisoformat(date_str)
+    except ValueError:
+        target_date = _date.today()
+
+    # Server-side 5 PM lock enforcement
+    now = datetime.now()
+    today = _date.today()
+    if target_date < today:
+        return jsonify({'error': 'Cannot modify attendance for past days'}), 403
+    if target_date == today and now.hour >= 17:
+        return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
+
+    current_week = get_current_camp_week(target_date) or 0
+
+    count = 0
+    for pid in person_ids:
+        existing = AttendanceRecord.query.filter_by(
+            person_id=str(pid),
+            program_name=program_name,
+            date=target_date,
+            checkpoint_id=int(checkpoint_id)
+        ).first()
+        if existing:
+            existing.status = status
+            existing.recorded_by = current_user.id
+            existing.recorded_at = datetime.utcnow()
+        else:
+            db.session.add(AttendanceRecord(
+                person_id=str(pid),
+                program_name=program_name,
+                week=current_week,
+                date=target_date,
+                checkpoint_id=int(checkpoint_id),
+                status=status,
+                recorded_by=current_user.id
+            ))
+        count += 1
+
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'count': count})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/attendance/summary')
+@login_required
+def attendance_summary():
+    """Admin: aggregated attendance stats for all programs on a given date."""
+    _ensure_enrollment_cache()
+    from datetime import date as _date
+    date_str = request.args.get('date', _date.today().isoformat())
+    try:
+        target_date = _date.fromisoformat(date_str)
+    except ValueError:
+        target_date = _date.today()
+
+    # Get all records for the date
+    records = AttendanceRecord.query.filter_by(date=target_date).all()
+    checkpoints = AttendanceCheckpoint.query.filter_by(active=True).order_by(AttendanceCheckpoint.sort_order).all()
+
+    # Get all programs from enrollment data
+    all_programs = []
+    total_campers_by_program = {}
+    if api_cache.get('data') and api_cache['data'].get('participants'):
+        participants = api_cache['data']['participants']
+        # Figure out which week this date falls in
+        week_num = get_current_camp_week(target_date)
+        if week_num:
+            week_str = str(week_num)
+            for prog_name, weeks in participants.items():
+                if week_str in weeks and len(weeks[week_str]) > 0:
+                    all_programs.append(prog_name)
+                    total_campers_by_program[prog_name] = len(weeks[week_str])
+
+    # Build summary: program × checkpoint → {present, absent, late, early_pickup, total}
+    summary = {}
+    totals = {'present': 0, 'absent': 0, 'late': 0, 'early_pickup': 0}
+    for r in records:
+        key = (r.program_name, r.checkpoint_id)
+        if key not in summary:
+            summary[key] = {'present': 0, 'absent': 0, 'late': 0, 'early_pickup': 0, 'marked': 0}
+        summary[key][r.status] = summary[key].get(r.status, 0) + 1
+        summary[key]['marked'] += 1
+        # Only count checkpoint 1 (daily attendance) in KPI totals to avoid double-counting KC
+        if r.checkpoint_id == 1:
+            totals[r.status] = totals.get(r.status, 0) + 1
+
+    # Format response
+    programs_data = []
+    for prog in sorted(all_programs):
+        total_campers = total_campers_by_program.get(prog, 0)
+        prog_entry = {
+            'program': prog,
+            'total_campers': total_campers,
+            'checkpoints': []
+        }
+        for cp in checkpoints:
+            key = (prog, cp.id)
+            stats = summary.get(key, {'present': 0, 'absent': 0, 'late': 0, 'early_pickup': 0, 'marked': 0})
+            stats['checkpoint_id'] = cp.id
+            stats['checkpoint_name'] = cp.name
+            stats['total'] = total_campers
+            stats['completion'] = round(stats['marked'] / total_campers * 100) if total_campers > 0 else 0
+            prog_entry['checkpoints'].append(stats)
+        programs_data.append(prog_entry)
+
+    return jsonify({
+        'date': target_date.isoformat(),
+        'week': get_current_camp_week(target_date),
+        'totals': totals,
+        'total_campers': sum(total_campers_by_program.values()),
+        'programs': programs_data,
+        'checkpoints': [{'id': c.id, 'name': c.name, 'time_label': c.time_label} for c in checkpoints]
+    })
+
+@app.route('/api/attendance/detail/<program>')
+@login_required
+def attendance_detail(program):
+    """Admin: individual camper attendance for a specific program on a date."""
+    _ensure_enrollment_cache()
+    from datetime import date as _date
+    date_str = request.args.get('date', _date.today().isoformat())
+    try:
+        target_date = _date.fromisoformat(date_str)
+    except ValueError:
+        target_date = _date.today()
+
+    # Get campers from enrollment
+    week_num = get_current_camp_week(target_date)
+    campers = []
+    if api_cache.get('data') and api_cache['data'].get('participants'):
+        participants = api_cache['data']['participants']
+        if week_num:
+            week_str = str(week_num)
+            if program in participants and week_str in participants[program]:
+                campers = participants[program][week_str]
+
+    # Load person names
+    persons_map = {}
+    persons_cache_path = os.path.join(DATA_FOLDER, 'persons_cache.json')
+    if os.path.exists(persons_cache_path):
+        try:
+            with open(persons_cache_path, 'r') as f:
+                persons_map = json.load(f)
+        except Exception:
+            pass
+
+    # Get records
+    records = AttendanceRecord.query.filter_by(
+        program_name=program, date=target_date
+    ).all()
+    att_map = {}
+    for r in records:
+        if r.person_id not in att_map:
+            att_map[r.person_id] = {}
+        att_map[r.person_id][str(r.checkpoint_id)] = {
+            'status': r.status,
+            'notes': r.notes,
+            'recorded_by': r.recorded_by,
+            'recorded_at': r.recorded_at.isoformat() if r.recorded_at else None
+        }
+
+    # Helper to extract name from persons_cache entry
+    def _person_name(person_id, fallback=''):
+        entry = persons_map.get(str(person_id))
+        if isinstance(entry, dict):
+            fn = entry.get('first_name', '')
+            ln = entry.get('last_name', '')
+            return f'{fn} {ln}'.strip() or fallback
+        elif isinstance(entry, str):
+            return entry or fallback
+        return fallback
+
+    camper_list = []
+    for camper in campers:
+        pid = str(camper.get('personId') or camper.get('person_id', ''))
+        name = _person_name(pid, camper.get('name', f'Camper {pid}'))
+        camper_list.append({
+            'person_id': pid,
+            'name': name,
+            'attendance': att_map.get(pid, {})
+        })
+    camper_list.sort(key=lambda c: c['name'].split()[-1] if c['name'] else '')
+
+    checkpoints = AttendanceCheckpoint.query.filter_by(active=True).order_by(AttendanceCheckpoint.sort_order).all()
+
+    return jsonify({
+        'program': program,
+        'date': target_date.isoformat(),
+        'week': week_num,
+        'campers': camper_list,
+        'checkpoints': [{'id': c.id, 'name': c.name, 'time_label': c.time_label} for c in checkpoints]
+    })
+
+# ---- Admin Management: Unit Leader Assignments ----
+
+@app.route('/api/attendance/assignments', methods=['GET'])
+@login_required
+def get_assignments():
+    """Admin: list all unit leader → program assignments."""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Admin only'}), 403
+    assignments = UnitLeaderAssignment.query.all()
+    # Group by username
+    by_user = {}
+    for a in assignments:
+        if a.username not in by_user:
+            by_user[a.username] = []
+        by_user[a.username].append(a.program_name)
+    return jsonify({'assignments': by_user})
+
+@app.route('/api/attendance/assignments', methods=['POST'])
+@login_required
+def save_assignment():
+    """Admin: assign a program to a unit leader."""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Admin only'}), 403
+    data = request.get_json()
+    username = data.get('username')
+    program_name = data.get('program_name')
+    if not username or not program_name:
+        return jsonify({'error': 'Missing username or program_name'}), 400
+    # Check user exists and is unit_leader
+    user_acc = UserAccount.query.filter_by(username=username).first()
+    if not user_acc:
+        return jsonify({'error': 'User not found'}), 404
+    # Check if already assigned
+    existing = UnitLeaderAssignment.query.filter_by(username=username, program_name=program_name).first()
+    if existing:
+        return jsonify({'message': 'Already assigned'}), 200
+    db.session.add(UnitLeaderAssignment(username=username, program_name=program_name))
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/attendance/assignments', methods=['DELETE'])
+@login_required
+def delete_assignment():
+    """Admin: remove a program assignment from a unit leader."""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Admin only'}), 403
+    data = request.get_json()
+    username = data.get('username')
+    program_name = data.get('program_name')
+    a = UnitLeaderAssignment.query.filter_by(username=username, program_name=program_name).first()
+    if a:
+        db.session.delete(a)
+        db.session.commit()
+    return jsonify({'success': True})
+
+# ---- Admin Management: Checkpoints ----
+
+@app.route('/api/attendance/checkpoints', methods=['PUT'])
+@login_required
+def update_checkpoint():
+    """Admin: update a checkpoint's name, time_label, or active status."""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Admin only'}), 403
+    data = request.get_json()
+    cp_id = data.get('id')
+    cp = db.session.get(AttendanceCheckpoint, cp_id)
+    if not cp:
+        return jsonify({'error': 'Checkpoint not found'}), 404
+    if 'name' in data:
+        cp.name = data['name']
+    if 'time_label' in data:
+        cp.time_label = data['time_label']
+    if 'active' in data:
+        cp.active = bool(data['active'])
+    if 'sort_order' in data:
+        cp.sort_order = int(data['sort_order'])
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/attendance/week-info')
+@login_required
+def attendance_week_info():
+    """Return current camp week info and all week date ranges."""
+    from datetime import date as _date
+    today = _date.today()
+    current_week = get_current_camp_week(today)
+    return jsonify({
+        'today': today.isoformat(),
+        'current_week': current_week,
+        'is_camp_day': is_camp_day(today),
+        'weeks': {str(k): {'start': v[0], 'end': v[1]} for k, v in CAMP_WEEK_DATES.items()}
+    })
+
+@app.route('/api/attendance/sync-bac', methods=['POST'])
+@login_required
+def sync_bac_data():
+    """Sync Before and After Care data from CampMinder financial transactions + ECA sessions.
+    BAC comes from financial line items named 'Before and After Care Week NN'.
+    ECA comes from session enrollments in ECA Week 1-9 sessions.
+    Results are stored in persons_cache.json as 'bac_weeks' list per person."""
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Admin only'}), 403
+
+    if not CAMPMINDER_API_AVAILABLE:
+        return jsonify({'error': 'CampMinder API not available'}), 500
+
+    import re
+
+    try:
+        api = CampMinderAPIClient()
+
+        # === Part 1: BAC from financial transactions ===
+        transactions = api.get_transaction_details(2026)
+        bac_persons = {}
+        for t in transactions:
+            desc = str(t.get('description', ''))
+            if 'before and after' not in desc.lower():
+                continue
+            if t.get('isReversed', False):
+                continue
+            pid = t.get('personId')
+            week_match = re.search(r'Week\s*(\d+)', desc, re.IGNORECASE)
+            if pid and week_match:
+                if pid not in bac_persons:
+                    bac_persons[pid] = set()
+                bac_persons[pid].add(int(week_match.group(1)))
+
+        # === Part 2: ECA from session enrollments ===
+        attendees = api.get_attendees(2026, api.client_id, status=6)
+        eca_session_to_week = {
+            1369500: 1, 1369501: 2, 1369502: 3, 1369503: 4,
+            1369504: 5, 1369505: 6, 1369506: 7, 1369507: 8, 1369508: 9
+        }
+        eca_persons = {}
+        for att in attendees:
+            pid = att.get('PersonID')
+            for sps in att.get('SessionProgramStatus', []):
+                sid = sps.get('SessionID')
+                status_id = sps.get('StatusID')
+                if sid in eca_session_to_week and status_id in [2, 4]:
+                    if pid not in eca_persons:
+                        eca_persons[pid] = set()
+                    eca_persons[pid].add(eca_session_to_week[sid])
+
+        # === Part 3: Merge into persons_cache ===
+        persons_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
+        persons = {}
+        if os.path.exists(persons_file):
+            with open(persons_file, 'r') as f:
+                persons = json.load(f)
+
+        all_kc_persons = set(bac_persons.keys()) | set(eca_persons.keys())
+        updated = 0
+        for pid in all_kc_persons:
+            str_pid = str(pid)
+            bac_weeks = bac_persons.get(pid, set())
+            eca_weeks = eca_persons.get(pid, set())
+            combined = sorted(bac_weeks | eca_weeks)
+            if str_pid in persons:
+                persons[str_pid]['bac_weeks'] = combined
+                updated += 1
+            else:
+                persons[str_pid] = {'bac_weeks': combined}
+                updated += 1
+
+        with open(persons_file, 'w') as f:
+            json.dump(persons, f, indent=2)
+
+        return jsonify({
+            'success': True,
+            'bac_financial': len(bac_persons),
+            'eca_sessions': len(eca_persons),
+            'total_kc_persons': len(all_kc_persons),
+            'updated': updated
+        })
+
+    except Exception as e:
+        print(f"Error syncing BAC data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 # ==================== ERROR HANDLERS ====================
 

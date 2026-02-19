@@ -26,6 +26,9 @@ function switchView(viewName) {
     if (viewName === 'finance') {
         setTimeout(initFinanceCharts, 100);
     }
+    if (viewName === 'attendance') {
+        setTimeout(initAttendanceView, 100);
+    }
 }
 
 // Filter by category
@@ -1854,5 +1857,271 @@ function uploadPOFile(file) {
 
     // Clear the file input so the same file can be re-uploaded
     document.getElementById('poFileInput').value = '';
+}
+
+// ==================== ADMIN ATTENDANCE ====================
+
+var attRefreshInterval = null;
+var attInitialized = false;
+
+function initAttendanceView() {
+    if (attInitialized) {
+        // Already initialized — just refresh
+        loadAttendanceSummary();
+        return;
+    }
+    attInitialized = true;
+
+    // Set date picker to today
+    var dateInput = document.getElementById('att-admin-date');
+    if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    // Load summary
+    loadAttendanceSummary();
+
+    // Auto-refresh every 30s
+    if (attRefreshInterval) clearInterval(attRefreshInterval);
+    attRefreshInterval = setInterval(function() {
+        // Only refresh if attendance view is active
+        var view = document.getElementById('attendance-view');
+        if (view && view.classList.contains('active')) {
+            loadAttendanceSummary();
+        }
+    }, 30000);
+
+    // Load unit leader assignments
+    loadAssignments();
+}
+
+function loadAttendanceSummary() {
+    var dateInput = document.getElementById('att-admin-date');
+    var dateVal = dateInput ? dateInput.value : '';
+    var url = '/api/attendance/summary' + (dateVal ? '?date=' + dateVal : '');
+
+    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        // Update KPIs
+        document.getElementById('att-kpi-present').textContent = data.totals.present || 0;
+        document.getElementById('att-kpi-absent').textContent = data.totals.absent || 0;
+        document.getElementById('att-kpi-late').textContent = data.totals.late || 0;
+        document.getElementById('att-kpi-early').textContent = data.totals.early_pickup || 0;
+
+        // Update refresh badge
+        var badge = document.getElementById('att-refresh-badge');
+        if (badge) {
+            var now = new Date();
+            badge.textContent = 'Updated ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        }
+
+        // Render grid
+        renderAttendanceGrid(data);
+    }).catch(function(err) {
+        console.error('Attendance summary error:', err);
+    });
+}
+
+function renderAttendanceGrid(data) {
+    var grid = document.getElementById('att-admin-grid');
+    var empty = document.getElementById('att-admin-empty');
+    if (!grid) return;
+
+    var programs = data.programs || [];
+
+    if (programs.length === 0) {
+        grid.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+    grid.style.display = 'table';
+    empty.style.display = 'none';
+
+    // Simplified header — single daily attendance column + KC columns
+    var headerHtml = '<tr><th>Program</th><th>Enrolled</th><th>Attendance</th><th>Present</th><th>Absent</th><th>Late</th><th>Early</th></tr>';
+
+    // Build rows — use only checkpoint 1 (Morning = daily) for main stats
+    var bodyHtml = '';
+    programs.forEach(function(prog) {
+        // Find checkpoint 1 (Morning/Daily) stats
+        var dailyStats = null;
+        (prog.checkpoints || []).forEach(function(cp) {
+            if (cp.checkpoint_id === 1) dailyStats = cp;
+        });
+        if (!dailyStats) {
+            dailyStats = { marked: 0, total: prog.total_campers, completion: 0, present: 0, absent: 0, late: 0, early_pickup: 0 };
+        }
+
+        var pct = dailyStats.completion;
+        var cellClass = 'att-cell';
+        if (pct >= 100) cellClass += ' complete';
+        else if (pct > 0) cellClass += ' partial';
+        else cellClass += ' empty';
+
+        bodyHtml += '<tr style="cursor:pointer;" onclick="loadAttendanceDetail(\'' + prog.program.replace(/'/g, "\\'") + '\')">';
+        bodyHtml += '<td style="font-weight:600;white-space:nowrap;">' + prog.program + '</td>';
+        bodyHtml += '<td style="text-align:center;">' + prog.total_campers + '</td>';
+        bodyHtml += '<td class="' + cellClass + '" style="text-align:center;">';
+        bodyHtml += '<div class="att-cell-pct">' + pct + '%</div>';
+        bodyHtml += '<div class="att-cell-count">' + dailyStats.marked + '/' + dailyStats.total + '</div>';
+        bodyHtml += '</td>';
+        bodyHtml += '<td style="text-align:center;color:#16A34A;font-weight:600;">' + (dailyStats.present || 0) + '</td>';
+        bodyHtml += '<td style="text-align:center;color:#DC2626;font-weight:600;">' + (dailyStats.absent || 0) + '</td>';
+        bodyHtml += '<td style="text-align:center;color:#D97706;font-weight:600;">' + (dailyStats.late || 0) + '</td>';
+        bodyHtml += '<td style="text-align:center;color:#E64A19;font-weight:600;">' + (dailyStats.early_pickup || 0) + '</td>';
+        bodyHtml += '</tr>';
+    });
+
+    grid.querySelector('thead').innerHTML = headerHtml;
+    grid.querySelector('tbody').innerHTML = bodyHtml;
+}
+
+function loadAttendanceDetail(program) {
+    var dateInput = document.getElementById('att-admin-date');
+    var dateVal = dateInput ? dateInput.value : '';
+    var url = '/api/attendance/detail/' + encodeURIComponent(program) + (dateVal ? '?date=' + dateVal : '');
+
+    document.getElementById('att-detail-title').textContent = program + ' — Detail';
+    document.getElementById('att-admin-detail').style.display = 'block';
+    document.getElementById('att-detail-body').innerHTML = '<div style="text-align:center;padding:20px;color:#6B7280;">Loading...</div>';
+
+    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        var campers = data.campers || [];
+
+        // Simplified detail: Status (checkpoint 1) + KC Before (cp 4) + KC After (cp 5)
+        var html = '<table class="att-detail-table"><thead><tr>';
+        html += '<th>Camper</th><th>Status</th><th>KC Before</th><th>KC After</th>';
+        html += '</tr></thead><tbody>';
+
+        campers.forEach(function(c) {
+            html += '<tr><td style="font-weight:500;white-space:nowrap;">' + c.name + '</td>';
+
+            // Main status (checkpoint 1)
+            var att = c.attendance['1'] || {};
+            var status = att.status || '—';
+            var cls = 'att-status-badge';
+            if (status === 'present') cls += ' present';
+            else if (status === 'absent') cls += ' absent';
+            else if (status === 'late') cls += ' late';
+            else if (status === 'early_pickup') cls += ' early';
+            var statusLabels = { present: '✓ Present', absent: '✗ Absent', late: 'LA', early_pickup: 'EP' };
+            var label = statusLabels[status] || '—';
+            html += '<td style="text-align:center;"><span class="' + cls + '">' + label + '</span></td>';
+
+            // KC Before (checkpoint 4)
+            var kcBefore = c.attendance['4'] || {};
+            var kcbStatus = kcBefore.status || '';
+            if (kcbStatus === 'present') {
+                html += '<td style="text-align:center;"><span class="att-status-badge kc">KC ✓</span></td>';
+            } else if (kcbStatus) {
+                html += '<td style="text-align:center;"><span class="att-status-badge">—</span></td>';
+            } else {
+                html += '<td style="text-align:center;color:#9CA3AF;">—</td>';
+            }
+
+            // KC After (checkpoint 5)
+            var kcAfter = c.attendance['5'] || {};
+            var kcaStatus = kcAfter.status || '';
+            if (kcaStatus === 'present') {
+                html += '<td style="text-align:center;"><span class="att-status-badge kc">KC ✓</span></td>';
+            } else if (kcaStatus) {
+                html += '<td style="text-align:center;"><span class="att-status-badge">—</span></td>';
+            } else {
+                html += '<td style="text-align:center;color:#9CA3AF;">—</td>';
+            }
+
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        if (campers.length === 0) html = '<div style="text-align:center;padding:20px;color:#6B7280;">No campers enrolled.</div>';
+
+        document.getElementById('att-detail-body').innerHTML = html;
+    }).catch(function(err) {
+        document.getElementById('att-detail-body').innerHTML = '<div style="color:#EF4444;">Error loading detail.</div>';
+    });
+}
+
+// ---- Unit Leader Assignment Management ----
+
+function loadAssignments() {
+    fetch('/api/attendance/assignments').then(function(r) { return r.json(); }).then(function(data) {
+        var container = document.getElementById('att-assignments-body');
+        if (!container) return;
+
+        var assignments = data.assignments || {};
+        var keys = Object.keys(assignments);
+        if (keys.length === 0) {
+            container.innerHTML = '<div style="color:#6B7280;font-size:13px;padding:8px 0;">No assignments yet.</div>';
+        } else {
+            var html = '<div class="att-assign-list">';
+            keys.forEach(function(username) {
+                var progs = assignments[username];
+                html += '<div class="att-assign-row">';
+                html += '<strong>' + username + '</strong>: ';
+                progs.forEach(function(prog) {
+                    html += '<span class="att-assign-tag">' + prog + ' <button class="att-assign-remove" onclick="removeAssignment(\'' + username.replace(/'/g, "\\'") + '\', \'' + prog.replace(/'/g, "\\'") + '\')">&times;</button></span>';
+                });
+                html += '</div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Populate user dropdown (fetch all users with unit_leader role)
+        return fetch('/api/users');
+    }).then(function(r) { return r ? r.json() : null; }).then(function(usersData) {
+        if (!usersData) return;
+        var userSelect = document.getElementById('att-assign-user');
+        if (!userSelect) return;
+        userSelect.innerHTML = '<option value="">Select user...</option>';
+        (usersData.users || []).forEach(function(u) {
+            userSelect.innerHTML += '<option value="' + u.username + '">' + u.username + ' (' + u.role + ')</option>';
+        });
+
+        // Populate program dropdown from enrollment data
+        var progSelect = document.getElementById('att-assign-program');
+        if (!progSelect) return;
+        progSelect.innerHTML = '<option value="">Select program...</option>';
+        var progNames = Object.keys(window.participantsData || {}).sort();
+        progNames.forEach(function(p) {
+            progSelect.innerHTML += '<option value="' + p + '">' + p + '</option>';
+        });
+    }).catch(function(err) {
+        console.error('Load assignments error:', err);
+    });
+}
+
+function addAssignment() {
+    var username = document.getElementById('att-assign-user').value;
+    var program = document.getElementById('att-assign-program').value;
+    if (!username || !program) {
+        showToast('Select both user and program', 'error');
+        return;
+    }
+    fetch('/api/attendance/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, program_name: program })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.success || data.message) {
+            showToast('Assignment added');
+            loadAssignments();
+        } else {
+            showToast('Error: ' + (data.error || 'Unknown'), 'error');
+        }
+    });
+}
+
+function removeAssignment(username, program) {
+    fetch('/api/attendance/assignments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, program_name: program })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.success) {
+            showToast('Assignment removed');
+            loadAssignments();
+        }
+    });
 }
 
