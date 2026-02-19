@@ -12,6 +12,7 @@
     let isDayLocked = false;       // true after 5 PM for that date
     let weekDates = {};            // week# → {start, end}
     let saveTimers = {};
+    let sortMode = 'alpha';        // 'alpha' or 'group'
 
     // Fixed checkpoint ID = 1 (Morning) for all daily attendance
     const DAILY_CP = '1';
@@ -173,6 +174,8 @@
         campers = [];
         document.getElementById('camper-section').classList.remove('active');
         document.getElementById('program-selector').classList.add('active');
+        var sortToggle = document.getElementById('att-sort-toggle');
+        if (sortToggle) sortToggle.style.display = 'none';
     };
 
     // ---- Load Campers ----
@@ -187,12 +190,87 @@
             .then(function(data) {
                 campers = data.campers || [];
                 document.getElementById('camper-count').textContent = campers.length + ' campers';
+                var sortToggle = document.getElementById('att-sort-toggle');
+                if (sortToggle) sortToggle.style.display = 'flex';
                 renderCamperList();
             })
             .catch(function(err) {
                 console.error('Load campers error:', err);
                 list.innerHTML = '<div class="att-empty"><p>Failed to load campers</p></div>';
             });
+    }
+
+    // ---- Toggle Sort Mode ----
+    window.toggleSortMode = function(mode) {
+        sortMode = mode;
+        document.querySelectorAll('.sort-toggle-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+        renderCamperList();
+    };
+
+    // ---- Render Single Camper Row ----
+    function renderSingleCamperRow(c, disabledAttr) {
+        var att = (c.attendance && c.attendance[DAILY_CP]) || {};
+        var currentStatus = att.status || '';
+
+        var epAtt = (c.attendance && c.attendance[EP_CP]) || {};
+        var hasEP = epAtt.status === 'early_pickup';
+
+        var borderClass = '';
+        if (currentStatus === 'present' && hasEP) borderClass = 'marked-present-ep';
+        else if (currentStatus === 'late' && hasEP) borderClass = 'marked-late-ep';
+        else if (currentStatus === 'present') borderClass = 'marked';
+        else if (currentStatus) borderClass = 'marked-' + currentStatus;
+
+        var hasKC = !!c.has_kc;
+        var kcBeforeAtt = (c.attendance && c.attendance[KC_BEFORE_CP]) || {};
+        var kcAfterAtt  = (c.attendance && c.attendance[KC_AFTER_CP]) || {};
+        var kcBeforeStatus = kcBeforeAtt.status || '';
+        var kcAfterStatus  = kcAfterAtt.status || '';
+
+        var html = '<div class="camper-row ' + borderClass + '" id="row-' + c.person_id + '" data-pid="' + c.person_id + '">';
+
+        html += '<div class="camper-info">';
+        html += '<span class="camper-name">' + escHTML(c.name) + '</span>';
+        if (c.youngest_sibling) {
+            html += '<span class="camper-sibling">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> ' +
+                escHTML(c.youngest_sibling.name) + ' <span class="sibling-program">(' + escHTML(c.youngest_sibling.program) + ')</span>' +
+            '</span>';
+        }
+        html += '</div>';
+
+        html += '<div class="status-buttons">';
+
+        if (hasKC) {
+            html += '<button class="status-btn kc_btn ' + (kcBeforeStatus === 'present' ? 'active' : '') + '"' +
+                ' onclick="setKC(\'' + c.person_id + '\', \'before\', this)"' +
+                ' title="Kid Connection - Before Care"' + disabledAttr + '>KC</button>';
+        }
+
+        html += '<button class="status-btn present ' + (currentStatus === 'present' ? 'active' : '') + '"' +
+            ' onclick="setStatus(\'' + c.person_id + '\', \'present\', this)"' +
+            ' title="Present"' + disabledAttr + '>&#10003;</button>';
+        html += '<button class="status-btn absent ' + (currentStatus === 'absent' ? 'active' : '') + '"' +
+            ' onclick="setStatus(\'' + c.person_id + '\', \'absent\', this)"' +
+            ' title="Absent"' + disabledAttr + '>&#10007;</button>';
+        html += '<button class="status-btn late ' + (currentStatus === 'late' ? 'active' : '') + '"' +
+            ' onclick="setStatus(\'' + c.person_id + '\', \'late\', this)"' +
+            ' title="Late Arrival"' + disabledAttr + '>LA</button>';
+
+        html += '<button class="status-btn early_pickup ' + (hasEP ? 'active' : '') + '"' +
+            ' onclick="toggleEP(\'' + c.person_id + '\', this)"' +
+            ' title="Early Pickup (combinable with Present/Late)"' + disabledAttr + '>EP</button>';
+
+        if (hasKC) {
+            html += '<button class="status-btn kc_btn ' + (kcAfterStatus === 'present' ? 'active' : '') + '"' +
+                ' onclick="setKC(\'' + c.person_id + '\', \'after\', this)"' +
+                ' title="Kid Connection - After Care"' + disabledAttr + '>KC</button>';
+        }
+
+        html += '</div></div>';
+        return html;
     }
 
     // ---- Render Camper List ----
@@ -206,75 +284,51 @@
 
         var disabledAttr = isDayLocked ? ' disabled' : '';
 
-        list.innerHTML = campers.map(function(c) {
-            var att = (c.attendance && c.attendance[DAILY_CP]) || {};
-            var currentStatus = att.status || '';
+        if (sortMode === 'group') {
+            // Group campers by group_number
+            var groups = {};
+            campers.forEach(function(c) {
+                var g = c.group_number || 0;
+                if (!groups[g]) groups[g] = [];
+                groups[g].push(c);
+            });
 
-            // EP is now an independent flag stored on checkpoint 6
-            var epAtt = (c.attendance && c.attendance[EP_CP]) || {};
-            var hasEP = epAtt.status === 'early_pickup';
+            // Sort group numbers: 1, 2, 3... then 0 (Unassigned) last
+            var groupNums = Object.keys(groups).map(Number).sort(function(a, b) {
+                if (a === 0) return 1;
+                if (b === 0) return -1;
+                return a - b;
+            });
 
-            // Border class — show EP combined indicator
-            var borderClass = '';
-            if (currentStatus === 'present' && hasEP) borderClass = 'marked-present-ep';
-            else if (currentStatus === 'late' && hasEP) borderClass = 'marked-late-ep';
-            else if (currentStatus === 'present') borderClass = 'marked';
-            else if (currentStatus) borderClass = 'marked-' + currentStatus;
+            var html = '';
+            groupNums.forEach(function(gNum) {
+                var label = gNum === 0 ? 'Unassigned' : 'Group ' + gNum;
+                var groupCampers = groups[gNum];
 
-            var hasKC = !!c.has_kc;
-            var kcBeforeAtt = (c.attendance && c.attendance[KC_BEFORE_CP]) || {};
-            var kcAfterAtt  = (c.attendance && c.attendance[KC_AFTER_CP]) || {};
-            var kcBeforeStatus = kcBeforeAtt.status || '';
-            var kcAfterStatus  = kcAfterAtt.status || '';
+                // Sort within group by last name
+                groupCampers.sort(function(a, b) {
+                    var aLast = a.name.split(' ').slice(-1)[0].toLowerCase();
+                    var bLast = b.name.split(' ').slice(-1)[0].toLowerCase();
+                    return aLast.localeCompare(bLast);
+                });
 
-            var html = '<div class="camper-row ' + borderClass + '" id="row-' + c.person_id + '" data-pid="' + c.person_id + '">';
+                html += '<div class="group-header">' +
+                    '<span class="group-header-label">' + escHTML(label) + '</span>' +
+                    '<span class="group-header-count">' + groupCampers.length + '</span>' +
+                '</div>';
 
-            // Camper info area (name + optional sibling)
-            html += '<div class="camper-info">';
-            html += '<span class="camper-name">' + escHTML(c.name) + '</span>';
-            if (c.youngest_sibling) {
-                html += '<span class="camper-sibling">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> ' +
-                    escHTML(c.youngest_sibling.name) + ' <span class="sibling-program">(' + escHTML(c.youngest_sibling.program) + ')</span>' +
-                '</span>';
-            }
-            html += '</div>';
+                html += groupCampers.map(function(c) {
+                    return renderSingleCamperRow(c, disabledAttr);
+                }).join('');
+            });
 
-            html += '<div class="status-buttons">';
-
-            // KC Before (only if camper has KC)
-            if (hasKC) {
-                html += '<button class="status-btn kc_btn ' + (kcBeforeStatus === 'present' ? 'active' : '') + '"' +
-                    ' onclick="setKC(\'' + c.person_id + '\', \'before\', this)"' +
-                    ' title="Kid Connection - Before Care"' + disabledAttr + '>KC</button>';
-            }
-
-            // Main attendance buttons (Present, Absent, Late)
-            html += '<button class="status-btn present ' + (currentStatus === 'present' ? 'active' : '') + '"' +
-                ' onclick="setStatus(\'' + c.person_id + '\', \'present\', this)"' +
-                ' title="Present"' + disabledAttr + '>&#10003;</button>';
-            html += '<button class="status-btn absent ' + (currentStatus === 'absent' ? 'active' : '') + '"' +
-                ' onclick="setStatus(\'' + c.person_id + '\', \'absent\', this)"' +
-                ' title="Absent"' + disabledAttr + '>&#10007;</button>';
-            html += '<button class="status-btn late ' + (currentStatus === 'late' ? 'active' : '') + '"' +
-                ' onclick="setStatus(\'' + c.person_id + '\', \'late\', this)"' +
-                ' title="Late Arrival"' + disabledAttr + '>LA</button>';
-
-            // EP is now an independent toggle button (can combine with Present or Late)
-            html += '<button class="status-btn early_pickup ' + (hasEP ? 'active' : '') + '"' +
-                ' onclick="toggleEP(\'' + c.person_id + '\', this)"' +
-                ' title="Early Pickup (combinable with Present/Late)"' + disabledAttr + '>EP</button>';
-
-            // KC After (only if camper has KC)
-            if (hasKC) {
-                html += '<button class="status-btn kc_btn ' + (kcAfterStatus === 'present' ? 'active' : '') + '"' +
-                    ' onclick="setKC(\'' + c.person_id + '\', \'after\', this)"' +
-                    ' title="Kid Connection - After Care"' + disabledAttr + '>KC</button>';
-            }
-
-            html += '</div></div>';
-            return html;
-        }).join('');
+            list.innerHTML = html;
+        } else {
+            // Default alphabetical
+            list.innerHTML = campers.map(function(c) {
+                return renderSingleCamperRow(c, disabledAttr);
+            }).join('');
+        }
 
         updateProgress();
     }

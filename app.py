@@ -1524,6 +1524,83 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
 
     return persons_cache
 
+def _sync_bac_to_cache(persons_cache=None):
+    """Sync Before/After Care weeks from CampMinder financial + ECA data into persons_cache.
+
+    Args:
+        persons_cache: Existing cache dict. If None, loads from file.
+
+    Returns:
+        Updated persons_cache dict with bac_weeks populated.
+    """
+    import re
+    persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
+
+    if persons_cache is None:
+        persons_cache = _load_persons_cache()
+
+    if not is_api_configured():
+        return persons_cache
+
+    try:
+        api = CampMinderAPIClient()
+
+        # Part 1: BAC from financial transactions
+        print("BAC sync: fetching financial transactions...")
+        transactions = api.get_transaction_details(2026)
+        bac_persons = {}
+        for t in transactions:
+            desc = str(t.get('description', ''))
+            if 'before and after' not in desc.lower():
+                continue
+            if t.get('isReversed', False):
+                continue
+            pid = t.get('personId')
+            week_match = re.search(r'Week\s*(\d+)', desc, re.IGNORECASE)
+            if pid and week_match:
+                bac_persons.setdefault(pid, set()).add(int(week_match.group(1)))
+
+        # Part 2: ECA from session enrollments
+        print("BAC sync: fetching ECA session data...")
+        attendees = api.get_attendees(2026, api.client_id, status=6)
+        eca_session_to_week = {
+            1369500: 1, 1369501: 2, 1369502: 3, 1369503: 4,
+            1369504: 5, 1369505: 6, 1369506: 7, 1369507: 8, 1369508: 9
+        }
+        eca_persons = {}
+        for att in attendees:
+            pid = att.get('PersonID')
+            for sps in att.get('SessionProgramStatus', []):
+                sid = sps.get('SessionID')
+                status_id = sps.get('StatusID')
+                if sid in eca_session_to_week and status_id in [2, 4]:
+                    eca_persons.setdefault(pid, set()).add(eca_session_to_week[sid])
+
+        # Part 3: Merge into persons_cache
+        all_kc_persons = set(bac_persons.keys()) | set(eca_persons.keys())
+        for pid in all_kc_persons:
+            str_pid = str(pid)
+            combined = sorted(bac_persons.get(pid, set()) | eca_persons.get(pid, set()))
+            if str_pid in persons_cache:
+                persons_cache[str_pid]['bac_weeks'] = combined
+            else:
+                persons_cache[str_pid] = {'bac_weeks': combined}
+
+        # Save to file
+        try:
+            with open(persons_cache_file, 'w') as f:
+                json.dump(persons_cache, f)
+        except Exception:
+            pass
+
+        print(f"BAC sync complete: {len(bac_persons)} financial, {len(eca_persons)} ECA, {len(all_kc_persons)} total KC persons")
+
+    except Exception as e:
+        print(f"Error syncing BAC data: {e}")
+        traceback.print_exc()
+
+    return persons_cache
+
 @app.route('/api/participants/<program>/<int:week>')
 @login_required
 def api_participants(program, week):
@@ -2678,6 +2755,16 @@ def attendance_campers(program, week):
     if pids_to_fetch and is_api_configured():
         persons_map = _fetch_and_cache_persons(pids_to_fetch, persons_map)
 
+    # Auto-sync BAC data if no bac_weeks found (needed for KC buttons)
+    has_any_bac = any(
+        isinstance(persons_map.get(str(c.get('personId') or c.get('person_id'))), dict) and
+        persons_map.get(str(c.get('personId') or c.get('person_id')), {}).get('bac_weeks')
+        for c in campers
+    ) if campers else False
+    if not has_any_bac and campers and is_api_configured():
+        print("No bac_weeks found in persons_cache — auto-syncing BAC data...")
+        persons_map = _sync_bac_to_cache(persons_map)
+
     # Get attendance records for specified date + program
     records = AttendanceRecord.query.filter_by(
         program_name=program, date=target_date
@@ -2764,6 +2851,10 @@ def attendance_campers(program, week):
         youngest = enrolled_siblings[0]
         return {'name': youngest['name'], 'program': youngest['program']}
 
+    # Load group assignments for sorting by group
+    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
+    group_map = {ga.person_id: ga.group_number for ga in ga_rows}
+
     # Build camper list with attendance data
     camper_list = []
     for camper in campers:
@@ -2773,6 +2864,7 @@ def attendance_campers(program, week):
             'person_id': str(person_id),
             'name': name,
             'has_kc': _has_kc(person_id),
+            'group_number': group_map.get(str(person_id), 0),
             'attendance': {}
         }
         # Fill in attendance per checkpoint
@@ -3195,89 +3287,18 @@ def attendance_week_info():
 @login_required
 def sync_bac_data():
     """Sync Before and After Care data from CampMinder financial transactions + ECA sessions.
-    BAC comes from financial line items named 'Before and After Care Week NN'.
-    ECA comes from session enrollments in ECA Week 1-9 sessions.
-    Results are stored in persons_cache.json as 'bac_weeks' list per person."""
+    Delegates to _sync_bac_to_cache() helper."""
     if current_user.role != 'admin':
         return jsonify({'error': 'Admin only'}), 403
-
     if not CAMPMINDER_API_AVAILABLE:
         return jsonify({'error': 'CampMinder API not available'}), 500
 
-    import re
-
     try:
-        api = CampMinderAPIClient()
-
-        # === Part 1: BAC from financial transactions ===
-        transactions = api.get_transaction_details(2026)
-        bac_persons = {}
-        for t in transactions:
-            desc = str(t.get('description', ''))
-            if 'before and after' not in desc.lower():
-                continue
-            if t.get('isReversed', False):
-                continue
-            pid = t.get('personId')
-            week_match = re.search(r'Week\s*(\d+)', desc, re.IGNORECASE)
-            if pid and week_match:
-                if pid not in bac_persons:
-                    bac_persons[pid] = set()
-                bac_persons[pid].add(int(week_match.group(1)))
-
-        # === Part 2: ECA from session enrollments ===
-        attendees = api.get_attendees(2026, api.client_id, status=6)
-        eca_session_to_week = {
-            1369500: 1, 1369501: 2, 1369502: 3, 1369503: 4,
-            1369504: 5, 1369505: 6, 1369506: 7, 1369507: 8, 1369508: 9
-        }
-        eca_persons = {}
-        for att in attendees:
-            pid = att.get('PersonID')
-            for sps in att.get('SessionProgramStatus', []):
-                sid = sps.get('SessionID')
-                status_id = sps.get('StatusID')
-                if sid in eca_session_to_week and status_id in [2, 4]:
-                    if pid not in eca_persons:
-                        eca_persons[pid] = set()
-                    eca_persons[pid].add(eca_session_to_week[sid])
-
-        # === Part 3: Merge into persons_cache ===
-        persons_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
-        persons = {}
-        if os.path.exists(persons_file):
-            with open(persons_file, 'r') as f:
-                persons = json.load(f)
-
-        all_kc_persons = set(bac_persons.keys()) | set(eca_persons.keys())
-        updated = 0
-        for pid in all_kc_persons:
-            str_pid = str(pid)
-            bac_weeks = bac_persons.get(pid, set())
-            eca_weeks = eca_persons.get(pid, set())
-            combined = sorted(bac_weeks | eca_weeks)
-            if str_pid in persons:
-                persons[str_pid]['bac_weeks'] = combined
-                updated += 1
-            else:
-                persons[str_pid] = {'bac_weeks': combined}
-                updated += 1
-
-        with open(persons_file, 'w') as f:
-            json.dump(persons, f, indent=2)
-
-        return jsonify({
-            'success': True,
-            'bac_financial': len(bac_persons),
-            'eca_sessions': len(eca_persons),
-            'total_kc_persons': len(all_kc_persons),
-            'updated': updated
-        })
-
+        persons = _sync_bac_to_cache()
+        kc_count = sum(1 for p in persons.values()
+                       if isinstance(p, dict) and p.get('bac_weeks'))
+        return jsonify({'success': True, 'total_kc_persons': kc_count})
     except Exception as e:
-        print(f"Error syncing BAC data: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 # ==================== ERROR HANDLERS ====================
