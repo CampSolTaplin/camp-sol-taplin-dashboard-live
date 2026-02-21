@@ -2924,13 +2924,14 @@ def attendance_record():
     except ValueError:
         target_date = _date.today()
 
-    # Server-side 5 PM lock enforcement
-    now = datetime.now()
-    today = _date.today()
-    if target_date < today:
-        return jsonify({'error': 'Cannot modify attendance for past days'}), 403
-    if target_date == today and now.hour >= 17:
-        return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
+    # Server-side 5 PM lock enforcement (admins bypass)
+    if current_user.role != 'admin':
+        now = datetime.now()
+        today = _date.today()
+        if target_date < today:
+            return jsonify({'error': 'Cannot modify attendance for past days'}), 403
+        if target_date == today and now.hour >= 17:
+            return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
 
     current_week = get_current_camp_week(target_date)
     if current_week is None:
@@ -3002,13 +3003,14 @@ def attendance_record_batch():
     except ValueError:
         target_date = _date.today()
 
-    # Server-side 5 PM lock enforcement
-    now = datetime.now()
-    today = _date.today()
-    if target_date < today:
-        return jsonify({'error': 'Cannot modify attendance for past days'}), 403
-    if target_date == today and now.hour >= 17:
-        return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
+    # Server-side 5 PM lock enforcement (admins bypass)
+    if current_user.role != 'admin':
+        now = datetime.now()
+        today = _date.today()
+        if target_date < today:
+            return jsonify({'error': 'Cannot modify attendance for past days'}), 403
+        if target_date == today and now.hour >= 17:
+            return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
 
     current_week = get_current_camp_week(target_date) or 0
 

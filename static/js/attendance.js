@@ -77,6 +77,20 @@
     }
 
     function updateLockStatus() {
+        // Admins bypass all time/date locks
+        if (typeof IS_ADMIN !== 'undefined' && IS_ADMIN) {
+            isDayLocked = false;
+            var lockBadge = document.getElementById('att-lock-badge');
+            var lockedBanner = document.getElementById('att-locked-banner');
+            var markAllBtn = document.getElementById('mark-all-btn');
+            var unmarkAllBtn = document.getElementById('unmark-all-btn');
+            if (lockBadge) lockBadge.style.display = 'none';
+            if (lockedBanner) lockedBanner.style.display = 'none';
+            if (markAllBtn) markAllBtn.style.display = 'inline-flex';
+            if (unmarkAllBtn) unmarkAllBtn.style.display = 'inline-flex';
+            return;
+        }
+
         var now = new Date();
         var todayStr = now.toISOString().split('T')[0];
 
