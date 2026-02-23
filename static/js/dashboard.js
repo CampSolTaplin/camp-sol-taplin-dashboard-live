@@ -32,6 +32,14 @@ function switchView(viewName) {
     }
 }
 
+// Settings sub-menu toggle
+function toggleSettingsMenu() {
+    const parent = document.querySelector('.nav-parent');
+    const submenu = document.getElementById('settings-submenu');
+    if (parent) parent.classList.toggle('expanded');
+    if (submenu) submenu.classList.toggle('open');
+}
+
 // Filter by category
 function filterByCategory(category) {
     switchView('detailed');

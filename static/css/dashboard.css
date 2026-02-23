@@ -108,6 +108,29 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     flex-shrink: 0;
 }
 
+/* Settings sub-menu */
+.nav-parent { justify-content: flex-start; position: relative; }
+.nav-parent .nav-chevron {
+    margin-left: auto; width: 14px; height: 14px;
+    transition: transform 0.2s;
+}
+.nav-parent.expanded .nav-chevron { transform: rotate(180deg); }
+
+.nav-submenu {
+    max-height: 0; overflow: hidden; transition: max-height 0.25s ease;
+}
+.nav-submenu.open { max-height: 120px; }
+
+.nav-subitem {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 14px 9px 38px;
+    border-radius: 6px; color: rgba(255,255,255,0.6);
+    cursor: pointer; font-size: 13px; font-weight: 400;
+    transition: all 0.2s;
+}
+.nav-subitem:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-subitem svg { width: 15px; height: 15px; min-width: 15px; }
+
 .report-date {
     background: rgba(255,255,255,0.1);
     border-radius: 10px;
