@@ -398,14 +398,11 @@ body {
     align-items: center;
 }
 
-.att-mark-all {
+.att-bulk-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    background: var(--success);
-    color: white;
-    border: none;
     border-radius: 8px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
@@ -415,47 +412,34 @@ body {
     -webkit-user-select: none;
     user-select: none;
 }
-.att-mark-all:active {
+.att-bulk-btn:active {
     transform: scale(0.97);
-    background: #16A34A;
 }
-.att-mark-all svg {
+.att-bulk-btn svg {
     width: 16px;
     height: 16px;
 }
-.att-mark-all:disabled {
+.att-bulk-btn:disabled {
     opacity: 0.5;
     cursor: default;
 }
 
+.att-mark-all {
+    background: var(--success);
+    color: white;
+    border: none;
+}
+.att-mark-all:active {
+    background: #16A34A;
+}
+
 .att-unmark-all {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
     background: var(--card);
     color: var(--danger);
     border: 2px solid var(--danger);
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    -webkit-user-select: none;
-    user-select: none;
 }
 .att-unmark-all:active {
-    transform: scale(0.97);
     background: var(--danger-light);
-}
-.att-unmark-all svg {
-    width: 16px;
-    height: 16px;
-}
-.att-unmark-all:disabled {
-    opacity: 0.5;
-    cursor: default;
 }
 
 /* ==================== CAMPER LIST ==================== */
