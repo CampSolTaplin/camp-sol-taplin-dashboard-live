@@ -6,7 +6,7 @@ Flask Application with User Management and Live CampMinder API Integration
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session, flash
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -15,7 +15,7 @@ import os
 import json
 import traceback
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from io import BytesIO
 import threading
 
@@ -44,6 +44,10 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # ==================== DATABASE CONFIG ====================
+DB_POOL_SIZE = 5
+DB_MAX_OVERFLOW = 10
+DB_POOL_RECYCLE_SECONDS = 300
+
 from flask_sqlalchemy import SQLAlchemy
 
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///local.db')
@@ -56,9 +60,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 if database_url.startswith('postgresql://'):
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'pool_pre_ping': True,        # Test connections before use (fixes SSL EOF errors)
-        'pool_recycle': 300,           # Recycle connections every 5 minutes
-        'pool_size': 5,
-        'max_overflow': 10,
+        'pool_recycle': DB_POOL_RECYCLE_SECONDS,
+        'pool_size': DB_POOL_SIZE,
+        'max_overflow': DB_MAX_OVERFLOW,
     }
 
 db = SQLAlchemy(app)
@@ -68,6 +72,7 @@ CAMPMINDER_API_KEY = os.environ.get('CAMPMINDER_API_KEY')
 CAMPMINDER_SUBSCRIPTION_KEY = os.environ.get('CAMPMINDER_SUBSCRIPTION_KEY')
 CAMPMINDER_SEASON_ID = int(os.environ.get('CAMPMINDER_SEASON_ID', '2026'))
 CACHE_TTL_MINUTES = 15  # Cache data for 15 minutes
+ATTENDANCE_LOCK_HOUR = 17  # 5:00 PM
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -299,16 +304,26 @@ CAMP_WEEK_DATES = {
     9: ('2026-08-03', '2026-08-07'),
 }
 
+def _parse_date_param(source=None, key='date'):
+    """Parse a date string from request args or a dict, defaulting to today."""
+    if source is None:
+        date_str = request.args.get(key, date.today().isoformat())
+    else:
+        date_str = source.get(key, date.today().isoformat())
+    try:
+        return date.fromisoformat(date_str)
+    except (ValueError, TypeError):
+        return date.today()
+
 def get_current_camp_week(today=None):
     """Return current camp week number (1-9) or None if not during camp."""
     if today is None:
         today = datetime.now().date()
     elif isinstance(today, datetime):
         today = today.date()
-    from datetime import date as _date
     for week_num, (start_str, end_str) in CAMP_WEEK_DATES.items():
-        start = _date.fromisoformat(start_str)
-        end = _date.fromisoformat(end_str)
+        start = date.fromisoformat(start_str)
+        end = date.fromisoformat(end_str)
         if start <= today <= end:
             return week_num
     return None
@@ -665,7 +680,7 @@ def shared_matrix(token):
                 try:
                     dt = datetime.fromisoformat(generated_at)
                     generated_at = dt.strftime('%B %d, %Y at %I:%M %p')
-                except:
+                except (ValueError, TypeError):
                     pass
             data_source = 'api'
 
@@ -713,7 +728,7 @@ def dashboard():
                 try:
                     dt = datetime.fromisoformat(generated_at)
                     generated_at = dt.strftime('%B %d, %Y at %I:%M %p')
-                except:
+                except (ValueError, TypeError):
                     pass
             data_source = 'api'
     
@@ -1240,7 +1255,7 @@ def api_refresh_data():
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'An internal error occurred'
         }), 500
 
 @app.route('/api/finance/refresh', methods=['POST'])
@@ -1280,7 +1295,7 @@ def api_finance_refresh():
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'An internal error occurred'
         }), 500
 
 def _load_persons_cache():
@@ -1524,6 +1539,14 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
 
     return persons_cache
 
+def _load_and_fetch_persons(person_ids):
+    """Load persons cache and auto-fetch any missing IDs from CampMinder API."""
+    cache = _load_persons_cache()
+    to_fetch = [pid for pid in person_ids if pid and str(pid) not in cache]
+    if to_fetch and is_api_configured():
+        cache = _fetch_and_cache_persons(to_fetch, cache)
+    return cache
+
 def _sync_bac_to_cache(persons_cache=None):
     """Sync Before/After Care weeks from CampMinder financial + ECA data into persons_cache.
 
@@ -1619,18 +1642,11 @@ def api_participants(program, week):
     # Get unique person_ids that need lookup
     person_ids = [p['person_id'] for p in participants]
 
-    # Load persons cache from file
-    persons_cache = _load_persons_cache()
-
-    # Fetch any missing persons using batch endpoint
-    pids_to_fetch = [pid for pid in person_ids if str(pid) not in persons_cache]
-
-    if pids_to_fetch and is_api_configured():
-        persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
+    # Load persons cache, auto-fetch missing ones from API
+    persons_cache = _load_and_fetch_persons(person_ids)
 
     # Load group assignments for this program/week from DB
-    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
-    group_map = {ga.person_id: ga.group_number for ga in ga_rows}
+    group_map = _get_group_map(program, week)
 
     # Build enriched participants list
     enriched = []
@@ -1760,15 +1776,11 @@ def download_by_groups(program, week):
     participants = program_data.get(str(week), [])
 
     # Load persons cache, auto-fetch missing ones from API
-    persons_cache = _load_persons_cache()
     all_pids = [p['person_id'] for p in participants]
-    pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_cache]
-    if pids_to_fetch and is_api_configured():
-        persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
+    persons_cache = _load_and_fetch_persons(all_pids)
 
     # Load group assignments from DB
-    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
-    group_map = {ga.person_id: ga.group_number for ga in ga_rows}
+    group_map = _get_group_map(program, week)
 
     # Build camper list
     campers = []
@@ -2136,14 +2148,10 @@ def print_by_groups(program, week):
     program_data = data['participants'].get(program, {})
     participants = program_data.get(str(week), [])
 
-    persons_cache = _load_persons_cache()
     all_pids = [p['person_id'] for p in participants]
-    pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_cache]
-    if pids_to_fetch and is_api_configured():
-        persons_cache = _fetch_and_cache_persons(pids_to_fetch, persons_cache)
+    persons_cache = _load_and_fetch_persons(all_pids)
 
-    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
-    group_map = {ga.person_id: ga.group_number for ga in ga_rows}
+    group_map = _get_group_map(program, week)
 
     campers = []
     for p in participants:
@@ -2469,7 +2477,7 @@ def upload_share_group():
     except Exception as e:
         print(f"Error processing Share Group CSV: {e}")
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An internal error occurred'}), 500
 
 
 @app.route('/upload', methods=['POST'])
@@ -2685,6 +2693,25 @@ def _ensure_enrollment_cache():
                 except Exception as e:
                     print(f"Error force-loading enrollment cache: {e}")
 
+def _check_program_access(program_name):
+    """Return 403 response if user lacks program access, else None. Admins always pass."""
+    if current_user.role != 'admin':
+        assignment = UnitLeaderAssignment.query.filter_by(
+            username=current_user.id, program_name=program_name
+        ).first()
+        if not assignment:
+            return jsonify({'error': 'Not authorized for this program'}), 403
+    return None
+
+def _get_group_map(program, week):
+    """Return dict mapping person_id -> group_number for a program/week."""
+    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
+    return {ga.person_id: ga.group_number for ga in ga_rows}
+
+def _get_active_checkpoints():
+    """Return list of active attendance checkpoints sorted by order."""
+    return AttendanceCheckpoint.query.filter_by(active=True).order_by(AttendanceCheckpoint.sort_order).all()
+
 @app.route('/attendance')
 @login_required
 def attendance_page():
@@ -2711,7 +2738,7 @@ def attendance_my_programs():
 @login_required
 def attendance_checkpoints():
     """Return active checkpoints."""
-    checkpoints = AttendanceCheckpoint.query.filter_by(active=True).order_by(AttendanceCheckpoint.sort_order).all()
+    checkpoints = _get_active_checkpoints()
     return jsonify({'checkpoints': [
         {'id': c.id, 'name': c.name, 'time_label': c.time_label, 'sort_order': c.sort_order}
         for c in checkpoints
@@ -2722,22 +2749,14 @@ def attendance_checkpoints():
 def attendance_campers(program, week):
     """Return camper list for a program/week with attendance for a specific date."""
     # Check access: admin can see all, unit_leader only assigned programs
-    if current_user.role != 'admin':
-        assignment = UnitLeaderAssignment.query.filter_by(
-            username=current_user.id, program_name=program
-        ).first()
-        if not assignment:
-            return jsonify({'error': 'Not authorized for this program'}), 403
+    denied = _check_program_access(program)
+    if denied:
+        return denied
 
     _ensure_enrollment_cache()
 
     # Parse date from query param (default to today)
-    from datetime import date as _date
-    date_str = request.args.get('date', _date.today().isoformat())
-    try:
-        target_date = _date.fromisoformat(date_str)
-    except ValueError:
-        target_date = _date.today()
+    target_date = _parse_date_param()
 
     # Get campers from enrollment data
     campers = []
@@ -2748,12 +2767,8 @@ def attendance_campers(program, week):
             campers = participants[program][week_str]
 
     # Load person names from cache, auto-fetch missing ones from API
-    persons_map = _load_persons_cache()
-    # Collect all person IDs (as ints) from campers to check which are missing
     all_pids = [c.get('personId') or c.get('person_id') for c in campers]
-    pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_map]
-    if pids_to_fetch and is_api_configured():
-        persons_map = _fetch_and_cache_persons(pids_to_fetch, persons_map)
+    persons_map = _load_and_fetch_persons(all_pids)
 
     # Auto-sync BAC data if no bac_weeks found (needed for KC buttons)
     has_any_bac = any(
@@ -2852,8 +2867,7 @@ def attendance_campers(program, week):
         return {'name': youngest['name'], 'program': youngest['program']}
 
     # Load group assignments for sorting by group
-    ga_rows = GroupAssignment.query.filter_by(program=program, week=week).all()
-    group_map = {ga.person_id: ga.group_number for ga in ga_rows}
+    group_map = _get_group_map(program, week)
 
     # Build camper list with attendance data
     camper_list = []
@@ -2909,28 +2923,20 @@ def attendance_record():
         return jsonify({'error': 'Invalid status'}), 400
 
     # Check access
-    if current_user.role != 'admin':
-        assignment = UnitLeaderAssignment.query.filter_by(
-            username=current_user.id, program_name=program_name
-        ).first()
-        if not assignment:
-            return jsonify({'error': 'Not authorized'}), 403
+    denied = _check_program_access(program_name)
+    if denied:
+        return denied
 
     # Parse target date from request (default to today)
-    from datetime import date as _date
-    date_str = data.get('date', _date.today().isoformat())
-    try:
-        target_date = _date.fromisoformat(date_str)
-    except ValueError:
-        target_date = _date.today()
+    target_date = _parse_date_param(source=data)
 
     # Server-side 5 PM lock enforcement (admins bypass)
     if current_user.role != 'admin':
         now = datetime.now()
-        today = _date.today()
+        today = date.today()
         if target_date < today:
             return jsonify({'error': 'Cannot modify attendance for past days'}), 403
-        if target_date == today and now.hour >= 17:
+        if target_date == today and now.hour >= ATTENDANCE_LOCK_HOUR:
             return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
 
     current_week = get_current_camp_week(target_date)
@@ -2969,7 +2975,8 @@ def attendance_record():
         return jsonify({'success': True, 'status': status})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        traceback.print_exc()
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 @app.route('/api/attendance/record-batch', methods=['POST'])
 @login_required
@@ -2988,28 +2995,20 @@ def attendance_record_batch():
         return jsonify({'error': 'Missing required fields'}), 400
 
     # Check access
-    if current_user.role != 'admin':
-        assignment = UnitLeaderAssignment.query.filter_by(
-            username=current_user.id, program_name=program_name
-        ).first()
-        if not assignment:
-            return jsonify({'error': 'Not authorized'}), 403
+    denied = _check_program_access(program_name)
+    if denied:
+        return denied
 
     # Parse target date from request (default to today)
-    from datetime import date as _date
-    date_str = data.get('date', _date.today().isoformat())
-    try:
-        target_date = _date.fromisoformat(date_str)
-    except ValueError:
-        target_date = _date.today()
+    target_date = _parse_date_param(source=data)
 
     # Server-side 5 PM lock enforcement (admins bypass)
     if current_user.role != 'admin':
         now = datetime.now()
-        today = _date.today()
+        today = date.today()
         if target_date < today:
             return jsonify({'error': 'Cannot modify attendance for past days'}), 403
-        if target_date == today and now.hour >= 17:
+        if target_date == today and now.hour >= ATTENDANCE_LOCK_HOUR:
             return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
 
     current_week = get_current_camp_week(target_date) or 0
@@ -3043,23 +3042,19 @@ def attendance_record_batch():
         return jsonify({'success': True, 'count': count})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        traceback.print_exc()
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 @app.route('/api/attendance/summary')
 @login_required
 def attendance_summary():
     """Admin: aggregated attendance stats for all programs on a given date."""
     _ensure_enrollment_cache()
-    from datetime import date as _date
-    date_str = request.args.get('date', _date.today().isoformat())
-    try:
-        target_date = _date.fromisoformat(date_str)
-    except ValueError:
-        target_date = _date.today()
+    target_date = _parse_date_param()
 
     # Get all records for the date
     records = AttendanceRecord.query.filter_by(date=target_date).all()
-    checkpoints = AttendanceCheckpoint.query.filter_by(active=True).order_by(AttendanceCheckpoint.sort_order).all()
+    checkpoints = _get_active_checkpoints()
 
     # Get all programs from enrollment data
     all_programs = []
@@ -3121,24 +3116,23 @@ def attendance_summary():
 def attendance_trends():
     """Admin: attendance trend data across all programs, grouped by date."""
     _ensure_enrollment_cache()
-    from datetime import date as _date, timedelta
     start_str = request.args.get('start')
     end_str = request.args.get('end')
-    today = _date.today()
+    today = date.today()
 
     # Defaults: current camp week, or last 7 days
     if not start_str or not end_str:
         cw = get_current_camp_week(today)
         if cw and cw in CAMP_WEEK_DATES:
-            start_date = _date.fromisoformat(CAMP_WEEK_DATES[cw][0])
+            start_date = date.fromisoformat(CAMP_WEEK_DATES[cw][0])
             end_date = today
         else:
             start_date = today - timedelta(days=6)
             end_date = today
     else:
         try:
-            start_date = _date.fromisoformat(start_str)
-            end_date = _date.fromisoformat(end_str)
+            start_date = date.fromisoformat(start_str)
+            end_date = date.fromisoformat(end_str)
         except ValueError:
             start_date = today - timedelta(days=6)
             end_date = today
@@ -3203,12 +3197,7 @@ def attendance_trends():
 def attendance_detail(program):
     """Admin: individual camper attendance for a specific program on a date."""
     _ensure_enrollment_cache()
-    from datetime import date as _date
-    date_str = request.args.get('date', _date.today().isoformat())
-    try:
-        target_date = _date.fromisoformat(date_str)
-    except ValueError:
-        target_date = _date.today()
+    target_date = _parse_date_param()
 
     # Get campers from enrollment
     week_num = get_current_camp_week(target_date)
@@ -3221,11 +3210,8 @@ def attendance_detail(program):
                 campers = participants[program][week_str]
 
     # Load person names from cache, auto-fetch missing ones from API
-    persons_map = _load_persons_cache()
     all_pids = [c.get('personId') or c.get('person_id') for c in campers]
-    pids_to_fetch = [pid for pid in all_pids if pid and str(pid) not in persons_map]
-    if pids_to_fetch and is_api_configured():
-        persons_map = _fetch_and_cache_persons(pids_to_fetch, persons_map)
+    persons_map = _load_and_fetch_persons(all_pids)
 
     # Get records
     records = AttendanceRecord.query.filter_by(
@@ -3264,7 +3250,7 @@ def attendance_detail(program):
         })
     camper_list.sort(key=lambda c: c['name'].split()[-1] if c['name'] else '')
 
-    checkpoints = AttendanceCheckpoint.query.filter_by(active=True).order_by(AttendanceCheckpoint.sort_order).all()
+    checkpoints = _get_active_checkpoints()
 
     return jsonify({
         'program': program,
@@ -3357,8 +3343,7 @@ def update_checkpoint():
 @login_required
 def attendance_week_info():
     """Return current camp week info and all week date ranges."""
-    from datetime import date as _date
-    today = _date.today()
+    today = date.today()
     current_week = get_current_camp_week(today)
     return jsonify({
         'today': today.isoformat(),
@@ -3383,7 +3368,8 @@ def sync_bac_data():
                        if isinstance(p, dict) and p.get('bac_weeks'))
         return jsonify({'success': True, 'total_kc_persons': kc_count})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        traceback.print_exc()
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 # ==================== ERROR HANDLERS ====================
 
