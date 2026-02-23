@@ -1729,7 +1729,24 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     border-top: 3px solid #1a202c;
     font-size: 0.95rem;
     letter-spacing: 0.3px;
+    background: #2d3748;
+    color: white;
+    font-weight: 700;
 }
+.totals-row .total-cell,
+.totals-row .fte-cell,
+.totals-row .goal-cell,
+.totals-row .percent-cell { background: #1a202c; }
+
+.totals-row-secondary td {
+    background: #4a5568;
+    color: white;
+    font-weight: 700;
+}
+.totals-row-secondary .total-cell,
+.totals-row-secondary .fte-cell,
+.totals-row-secondary .goal-cell,
+.totals-row-secondary .percent-cell { background: #374151; }
 
 /* KPI Info Tooltips */
 .kpi-info {
@@ -2301,6 +2318,14 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     padding: 0 2px;
     line-height: 1;
 }
+
+/* Attendance admin grid cell styles */
+.att-status-present { color: #16A34A; font-weight: 600; text-align: center; }
+.att-status-absent  { color: #DC2626; font-weight: 600; text-align: center; }
+.att-status-late    { color: #D97706; font-weight: 600; text-align: center; }
+.att-status-early   { color: #E64A19; font-weight: 600; text-align: center; }
+.att-prog-name      { font-weight: 600; white-space: nowrap; }
+.att-cell-center    { text-align: center; }
 
 .att-admin-select {
     padding: 8px 12px;

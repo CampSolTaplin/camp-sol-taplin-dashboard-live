@@ -61,26 +61,26 @@ function filterDetailedView() {
 
 // Recalculate Enrollment Matrix TOTALS based on visible rows
 function recalcEnrollmentTotals(table) {
-    var rows = table.querySelectorAll('tbody tr');
-    var sums = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
-    var nct = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
+    const rows = table.querySelectorAll('tbody tr');
+    const sums = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
+    const nct = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
 
     rows.forEach(function(row) {
         if (row.style.display === 'none') return;
-        var isCT = row.dataset.isCt === 'true';
-        for (var i = 0; i < 9; i++) {
-            var val = parseFloat(row.dataset['w' + (i + 1)]) || 0;
+        const isCT = row.dataset.isCt === 'true';
+        for (let i = 0; i < 9; i++) {
+            const val = parseFloat(row.dataset['w' + (i + 1)]) || 0;
             sums.w[i] += val;
             if (!isCT) nct.w[i] += val;
         }
-        var t = parseFloat(row.dataset.total) || 0;
-        var f = parseFloat(row.dataset.fte) || 0;
-        var g = parseFloat(row.dataset.goal) || 0;
+        const t = parseFloat(row.dataset.total) || 0;
+        const f = parseFloat(row.dataset.fte) || 0;
+        const g = parseFloat(row.dataset.goal) || 0;
         sums.total += t; sums.fte += f; sums.goal += g;
         if (!isCT) { nct.total += t; nct.fte += f; nct.goal += g; }
     });
 
-    for (var i = 1; i <= 9; i++) {
+    for (let i = 1; i <= 9; i++) {
         setCell('em-totals-w' + i, sums.w[i - 1]);
         setCell('em-nct-w' + i, nct.w[i - 1]);
     }
@@ -96,15 +96,15 @@ function recalcEnrollmentTotals(table) {
 
 // Filter Old View Stats
 function filterOldView() {
-    var filter = document.getElementById('oldViewCategoryFilter');
-    var table = document.getElementById('oldViewMatrix');
+    const filter = document.getElementById('oldViewCategoryFilter');
+    const table = document.getElementById('oldViewMatrix');
     if (!table) return;
 
-    var filterValue = filter ? filter.value : 'all';
-    var rows = table.querySelectorAll('tbody tr');
+    const filterValue = filter ? filter.value : 'all';
+    const rows = table.querySelectorAll('tbody tr');
 
     rows.forEach(function(row) {
-        var cat = row.dataset.category || '';
+        const cat = row.dataset.category || '';
         row.style.display = (filterValue === 'all' || cat === filterValue) ? '' : 'none';
     });
 
@@ -113,35 +113,35 @@ function filterOldView() {
 
 // Recalculate Old View Stats TOTALS based on visible rows
 function recalcOldViewTotals(table) {
-    var rows = table.querySelectorAll('tbody tr');
-    var s26 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
-    var n26 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
-    var s25 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0 };
-    var n25 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0 };
-    var counted25 = {};
-    var countedNct25 = {};
+    const rows = table.querySelectorAll('tbody tr');
+    const s26 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
+    const n26 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0, goal: 0 };
+    const s25 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0 };
+    const n25 = { w: [0,0,0,0,0,0,0,0,0], total: 0, fte: 0 };
+    const counted25 = {};
+    const countedNct25 = {};
 
     rows.forEach(function(row) {
         if (row.style.display === 'none') return;
-        var isCT = row.dataset.isCt === 'true';
-        var p25Name = row.dataset.p25Name || '';
+        const isCT = row.dataset.isCt === 'true';
+        const p25Name = row.dataset.p25Name || '';
 
         // 2026
-        for (var i = 0; i < 9; i++) {
-            var v = parseFloat(row.dataset['w' + (i+1) + '-26']) || 0;
+        for (let i = 0; i < 9; i++) {
+            const v = parseFloat(row.dataset['w' + (i+1) + '-26']) || 0;
             s26.w[i] += v;
             if (!isCT) n26.w[i] += v;
         }
-        var t26 = parseFloat(row.dataset['total-26']) || 0;
-        var f26 = parseFloat(row.dataset.fte26) || 0;
-        var g = parseFloat(row.dataset.goal) || 0;
+        const t26 = parseFloat(row.dataset['total-26']) || 0;
+        const f26 = parseFloat(row.dataset.fte26) || 0;
+        const g = parseFloat(row.dataset.goal) || 0;
         s26.total += t26; s26.fte += f26; s26.goal += g;
         if (!isCT) { n26.total += t26; n26.fte += f26; n26.goal += g; }
 
         // 2025 with dedup
         if (p25Name && !counted25[p25Name]) {
             counted25[p25Name] = true;
-            for (var i = 0; i < 9; i++) {
+            for (let i = 0; i < 9; i++) {
                 s25.w[i] += parseFloat(row.dataset['w' + (i+1) + '-25']) || 0;
             }
             s25.total += parseFloat(row.dataset['total-25']) || 0;
@@ -149,7 +149,7 @@ function recalcOldViewTotals(table) {
         }
         if (!isCT && p25Name && !countedNct25[p25Name]) {
             countedNct25[p25Name] = true;
-            for (var i = 0; i < 9; i++) {
+            for (let i = 0; i < 9; i++) {
                 n25.w[i] += parseFloat(row.dataset['w' + (i+1) + '-25']) || 0;
             }
             n25.total += parseFloat(row.dataset['total-25']) || 0;
@@ -161,7 +161,7 @@ function recalcOldViewTotals(table) {
     setCell('ov-totals-fte25', s25.fte.toFixed(1));
     setCell('ov-totals-fte26', s26.fte.toFixed(2));
     setCell('ov-totals-goal', s26.goal);
-    for (var i = 1; i <= 9; i++) {
+    for (let i = 1; i <= 9; i++) {
         setCell('ov-totals-w' + i + '-26', s26.w[i-1]);
         setCell('ov-totals-w' + i + '-25', s25.w[i-1]);
     }
@@ -172,7 +172,7 @@ function recalcOldViewTotals(table) {
     setCell('ov-nct-fte25', n25.fte.toFixed(1));
     setCell('ov-nct-fte26', n26.fte.toFixed(2));
     setCell('ov-nct-goal', n26.goal);
-    for (var i = 1; i <= 9; i++) {
+    for (let i = 1; i <= 9; i++) {
         setCell('ov-nct-w' + i + '-26', n26.w[i-1]);
         setCell('ov-nct-w' + i + '-25', n25.w[i-1]);
     }
@@ -181,8 +181,8 @@ function recalcOldViewTotals(table) {
 }
 
 // Current modal context
-var currentModalProgram = '';
-var currentModalWeek = 0;
+let currentModalProgram = '';
+let currentModalWeek = 0;
 
 // Render participants table from data
 function renderParticipantsTable(participants, list, program, week) {
@@ -191,10 +191,10 @@ function renderParticipantsTable(participants, list, program, week) {
         return;
     }
 
-    var isAdmin = (window.userPermissions && window.userPermissions.indexOf('edit_groups') !== -1);
+    const isAdmin = (window.userPermissions && window.userPermissions.indexOf('edit_groups') !== -1);
 
     // Collect all emails for copy button
-    var allEmails = [];
+    const allEmails = [];
     participants.forEach(function(p) {
         if (p.f1p1_email) allEmails.push(p.f1p1_email);
         if (p.f1p1_email2) allEmails.push(p.f1p1_email2);
@@ -204,7 +204,7 @@ function renderParticipantsTable(participants, list, program, week) {
     allEmails = allEmails.filter(function(v, i, a) { return a.indexOf(v) === i; });
 
     // Action bar with buttons
-    var html = '<div class="participant-actions-bar">';
+    let html = '<div class="participant-actions-bar">';
     html += '<div class="participant-count">' + participants.length + ' participant' + (participants.length !== 1 ? 's' : '');
     if (allEmails.length > 0) {
         html += ' &nbsp; <button class="copy-emails-btn" onclick="copyAllEmails(this)" data-emails="' + allEmails.join(',') + '">📋 Copy All Emails (' + allEmails.length + ')</button>';
@@ -234,25 +234,25 @@ function renderParticipantsTable(participants, list, program, week) {
     html += '<th>F1P2 Email 2</th>';
     html += '</tr></thead><tbody>';
 
-    var currentGroup = -1;
-    var groupIndex = 0;
+    let currentGroup = -1;
+    let groupIndex = 0;
 
     participants.forEach(function(p, index) {
-        var groupVal = p.group || 0;
+        const groupVal = p.group || 0;
 
         // Insert group separator when group changes
         if (groupVal !== currentGroup) {
             currentGroup = groupVal;
             groupIndex = 0;
-            var separatorLabel = groupVal === 0 ? 'Unassigned' : 'Group ' + groupVal;
-            var separatorIcon = groupVal === 0 ? '⬜' : '📌';
+            const separatorLabel = groupVal === 0 ? 'Unassigned' : 'Group ' + groupVal;
+            const separatorIcon = groupVal === 0 ? '⬜' : '📌';
             html += '<tr class="group-separator group-separator-' + groupVal + '">';
             html += '<td colspan="9">' + separatorIcon + ' ' + separatorLabel + '</td>';
             html += '</tr>';
         }
 
         groupIndex++;
-        var rowClass = groupVal > 0 ? ' class="group-row group-' + groupVal + '"' : '';
+        const rowClass = groupVal > 0 ? ' class="group-row group-' + groupVal + '"' : '';
         html += '<tr' + rowClass + '>';
         html += '<td>' + groupIndex + '</td>';
 
@@ -267,7 +267,7 @@ function renderParticipantsTable(participants, list, program, week) {
             html += '</select>';
             html += '</td>';
         } else {
-            var groupDisplay = groupVal > 0 ? groupVal : '-';
+            const groupDisplay = groupVal > 0 ? groupVal : '-';
             html += '<td class="group-cell">' + groupDisplay + '</td>';
         }
 
@@ -287,8 +287,8 @@ function renderParticipantsTable(participants, list, program, week) {
 
 // Save group assignment via AJAX (with forward propagation)
 function saveGroupAssignment(selectEl) {
-    var personId = selectEl.getAttribute('data-person-id');
-    var group = parseInt(selectEl.value);
+    const personId = selectEl.getAttribute('data-person-id');
+    const group = parseInt(selectEl.value);
 
     selectEl.classList.add('saving');
 
@@ -305,9 +305,9 @@ function saveGroupAssignment(selectEl) {
             setTimeout(function() { selectEl.classList.remove('saved'); }, 1000);
 
             // Show toast with updated weeks info
-            var updatedWeeks = data.updated_weeks || [currentModalWeek];
+            const updatedWeeks = data.updated_weeks || [currentModalWeek];
             if (updatedWeeks.length > 1) {
-                var groupLabel = group === 0 ? 'Unassigned' : 'Group ' + group;
+                const groupLabel = group === 0 ? 'Unassigned' : 'Group ' + group;
                 showToast(groupLabel + ' set for weeks ' + updatedWeeks.join(', '), 'success');
             }
 
@@ -329,13 +329,13 @@ function saveGroupAssignment(selectEl) {
 
 // Re-fetch and re-render participants table after a group change
 function refreshParticipantsTable() {
-    var list = document.getElementById('participantsList');
+    const list = document.getElementById('participantsList');
     if (!list || !currentModalProgram || !currentModalWeek) return;
 
     fetch('/api/participants/' + encodeURIComponent(currentModalProgram) + '/' + currentModalWeek)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            var participants = data.participants || [];
+            const participants = data.participants || [];
             renderParticipantsTable(participants, list, currentModalProgram, currentModalWeek);
         })
         .catch(function(err) {
@@ -391,10 +391,10 @@ function clearEnrollmentProgramSelection() {
 }
 
 function updateEnrollmentDownloadButton() {
-    var checked = document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]:checked');
-    var count = checked.length;
-    var btn = document.getElementById('downloadEnrollmentBtn');
-    var emailBtn = document.getElementById('emailEnrollmentBtn');
+    const checked = document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]:checked');
+    const count = checked.length;
+    const btn = document.getElementById('downloadEnrollmentBtn');
+    const emailBtn = document.getElementById('emailEnrollmentBtn');
     if (btn) {
         btn.disabled = (count === 0);
         btn.textContent = count > 0
@@ -410,7 +410,7 @@ function updateEnrollmentDownloadButton() {
 }
 
 function downloadMultiProgramEnrollment() {
-    var selected = [];
+    const selected = [];
     document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]:checked').forEach(function(cb) {
         selected.push(cb.value);
     });
@@ -420,8 +420,8 @@ function downloadMultiProgramEnrollment() {
         return;
     }
 
-    var statusEl = document.getElementById('enrollmentDownloadStatus');
-    var btn = document.getElementById('downloadEnrollmentBtn');
+    const statusEl = document.getElementById('enrollmentDownloadStatus');
+    const btn = document.getElementById('downloadEnrollmentBtn');
     if (statusEl) statusEl.textContent = 'Generating...';
     if (btn) btn.disabled = true;
 
@@ -437,11 +437,11 @@ function downloadMultiProgramEnrollment() {
         return response.blob();
     })
     .then(function(blob) {
-        var url = window.URL.createObjectURL(blob);
-        var a = document.createElement('a');
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
         a.href = url;
         // Build filename from selected program names
-        var namesPart = selected.map(function(s) { return s.replace(/\s+/g, ''); }).join('_');
+        let namesPart = selected.map(function(s) { return s.replace(/\s+/g, ''); }).join('_');
         if (namesPart.length > 80) namesPart = namesPart.substring(0, 80);
         a.download = 'Enrollment_' + namesPart + '.xlsx';
         document.body.appendChild(a);
@@ -462,7 +462,7 @@ function downloadMultiProgramEnrollment() {
 
 // Wire up enrollment program checkboxes
 (function() {
-    var checkboxContainer = document.getElementById('enrollmentProgramCheckboxes');
+    const checkboxContainer = document.getElementById('enrollmentProgramCheckboxes');
     if (checkboxContainer) {
         checkboxContainer.addEventListener('change', updateEnrollmentDownloadButton);
     }
@@ -471,7 +471,7 @@ function downloadMultiProgramEnrollment() {
 // ==================== Email Enrollment List (mailto) ====================
 
 function emailEnrollmentList() {
-    var selected = [];
+    const selected = [];
     document.querySelectorAll('#enrollmentProgramCheckboxes input[type="checkbox"]:checked').forEach(function(cb) {
         selected.push(cb.value);
     });
@@ -481,8 +481,8 @@ function emailEnrollmentList() {
         return;
     }
 
-    var statusEl = document.getElementById('enrollmentDownloadStatus');
-    var emailBtn = document.getElementById('emailEnrollmentBtn');
+    const statusEl = document.getElementById('enrollmentDownloadStatus');
+    const emailBtn = document.getElementById('emailEnrollmentBtn');
     if (statusEl) statusEl.textContent = 'Generating...';
     if (emailBtn) emailBtn.disabled = true;
 
@@ -500,10 +500,10 @@ function emailEnrollmentList() {
     })
     .then(function(blob) {
         // Trigger file download
-        var url = window.URL.createObjectURL(blob);
-        var a = document.createElement('a');
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
         a.href = url;
-        var namesPart = selected.map(function(s) { return s.replace(/\s+/g, ''); }).join('_');
+        let namesPart = selected.map(function(s) { return s.replace(/\s+/g, ''); }).join('_');
         if (namesPart.length > 80) namesPart = namesPart.substring(0, 80);
         a.download = 'Enrollment_' + namesPart + '.xlsx';
         document.body.appendChild(a);
@@ -515,10 +515,10 @@ function emailEnrollmentList() {
         setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 3000);
 
         // Step 2: Open mailto with pre-filled subject and body
-        var programList = selected.join(', ');
-        var subject = 'Camp Sol Taplin - Enrollment Roster';
-        var body = 'Hi,\n\nPlease find attached the enrollment roster for ' + programList + '.\n\nBest regards,\nCamp Sol Taplin';
-        var mailtoUrl = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+        const programList = selected.join(', ');
+        const subject = 'Camp Sol Taplin - Enrollment Roster';
+        const body = 'Hi,\n\nPlease find attached the enrollment roster for ' + programList + '.\n\nBest regards,\nCamp Sol Taplin';
+        const mailtoUrl = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 
         setTimeout(function() {
             window.location.href = mailtoUrl;
@@ -535,13 +535,13 @@ function emailEnrollmentList() {
 
 // Upload Share Group With CSV
 function uploadShareGroup() {
-    var fileInput = document.getElementById('shareGroupFile');
-    var status = document.getElementById('shareGroupStatus');
+    const fileInput = document.getElementById('shareGroupFile');
+    const status = document.getElementById('shareGroupStatus');
     if (!fileInput || !fileInput.files.length) {
         if (status) status.textContent = 'Please select a CSV file first.';
         return;
     }
-    var formData = new FormData();
+    const formData = new FormData();
     formData.append('file', fileInput.files[0]);
 
     if (status) status.textContent = 'Uploading...';
@@ -584,14 +584,14 @@ function showParticipants(program, week) {
     fetch('/api/participants/' + encodeURIComponent(program) + '/' + week)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            var participants = data.participants || [];
+            const participants = data.participants || [];
             renderParticipantsTable(participants, list, program, week);
         })
         .catch(function(err) {
             // Fallback to pre-loaded data (without emails)
             if (window.participantsData) {
-                var programData = window.participantsData[program];
-                var participants = programData ? (programData[String(week)] || []) : [];
+                const programData = window.participantsData[program];
+                const participants = programData ? (programData[String(week)] || []) : [];
                 renderParticipantsTable(participants, list, program, week);
             } else {
                 list.innerHTML = '<div class="participant-count">Failed to load participants</div>';
@@ -600,10 +600,10 @@ function showParticipants(program, week) {
 }
 
 function copyAllEmails(btn) {
-    var emails = btn.getAttribute('data-emails');
+    const emails = btn.getAttribute('data-emails');
     if (navigator.clipboard) {
         navigator.clipboard.writeText(emails.replace(/,/g, '; ')).then(function() {
-            var original = btn.textContent;
+            const original = btn.textContent;
             btn.textContent = '✅ Copied!';
             btn.style.background = '#4CAF50';
             btn.style.color = 'white';
@@ -615,13 +615,13 @@ function copyAllEmails(btn) {
         });
     } else {
         // Fallback
-        var ta = document.createElement('textarea');
+        const ta = document.createElement('textarea');
         ta.value = emails.replace(/,/g, '; ');
         document.body.appendChild(ta);
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        var original = btn.textContent;
+        const original = btn.textContent;
         btn.textContent = '✅ Copied!';
         setTimeout(function() { btn.innerHTML = original; }, 2000);
     }
@@ -871,7 +871,7 @@ function setCell(id, value) {
 
 function resetDateFilters() {
     ['startMonth', 'startDay', 'endMonth', 'endDay'].forEach(function(id) {
-        var el = document.getElementById(id);
+        const el = document.getElementById(id);
         if (el) el.value = '';
     });
     // Reset day dropdowns
@@ -1516,7 +1516,7 @@ function populateFinanceProgramTable() {
     });
 
     // Also add a total row
-    var totals = window.financeData.summary;
+    const totals = window.financeData.summary;
     html += '<tr style="font-weight:700; background:var(--bg);">';
     html += '<td>TOTAL</td>';
     html += '<td>' + (totals.total_campers || '-') + '</td>';
@@ -1703,8 +1703,8 @@ function initCamperDistributionChart() {
                 tooltip: {
                     callbacks: {
                         label: function(ctx) {
-                            var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
-                            var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0';
+                            const total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0';
                             return ctx.label + ': ' + ctx.parsed + ' campers (' + pct + '%)';
                         }
                     }
@@ -1743,20 +1743,20 @@ function formatNumber(num) {
 let budgetVsActualChartInstance = null;
 
 function initBudgetVsActualChart() {
-    var canvas = document.getElementById('budgetVsActualChart');
+    const canvas = document.getElementById('budgetVsActualChart');
     if (!canvas || !window.budgetData || !window.budgetData.po || !window.budgetData.po.budget_vs_actual) return;
 
     if (budgetVsActualChartInstance) {
         budgetVsActualChartInstance.destroy();
     }
 
-    var cats = window.budgetData.po.budget_vs_actual.categories;
+    const cats = window.budgetData.po.budget_vs_actual.categories;
     // Filter to only categories with budget > 0 and exclude Salaries (too large, skews chart)
-    var filtered = cats.filter(function(c) { return c.budgeted > 0 && c.category !== 'Salaries & Benefits'; });
+    const filtered = cats.filter(function(c) { return c.budgeted > 0 && c.category !== 'Salaries & Benefits'; });
 
-    var labels = filtered.map(function(c) { return c.category; });
-    var budgetAmounts = filtered.map(function(c) { return c.budgeted; });
-    var actualAmounts = filtered.map(function(c) { return c.actual; });
+    const labels = filtered.map(function(c) { return c.category; });
+    const budgetAmounts = filtered.map(function(c) { return c.budgeted; });
+    const actualAmounts = filtered.map(function(c) { return c.actual; });
 
     budgetVsActualChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -1777,13 +1777,13 @@ function initBudgetVsActualChart() {
                     label: 'Actual (PO)',
                     data: actualAmounts,
                     backgroundColor: actualAmounts.map(function(a, i) {
-                        var pct = budgetAmounts[i] > 0 ? (a / budgetAmounts[i] * 100) : 0;
+                        const pct = budgetAmounts[i] > 0 ? (a / budgetAmounts[i] * 100) : 0;
                         if (pct > 100) return 'rgba(239, 68, 68, 0.7)';
                         if (pct > 80) return 'rgba(245, 158, 11, 0.7)';
                         return 'rgba(16, 185, 129, 0.7)';
                     }),
                     borderColor: actualAmounts.map(function(a, i) {
-                        var pct = budgetAmounts[i] > 0 ? (a / budgetAmounts[i] * 100) : 0;
+                        const pct = budgetAmounts[i] > 0 ? (a / budgetAmounts[i] * 100) : 0;
                         if (pct > 100) return '#EF4444';
                         if (pct > 80) return '#F59E0B';
                         return '#10B981';
@@ -1835,7 +1835,7 @@ function uploadPOFile(file) {
 
     showToast('Uploading PO file...', 'success');
 
-    var formData = new FormData();
+    const formData = new FormData();
     formData.append('file', file);
 
     fetch('/api/upload-po', {
@@ -1862,8 +1862,8 @@ function uploadPOFile(file) {
 
 // ==================== ADMIN ATTENDANCE ====================
 
-var attRefreshInterval = null;
-var attInitialized = false;
+let attRefreshInterval = null;
+let attInitialized = false;
 
 function initAttendanceView() {
     if (attInitialized) {
@@ -1874,7 +1874,7 @@ function initAttendanceView() {
     attInitialized = true;
 
     // Set date picker to today
-    var dateInput = document.getElementById('att-admin-date');
+    const dateInput = document.getElementById('att-admin-date');
     if (dateInput) {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
@@ -1886,7 +1886,7 @@ function initAttendanceView() {
     if (attRefreshInterval) clearInterval(attRefreshInterval);
     attRefreshInterval = setInterval(function() {
         // Only refresh if attendance view is active
-        var view = document.getElementById('attendance-view');
+        const view = document.getElementById('attendance-view');
         if (view && view.classList.contains('active')) {
             loadAttendanceSummary();
         }
@@ -1900,9 +1900,9 @@ function initAttendanceView() {
 }
 
 function loadAttendanceSummary() {
-    var dateInput = document.getElementById('att-admin-date');
-    var dateVal = dateInput ? dateInput.value : '';
-    var url = '/api/attendance/summary' + (dateVal ? '?date=' + dateVal : '');
+    const dateInput = document.getElementById('att-admin-date');
+    const dateVal = dateInput ? dateInput.value : '';
+    const url = '/api/attendance/summary' + (dateVal ? '?date=' + dateVal : '');
 
     fetch(url).then(function(r) { return r.json(); }).then(function(data) {
         // Update KPIs
@@ -1912,9 +1912,9 @@ function loadAttendanceSummary() {
         document.getElementById('att-kpi-early').textContent = data.totals.early_pickup || 0;
 
         // Update refresh badge
-        var badge = document.getElementById('att-refresh-badge');
+        const badge = document.getElementById('att-refresh-badge');
         if (badge) {
-            var now = new Date();
+            const now = new Date();
             badge.textContent = 'Updated ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         }
 
@@ -1926,11 +1926,11 @@ function loadAttendanceSummary() {
 }
 
 function renderAttendanceGrid(data) {
-    var grid = document.getElementById('att-admin-grid');
-    var empty = document.getElementById('att-admin-empty');
+    const grid = document.getElementById('att-admin-grid');
+    const empty = document.getElementById('att-admin-empty');
     if (!grid) return;
 
-    var programs = data.programs || [];
+    const programs = data.programs || [];
 
     if (programs.length === 0) {
         grid.style.display = 'none';
@@ -1941,13 +1941,13 @@ function renderAttendanceGrid(data) {
     empty.style.display = 'none';
 
     // Simplified header — single daily attendance column + KC columns
-    var headerHtml = '<tr><th>Program</th><th>Enrolled</th><th>Attendance</th><th>Present</th><th>Absent</th><th>Late</th><th>Early</th></tr>';
+    const headerHtml = '<tr><th>Program</th><th>Enrolled</th><th>Attendance</th><th>Present</th><th>Absent</th><th>Late</th><th>Early</th></tr>';
 
     // Build rows — use only checkpoint 1 (Morning = daily) for main stats
-    var bodyHtml = '';
+    let bodyHtml = '';
     programs.forEach(function(prog) {
         // Find checkpoint 1 (Morning/Daily) stats
-        var dailyStats = null;
+        let dailyStats = null;
         (prog.checkpoints || []).forEach(function(cp) {
             if (cp.checkpoint_id === 1) dailyStats = cp;
         });
@@ -1955,23 +1955,23 @@ function renderAttendanceGrid(data) {
             dailyStats = { marked: 0, total: prog.total_campers, completion: 0, present: 0, absent: 0, late: 0, early_pickup: 0 };
         }
 
-        var pct = dailyStats.completion;
-        var cellClass = 'att-cell';
+        const pct = dailyStats.completion;
+        let cellClass = 'att-cell';
         if (pct >= 100) cellClass += ' complete';
         else if (pct > 0) cellClass += ' partial';
         else cellClass += ' empty';
 
         bodyHtml += '<tr style="cursor:pointer;" onclick="loadAttendanceDetail(\'' + prog.program.replace(/'/g, "\\'") + '\')">';
-        bodyHtml += '<td style="font-weight:600;white-space:nowrap;">' + prog.program + '</td>';
-        bodyHtml += '<td style="text-align:center;">' + prog.total_campers + '</td>';
-        bodyHtml += '<td class="' + cellClass + '" style="text-align:center;">';
+        bodyHtml += '<td class="att-prog-name">' + prog.program + '</td>';
+        bodyHtml += '<td class="att-cell-center">' + prog.total_campers + '</td>';
+        bodyHtml += '<td class="' + cellClass + ' att-cell-center">';
         bodyHtml += '<div class="att-cell-pct">' + pct + '%</div>';
         bodyHtml += '<div class="att-cell-count">' + dailyStats.marked + '/' + dailyStats.total + '</div>';
         bodyHtml += '</td>';
-        bodyHtml += '<td style="text-align:center;color:#16A34A;font-weight:600;">' + (dailyStats.present || 0) + '</td>';
-        bodyHtml += '<td style="text-align:center;color:#DC2626;font-weight:600;">' + (dailyStats.absent || 0) + '</td>';
-        bodyHtml += '<td style="text-align:center;color:#D97706;font-weight:600;">' + (dailyStats.late || 0) + '</td>';
-        bodyHtml += '<td style="text-align:center;color:#E64A19;font-weight:600;">' + (dailyStats.early_pickup || 0) + '</td>';
+        bodyHtml += '<td class="att-status-present">' + (dailyStats.present || 0) + '</td>';
+        bodyHtml += '<td class="att-status-absent">' + (dailyStats.absent || 0) + '</td>';
+        bodyHtml += '<td class="att-status-late">' + (dailyStats.late || 0) + '</td>';
+        bodyHtml += '<td class="att-status-early">' + (dailyStats.early_pickup || 0) + '</td>';
         bodyHtml += '</tr>';
     });
 
@@ -1980,19 +1980,19 @@ function renderAttendanceGrid(data) {
 }
 
 function loadAttendanceDetail(program) {
-    var dateInput = document.getElementById('att-admin-date');
-    var dateVal = dateInput ? dateInput.value : '';
-    var url = '/api/attendance/detail/' + encodeURIComponent(program) + (dateVal ? '?date=' + dateVal : '');
+    const dateInput = document.getElementById('att-admin-date');
+    const dateVal = dateInput ? dateInput.value : '';
+    const url = '/api/attendance/detail/' + encodeURIComponent(program) + (dateVal ? '?date=' + dateVal : '');
 
     document.getElementById('att-detail-title').textContent = program + ' — Detail';
     document.getElementById('att-admin-detail').style.display = 'block';
     document.getElementById('att-detail-body').innerHTML = '<div style="text-align:center;padding:20px;color:#6B7280;">Loading...</div>';
 
     fetch(url).then(function(r) { return r.json(); }).then(function(data) {
-        var campers = data.campers || [];
+        const campers = data.campers || [];
 
         // Simplified detail: Status (checkpoint 1) + KC Before (cp 4) + KC After (cp 5)
-        var html = '<table class="att-detail-table"><thead><tr>';
+        let html = '<table class="att-detail-table"><thead><tr>';
         html += '<th>Camper</th><th>Status</th><th>KC Before</th><th>KC After</th>';
         html += '</tr></thead><tbody>';
 
@@ -2000,20 +2000,20 @@ function loadAttendanceDetail(program) {
             html += '<tr><td style="font-weight:500;white-space:nowrap;">' + c.name + '</td>';
 
             // Main status (checkpoint 1)
-            var att = c.attendance['1'] || {};
-            var status = att.status || '—';
-            var cls = 'att-status-badge';
+            const att = c.attendance['1'] || {};
+            const status = att.status || '—';
+            let cls = 'att-status-badge';
             if (status === 'present') cls += ' present';
             else if (status === 'absent') cls += ' absent';
             else if (status === 'late') cls += ' late';
             else if (status === 'early_pickup') cls += ' early';
-            var statusLabels = { present: '✓ Present', absent: '✗ Absent', late: 'LA', early_pickup: 'EP' };
-            var label = statusLabels[status] || '—';
+            const statusLabels = { present: '✓ Present', absent: '✗ Absent', late: 'LA', early_pickup: 'EP' };
+            const label = statusLabels[status] || '—';
             html += '<td style="text-align:center;"><span class="' + cls + '">' + label + '</span></td>';
 
             // KC Before (checkpoint 4)
-            var kcBefore = c.attendance['4'] || {};
-            var kcbStatus = kcBefore.status || '';
+            const kcBefore = c.attendance['4'] || {};
+            const kcbStatus = kcBefore.status || '';
             if (kcbStatus === 'present') {
                 html += '<td style="text-align:center;"><span class="att-status-badge kc">KC ✓</span></td>';
             } else if (kcbStatus) {
@@ -2023,8 +2023,8 @@ function loadAttendanceDetail(program) {
             }
 
             // KC After (checkpoint 5)
-            var kcAfter = c.attendance['5'] || {};
-            var kcaStatus = kcAfter.status || '';
+            const kcAfter = c.attendance['5'] || {};
+            const kcaStatus = kcAfter.status || '';
             if (kcaStatus === 'present') {
                 html += '<td style="text-align:center;"><span class="att-status-badge kc">KC ✓</span></td>';
             } else if (kcaStatus) {
@@ -2049,17 +2049,17 @@ function loadAttendanceDetail(program) {
 
 function loadAssignments() {
     fetch('/api/attendance/assignments').then(function(r) { return r.json(); }).then(function(data) {
-        var container = document.getElementById('att-assignments-body');
+        const container = document.getElementById('att-assignments-body');
         if (!container) return;
 
-        var assignments = data.assignments || {};
-        var keys = Object.keys(assignments);
+        const assignments = data.assignments || {};
+        const keys = Object.keys(assignments);
         if (keys.length === 0) {
             container.innerHTML = '<div style="color:#6B7280;font-size:13px;padding:8px 0;">No assignments yet.</div>';
         } else {
-            var html = '<div class="att-assign-list">';
+            let html = '<div class="att-assign-list">';
             keys.forEach(function(username) {
-                var progs = assignments[username];
+                const progs = assignments[username];
                 html += '<div class="att-assign-row">';
                 html += '<strong>' + username + '</strong>: ';
                 progs.forEach(function(prog) {
@@ -2075,7 +2075,7 @@ function loadAssignments() {
         return fetch('/api/users');
     }).then(function(r) { return r ? r.json() : null; }).then(function(usersData) {
         if (!usersData) return;
-        var userSelect = document.getElementById('att-assign-user');
+        const userSelect = document.getElementById('att-assign-user');
         if (!userSelect) return;
         userSelect.innerHTML = '<option value="">Select user...</option>';
         (usersData.users || []).forEach(function(u) {
@@ -2083,10 +2083,10 @@ function loadAssignments() {
         });
 
         // Populate program dropdown from enrollment data
-        var progSelect = document.getElementById('att-assign-program');
+        const progSelect = document.getElementById('att-assign-program');
         if (!progSelect) return;
         progSelect.innerHTML = '<option value="">Select program...</option>';
-        var progNames = Object.keys(window.participantsData || {}).sort();
+        const progNames = Object.keys(window.participantsData || {}).sort();
         progNames.forEach(function(p) {
             progSelect.innerHTML += '<option value="' + p + '">' + p + '</option>';
         });
@@ -2096,8 +2096,8 @@ function loadAssignments() {
 }
 
 function addAssignment() {
-    var username = document.getElementById('att-assign-user').value;
-    var program = document.getElementById('att-assign-program').value;
+    const username = document.getElementById('att-assign-user').value;
+    const program = document.getElementById('att-assign-program').value;
     if (!username || !program) {
         showToast('Select both user and program', 'error');
         return;
@@ -2130,22 +2130,11 @@ function removeAssignment(username, program) {
 }
 
 // ==================== ATTENDANCE TREND CHART ====================
-
-var CAMP_WEEK_DATES_JS = {
-    1: ['2026-06-08', '2026-06-12'],
-    2: ['2026-06-15', '2026-06-19'],
-    3: ['2026-06-22', '2026-06-26'],
-    4: ['2026-06-29', '2026-07-03'],
-    5: ['2026-07-06', '2026-07-10'],
-    6: ['2026-07-13', '2026-07-17'],
-    7: ['2026-07-20', '2026-07-24'],
-    8: ['2026-07-27', '2026-07-31'],
-    9: ['2026-08-03', '2026-08-07']
-};
+// CAMP_WEEK_DATES_JS is injected via <script> in dashboard.html from Python's CAMP_WEEK_DATES
 
 function getCurrentCampWeekJS() {
-    var today = new Date().toISOString().split('T')[0];
-    for (var wk in CAMP_WEEK_DATES_JS) {
+    const today = new Date().toISOString().split('T')[0];
+    for (const wk in CAMP_WEEK_DATES_JS) {
         if (today >= CAMP_WEEK_DATES_JS[wk][0] && today <= CAMP_WEEK_DATES_JS[wk][1]) {
             return parseInt(wk);
         }
@@ -2154,12 +2143,12 @@ function getCurrentCampWeekJS() {
 }
 
 function setTrendRange(preset) {
-    var startInput = document.getElementById('att-trend-start');
-    var endInput = document.getElementById('att-trend-end');
+    const startInput = document.getElementById('att-trend-start');
+    const endInput = document.getElementById('att-trend-end');
     if (!startInput || !endInput) return;
 
-    var today = new Date().toISOString().split('T')[0];
-    var cw = getCurrentCampWeekJS();
+    const today = new Date().toISOString().split('T')[0];
+    const cw = getCurrentCampWeekJS();
 
     if (preset === 'this_week') {
         if (cw && CAMP_WEEK_DATES_JS[cw]) {
@@ -2167,20 +2156,20 @@ function setTrendRange(preset) {
             endInput.value = today;
         } else {
             // Fallback: last 5 days
-            var d = new Date();
+            const d = new Date();
             d.setDate(d.getDate() - 4);
             startInput.value = d.toISOString().split('T')[0];
             endInput.value = today;
         }
     } else if (preset === 'last_week') {
-        var prevWk = cw ? cw - 1 : null;
+        const prevWk = cw ? cw - 1 : null;
         if (prevWk && CAMP_WEEK_DATES_JS[prevWk]) {
             startInput.value = CAMP_WEEK_DATES_JS[prevWk][0];
             endInput.value = CAMP_WEEK_DATES_JS[prevWk][1];
         } else {
-            var d2 = new Date();
+            const d2 = new Date();
             d2.setDate(d2.getDate() - 11);
-            var d3 = new Date();
+            const d3 = new Date();
             d3.setDate(d3.getDate() - 7);
             startInput.value = d2.toISOString().split('T')[0];
             endInput.value = d3.toISOString().split('T')[0];
@@ -2196,7 +2185,7 @@ function setTrendRange(preset) {
         btn.style.color = '';
         btn.style.fontWeight = '';
     });
-    var activeBtn = document.querySelector('.att-trend-quick-btn[onclick*="' + preset + '"]');
+    const activeBtn = document.querySelector('.att-trend-quick-btn[onclick*="' + preset + '"]');
     if (activeBtn) {
         activeBtn.style.background = '#0D9488';
         activeBtn.style.color = 'white';
@@ -2207,13 +2196,13 @@ function setTrendRange(preset) {
 }
 
 function loadAttendanceTrends() {
-    var startInput = document.getElementById('att-trend-start');
-    var endInput = document.getElementById('att-trend-end');
-    var start = startInput ? startInput.value : '';
-    var end = endInput ? endInput.value : '';
+    const startInput = document.getElementById('att-trend-start');
+    const endInput = document.getElementById('att-trend-end');
+    const start = startInput ? startInput.value : '';
+    const end = endInput ? endInput.value : '';
 
-    var url = '/api/attendance/trends';
-    var params = [];
+    let url = '/api/attendance/trends';
+    const params = [];
     if (start) params.push('start=' + start);
     if (end) params.push('end=' + end);
     if (params.length) url += '?' + params.join('&');
@@ -2223,8 +2212,8 @@ function loadAttendanceTrends() {
         if (startInput && data.start) startInput.value = data.start;
         if (endInput && data.end) endInput.value = data.end;
 
-        var emptyEl = document.getElementById('att-trend-empty');
-        var canvas = document.getElementById('attendanceTrendChart');
+        const emptyEl = document.getElementById('att-trend-empty');
+        const canvas = document.getElementById('attendanceTrendChart');
 
         if (!data.dates || data.dates.length === 0) {
             if (canvas) canvas.style.display = 'none';
@@ -2242,26 +2231,26 @@ function loadAttendanceTrends() {
 }
 
 function renderAttendanceTrendChart(dates) {
-    var canvas = document.getElementById('attendanceTrendChart');
+    const canvas = document.getElementById('attendanceTrendChart');
     if (!canvas) return;
-    var ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
 
     if (attendanceTrendChartInstance) {
         attendanceTrendChartInstance.destroy();
     }
 
     // Format labels as "Mon 6/8"
-    var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    var labels = dates.map(function(d) {
-        var dt = new Date(d.date + 'T12:00:00');
-        var dayName = dayNames[dt.getDay()];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const labels = dates.map(function(d) {
+        const dt = new Date(d.date + 'T12:00:00');
+        const dayName = dayNames[dt.getDay()];
         return dayName + ' ' + (dt.getMonth() + 1) + '/' + dt.getDate();
     });
 
-    var presentData = dates.map(function(d) { return d.present; });
-    var lateData = dates.map(function(d) { return d.late; });
-    var absentData = dates.map(function(d) { return d.absent; });
-    var rateData = dates.map(function(d) { return d.rate; });
+    const presentData = dates.map(function(d) { return d.present; });
+    const lateData = dates.map(function(d) { return d.late; });
+    const absentData = dates.map(function(d) { return d.absent; });
+    const rateData = dates.map(function(d) { return d.rate; });
 
     attendanceTrendChartInstance = new Chart(ctx, {
         type: 'bar',
@@ -2336,8 +2325,8 @@ function renderAttendanceTrendChart(dates) {
                     cornerRadius: 8,
                     callbacks: {
                         afterBody: function(context) {
-                            var idx = context[0].dataIndex;
-                            var d = dates[idx];
+                            const idx = context[0].dataIndex;
+                            const d = dates[idx];
                             return 'Total Enrolled: ' + d.total_enrolled;
                         }
                     }
