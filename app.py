@@ -820,6 +820,7 @@ def dashboard():
                          programs_2025_map=programs_2025_map,
                          finance_data=finance_data,
                          budget_data=budget_context,
+                         camp_week_dates=CAMP_WEEK_DATES,
                          user=current_user)
 
 # ==================== USER MANAGEMENT ROUTES ====================
