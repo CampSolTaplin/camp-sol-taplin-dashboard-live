@@ -287,6 +287,95 @@ with app.app_context():
     # Ensure Early Pickup checkpoint exists (stores EP flag independently of main status)
     if not AttendanceCheckpoint.query.filter_by(name='Early Pickup').first():
         db.session.add(AttendanceCheckpoint(name='Early Pickup', sort_order=6, time_label='', active=True))
+
+    # ---- Unit Leader accounts ----
+    UNIT_LEADER_PERMISSIONS = ['view_dashboard', 'view_detailed', 'edit_groups',
+                               'take_attendance', 'view_attendance']
+    UNIT_LEADERS = {
+        'ecacamp@marjcc.org': [
+            'Infants', 'Toddler', 'PK2', 'PK3', 'PK4',
+        ],
+        'tsofim@marjcc.org': [
+            'Tsofim', "Children's Trust Tsofim",
+        ],
+        'yeladim@marjcc.org': [
+            'Yeladim', "Children's Trust Yeladim",
+        ],
+        'chaverim@marjcc.org': [
+            'Chaverim', "Children's Trust Chaverim",
+        ],
+        'giborim@marjcc.org': [
+            'Giborim', "Children's Trust Giborim",
+        ],
+        'madli-teen@marjcc.org': [
+            'Madli-Teen', "Children's Trust Madli-Teen",
+        ],
+        'teentravel@marjcc.org': [
+            'Teen Travel', 'Teen Travel: Epic Trip to Orlando',
+        ],
+        'basketballcamp@marjcc.org': [
+            'Basketball',
+        ],
+        'flagfootballcamp@marjcc.org': [
+            'Flag Football',
+        ],
+        'soccercamp@marjcc.org': [
+            'Soccer',
+        ],
+        'sportsacademy@marjcc.org': [
+            'Sports Academy 1', 'Sports Academy 2',
+        ],
+        'tennisacademy@marjcc.org': [
+            'Tennis Academy', 'Tennis Academy - Half Day',
+        ],
+        'swimacademy@marjcc.org': [
+            'Swim Academy',
+        ],
+        'gymnastics@marjcc.org': [
+            'Tiny Tumblers Gymnastics', 'Recreational Gymnastics',
+            'Competitive Gymnastics Team',
+        ],
+        'volleyballcamp@marjcc.org': [
+            'Volleyball',
+        ],
+        'karatecamp@marjcc.org': [
+            'MMA Camp',
+        ],
+        'tnuah@marjcc.org': [
+            'Teeny Tiny Tnuah', 'Tiny Tnuah 1', 'Tiny Tnuah 2',
+            'Tnuah 1', 'Tnuah 2', 'Extreme Tnuah',
+        ],
+        'artexploration@marjcc.org': [
+            'Art Exploration',
+        ],
+        'musicacademy@marjcc.org': [
+            'Music Camp',
+        ],
+        'theatercamp@marjcc.org': [
+            'Theater Camp',
+        ],
+        'madatzim@marjcc.org': [
+            'Madatzim 9th Grade', 'Madatzim 10th Grade',
+        ],
+        'ometz@marjcc.org': [
+            'OMETZ',
+        ],
+    }
+    for ul_username, ul_programs in UNIT_LEADERS.items():
+        if not UserAccount.query.filter_by(username=ul_username).first():
+            u = UserAccount(
+                username=ul_username,
+                password_hash=generate_password_hash('M@rjcc2026'),
+                role='unit_leader',
+            )
+            u.set_permissions(UNIT_LEADER_PERMISSIONS)
+            db.session.add(u)
+            db.session.flush()  # ensure user exists before adding assignments
+            for prog in ul_programs:
+                db.session.add(UnitLeaderAssignment(
+                    username=ul_username, program_name=prog))
+            print(f"Created unit leader: {ul_username} -> {', '.join(ul_programs)}")
+
     db.session.commit()
 
 # ==================== CAMP WEEK UTILITIES ====================
