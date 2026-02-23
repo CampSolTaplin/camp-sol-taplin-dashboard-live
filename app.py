@@ -848,7 +848,8 @@ def admin_users():
     return render_template('admin_users.html', users=user_list, user=current_user,
                          all_permissions=ALL_PERMISSIONS,
                          permission_labels=PERMISSION_LABELS,
-                         role_defaults=ROLE_DEFAULT_PERMISSIONS)
+                         role_defaults=ROLE_DEFAULT_PERMISSIONS,
+                         active_page='manage_users')
 
 @app.route('/api/users', methods=['GET'])
 @login_required
@@ -1086,7 +1087,8 @@ def admin_settings():
                          settings=all_settings,
                          total_goal=int(total_goal.value) if total_goal else 750,
                          revenue_goal=int(revenue_goal.value) if revenue_goal and revenue_goal.value != '0' else 0,
-                         user=current_user)
+                         user=current_user,
+                         active_page='camps_goals')
 
 @app.route('/api/settings', methods=['GET'])
 @login_required
