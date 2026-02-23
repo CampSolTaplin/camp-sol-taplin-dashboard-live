@@ -109,17 +109,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 }
 
 /* Settings sub-menu */
-.nav-parent { justify-content: flex-start; position: relative; }
-.nav-parent .nav-chevron {
-    margin-left: auto; width: 14px; height: 14px;
-    transition: transform 0.2s;
-}
-.nav-parent.expanded .nav-chevron { transform: rotate(180deg); }
+.nav-label { cursor: default; opacity: 0.7; pointer-events: none; }
 
-.nav-submenu {
-    max-height: 0; overflow: hidden; transition: max-height 0.25s ease;
-}
-.nav-submenu.open { max-height: 120px; }
+.nav-submenu { display: flex; flex-direction: column; }
 
 .nav-subitem {
     display: flex; align-items: center; gap: 8px;
