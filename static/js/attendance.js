@@ -362,7 +362,7 @@
         // Toggle off: if clicking the same status that's already active, clear it
         var currentStatus = (camper.attendance[DAILY_CP] && camper.attendance[DAILY_CP].status) || '';
         var isUnmarking = (currentStatus === status);
-        var newStatus = isUnmarking ? 'absent' : status;
+        var newStatus = isUnmarking ? 'unmarked' : status;
 
         camper.attendance[DAILY_CP] = isUnmarking ? {} : { status: status };
 
@@ -372,7 +372,7 @@
             var epTimerKey = personId + '_ep';
             if (saveTimers[epTimerKey]) clearTimeout(saveTimers[epTimerKey]);
             saveTimers[epTimerKey] = setTimeout(function() {
-                saveSingleRecord(personId, 'absent', EP_CP);
+                saveSingleRecord(personId, 'unmarked', EP_CP);
             }, 300);
         }
 
@@ -460,7 +460,7 @@
             if (isTogglingOn) {
                 saveSingleRecord(personId, 'early_pickup', EP_CP);
             } else {
-                saveSingleRecord(personId, 'absent', EP_CP);  // Clear EP
+                saveSingleRecord(personId, 'unmarked', EP_CP);  // Clear EP
             }
         }, 300);
     };
@@ -495,9 +495,8 @@
             if (newStatus) {
                 saveSingleRecord(personId, 'present', cpId);
             } else {
-                // To "unmark" we save as 'absent' or we need a delete endpoint
-                // For now, mark as absent to clear
-                saveSingleRecord(personId, 'absent', cpId);
+                // Unmark: delete the record from the database
+                saveSingleRecord(personId, 'unmarked', cpId);
             }
         }, 300);
     };
@@ -609,14 +608,14 @@
 
         var personIds = marked.map(function(c) { return c.person_id; });
 
-        // Clear main status
+        // Clear main status (delete records)
         fetch('/api/attendance/record-batch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 program_name: selectedProgram,
                 checkpoint_id: parseInt(DAILY_CP),
-                status: 'absent',
+                status: 'unmarked',
                 person_ids: personIds,
                 date: selectedDate
             })
@@ -628,7 +627,7 @@
                 body: JSON.stringify({
                     program_name: selectedProgram,
                     checkpoint_id: parseInt(EP_CP),
-                    status: 'absent',
+                    status: 'unmarked',
                     person_ids: personIds,
                     date: selectedDate
                 })

@@ -2920,7 +2920,7 @@ def attendance_record():
     if not all([person_id, program_name, checkpoint_id]):
         return jsonify({'error': 'Missing required fields'}), 400
 
-    if status not in ('present', 'absent', 'late', 'early_pickup'):
+    if status not in ('present', 'absent', 'late', 'early_pickup', 'unmarked'):
         return jsonify({'error': 'Invalid status'}), 400
 
     # Check access
@@ -2939,6 +2939,19 @@ def attendance_record():
             return jsonify({'error': 'Cannot modify attendance for past days'}), 403
         if target_date == today and now.hour >= ATTENDANCE_LOCK_HOUR:
             return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
+
+    # Handle unmark: delete the record entirely
+    if status == 'unmarked':
+        existing = AttendanceRecord.query.filter_by(
+            person_id=str(person_id),
+            program_name=program_name,
+            date=target_date,
+            checkpoint_id=int(checkpoint_id)
+        ).first()
+        if existing:
+            db.session.delete(existing)
+            db.session.commit()
+        return jsonify({'success': True, 'action': 'deleted'})
 
     current_week = get_current_camp_week(target_date)
     if current_week is None:
@@ -3011,6 +3024,22 @@ def attendance_record_batch():
             return jsonify({'error': 'Cannot modify attendance for past days'}), 403
         if target_date == today and now.hour >= ATTENDANCE_LOCK_HOUR:
             return jsonify({'error': 'Day is locked after 5:00 PM'}), 403
+
+    # Handle unmark: delete all matching records
+    if status == 'unmarked':
+        deleted = 0
+        for pid in person_ids:
+            existing = AttendanceRecord.query.filter_by(
+                person_id=str(pid),
+                program_name=program_name,
+                date=target_date,
+                checkpoint_id=int(checkpoint_id)
+            ).first()
+            if existing:
+                db.session.delete(existing)
+                deleted += 1
+        db.session.commit()
+        return jsonify({'success': True, 'count': deleted, 'action': 'deleted'})
 
     current_week = get_current_camp_week(target_date) or 0
 
