@@ -387,6 +387,9 @@ finance_cache = {
 }
 FINANCE_CACHE_TTL_MINUTES = 60
 
+# In-memory persons cache (avoids reading 200KB+ JSON from disk on every click)
+_persons_mem_cache = None  # Loaded lazily on first use, then kept in memory
+
 # PO (Purchase Order) data cache — persisted to data/po_data.json
 po_cache = {'data': None, 'uploaded_at': None}
 po_cache_path = os.path.join('data', 'po_data.json')
@@ -470,6 +473,8 @@ def fetch_live_data(force_refresh: bool = False) -> dict:
             print("Using cached API data")
             api_cache['data'] = cached['data']
             api_cache['fetched_at'] = cached.get('fetched_at')
+            # Pre-fetch missing persons in background
+            _prefetch_all_persons(cached['data'])
             return cached['data']
     
     # Prevent concurrent fetches
@@ -506,15 +511,64 @@ def fetch_live_data(force_refresh: bool = False) -> dict:
         })
         
         print(f"API data fetched successfully: {processed_data['summary']['total_enrollment']} campers")
+
+        # Pre-fetch all person details in background so clicks are instant
+        _prefetch_all_persons(processed_data)
+
         return processed_data
-        
+
     except Exception as e:
         print(f"Error fetching API data: {e}")
         traceback.print_exc()
         return api_cache.get('data')  # Return cached data if available
-        
+
     finally:
         api_cache['is_fetching'] = False
+
+def _prefetch_all_persons(enrollment_data):
+    """Pre-fetch all person details in a background thread so participant clicks are instant."""
+    participants = enrollment_data.get('participants', {})
+    if not participants:
+        return
+
+    # Collect ALL unique person IDs across all programs/weeks
+    all_person_ids = set()
+    for program_data in participants.values():
+        for week_participants in program_data.values():
+            for p in week_participants:
+                pid = p.get('person_id')
+                if pid:
+                    all_person_ids.add(pid)
+
+    if not all_person_ids:
+        return
+
+    # Check which ones are missing from cache
+    cache = _load_persons_cache()
+    missing = [pid for pid in all_person_ids if str(pid) not in cache]
+
+    if not missing:
+        print(f"Persons pre-fetch: all {len(all_person_ids)} persons already cached [OK]")
+        return
+
+    print(f"Persons pre-fetch: {len(missing)}/{len(all_person_ids)} missing, fetching in background...")
+
+    def _bg_prefetch(app_ctx, pids_to_fetch):
+        with app_ctx:
+            try:
+                cache = _load_persons_cache()
+                _fetch_and_cache_persons(pids_to_fetch, cache)
+                print(f"Persons pre-fetch complete: {len(pids_to_fetch)} persons fetched [OK]")
+            except Exception as e:
+                print(f"Persons pre-fetch error: {e}")
+                traceback.print_exc()
+
+    t = threading.Thread(
+        target=_bg_prefetch,
+        args=(app.app_context(), missing),
+        daemon=True
+    )
+    t.start()
 
 def fetch_financial_data(force_refresh: bool = False, enrollment_report: dict = None) -> dict:
     """
@@ -1302,16 +1356,21 @@ def api_finance_refresh():
         }), 500
 
 def _load_persons_cache():
-    """Load the persons cache from disk."""
+    """Load the persons cache — from memory if available, otherwise from disk (once)."""
+    global _persons_mem_cache
+    if _persons_mem_cache is not None:
+        return _persons_mem_cache
     persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
     persons_cache = {}
     try:
         if os.path.exists(persons_cache_file):
             with open(persons_cache_file, 'r') as f:
                 persons_cache = json.load(f)
+            print(f"Persons cache loaded from disk: {len(persons_cache)} entries")
     except Exception:
         pass
-    return persons_cache
+    _persons_mem_cache = persons_cache
+    return _persons_mem_cache
 
 def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
     """Fetch person details from CampMinder API and update the persons cache.
@@ -1530,12 +1589,15 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     'carpool': ''
                 }
 
-        # Save updated cache
+        # Save updated cache to disk AND update in-memory cache
+        global _persons_mem_cache
+        _persons_mem_cache = persons_cache
         try:
             with open(persons_cache_file, 'w') as f:
                 json.dump(persons_cache, f)
         except Exception:
             pass
+        print(f"Persons cache updated: {len(persons_cache)} entries total")
     except Exception as e:
         print(f"Error fetching persons batch: {e}")
         traceback.print_exc()
@@ -1612,7 +1674,9 @@ def _sync_bac_to_cache(persons_cache=None):
             else:
                 persons_cache[str_pid] = {'bac_weeks': combined}
 
-        # Save to file
+        # Save to file and update in-memory cache
+        global _persons_mem_cache
+        _persons_mem_cache = persons_cache
         try:
             with open(persons_cache_file, 'w') as f:
                 json.dump(persons_cache, f)
