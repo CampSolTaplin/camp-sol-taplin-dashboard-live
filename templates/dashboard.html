@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body>
+    {% set default_view = 'detailed' if user.has_permission('view_detailed')
+        else 'executive' if user.has_permission('view_dashboard')
+        else 'bydate' if user.has_permission('view_bydate')
+        else 'campcomparison' if user.has_permission('view_campcomparison')
+        else 'detailed' %}
+    {% set is_dashboard = true %}
     {% include '_sidebar.html' %}
 
     <main class="main">
