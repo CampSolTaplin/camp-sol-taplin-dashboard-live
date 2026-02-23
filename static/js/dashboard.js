@@ -193,8 +193,8 @@ function renderParticipantsTable(participants, list, program, week) {
 
     const isAdmin = (window.userPermissions && window.userPermissions.indexOf('edit_groups') !== -1);
 
-    // Collect all emails for copy button
-    const allEmails = [];
+    // Collect all unique emails for copy button
+    let allEmails = [];
     participants.forEach(function(p) {
         if (p.f1p1_email) allEmails.push(p.f1p1_email);
         if (p.f1p1_email2) allEmails.push(p.f1p1_email2);
