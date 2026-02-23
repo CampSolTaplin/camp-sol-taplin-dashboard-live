@@ -121,6 +121,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     transition: all 0.2s;
 }
 .nav-subitem:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-subitem.active { color: white; font-weight: 500; background: rgba(255,255,255,0.1); }
 .nav-subitem svg { width: 15px; height: 15px; min-width: 15px; }
 
 .report-date {
