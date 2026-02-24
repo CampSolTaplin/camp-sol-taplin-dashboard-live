@@ -430,6 +430,31 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     background: var(--teal-light, #e0f7f7);
 }
 
+/* Recent Enrollments Table */
+.recent-enrollments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.recent-enrollments-table th,
+.recent-enrollments-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+.recent-enrollments-table th {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.recent-enrollments-table tr:last-child td {
+    border-bottom: none;
+}
+.recent-enrollments-table tr:hover td {
+    background: var(--teal-light, #e0f7f7);
+}
+
 /* Pace Comparison */
 .pace-comparison-section {
     margin-bottom: 24px;
@@ -2296,6 +2321,66 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .att-status-badge.kc {
     background: #EDE9FE;
     color: #7C3AED;
+}
+
+/* Clickable status badge (admin) */
+.att-status-clickable {
+    cursor: pointer;
+    border: 2px solid transparent;
+    background: #F3F4F6;
+    transition: all 0.15s;
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    line-height: 1.2;
+}
+.att-status-clickable:hover {
+    border-color: #9CA3AF;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.att-status-clickable:active {
+    transform: scale(0.95);
+}
+
+/* KC eligibility badge */
+.att-kc-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #EDE9FE;
+    color: #7C3AED;
+    letter-spacing: 0.5px;
+}
+
+/* KC toggle button (admin attendance detail) */
+.att-kc-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 2px solid #D1D5DB;
+    background: white;
+    color: #9CA3AF;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.att-kc-toggle:hover {
+    border-color: #7C3AED;
+    color: #7C3AED;
+    background: #F5F3FF;
+}
+.att-kc-toggle.active {
+    background: #7C3AED;
+    border-color: #7C3AED;
+    color: white;
+}
+.att-kc-toggle.active:hover {
+    background: #6D28D9;
+    border-color: #6D28D9;
 }
 
 /* Assignment management */

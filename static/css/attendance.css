@@ -745,6 +745,268 @@ body {
     font-weight: 500;
 }
 
+/* ==================== KID CONNECTION SECTION ==================== */
+
+.kc-section {
+    margin-top: 20px;
+}
+
+.kc-card {
+    background: var(--card);
+    border: 2px solid var(--kc-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.kc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    background: var(--kc-light);
+    border-bottom: 1px solid var(--kc-border);
+}
+
+.kc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.kc-icon {
+    color: var(--kc);
+    flex-shrink: 0;
+}
+
+.kc-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--kc);
+}
+
+.kc-total-badge {
+    background: var(--kc);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* KC Tabs */
+.kc-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+}
+
+.kc-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.kc-tab.active {
+    color: var(--kc);
+    border-bottom-color: var(--kc);
+    background: var(--kc-light);
+}
+
+.kc-tab-count {
+    background: var(--border);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.kc-tab.active .kc-tab-count {
+    background: var(--kc);
+    color: white;
+}
+
+/* KC Sort Row */
+.kc-sort-row {
+    display: flex;
+    gap: 0;
+    padding: 10px 16px;
+    background: var(--bg);
+}
+
+.kc-sort-btn {
+    padding: 5px 14px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.kc-sort-btn.active {
+    background: var(--card);
+    color: var(--text);
+    box-shadow: var(--shadow);
+}
+
+/* KC List */
+.kc-list {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* KC Camper Row */
+.kc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--card);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+}
+
+.kc-row-present {
+    border-left: 4px solid var(--kc);
+}
+
+.kc-row-left {
+    border-left: 4px solid var(--success);
+}
+
+.kc-row-both {
+    border-left: 4px solid var(--kc);
+    background: linear-gradient(to right, var(--kc-light) 0%, var(--card) 30%);
+}
+
+.kc-row-info {
+    flex: 1;
+    min-width: 0;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.kc-row-name {
+    font-size: 14px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kc-row-program {
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.kc-row-buttons {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.kc-toggle-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+    color: var(--text-light);
+}
+
+.kc-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.kc-toggle-btn.present-btn.active {
+    background: var(--kc);
+    border-color: var(--kc);
+    color: white;
+}
+
+.kc-toggle-btn.left-btn.active {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+.kc-toggle-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* KC Empty State */
+.kc-empty {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+/* KC Group Headers (By Program sort) */
+.kc-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    background: var(--kc-light);
+    border-radius: 6px;
+    border-left: 3px solid var(--kc);
+}
+
+.kc-group-header:first-child {
+    margin-top: 0;
+}
+
+.kc-group-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--kc);
+}
+
+.kc-group-count {
+    font-size: 11px;
+    color: var(--text-light);
+    background: white;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
 /* ==================== TABLET (768px+) ==================== */
 
 @media (min-width: 768px) {
@@ -780,6 +1042,15 @@ body {
 
     .att-legend {
         gap: 8px 20px;
+        font-size: 13px;
+    }
+
+    .kc-row-name {
+        font-size: 15px;
+    }
+
+    .kc-toggle-btn {
+        padding: 8px 18px;
         font-size: 13px;
     }
 }

@@ -1465,10 +1465,51 @@ async function loadRetentionRate() {
     }
 }
 
-// Load retention rate on page load
+// ---- Recent Enrollments (KPI view) ----
+async function loadRecentEnrollments() {
+    const container = document.getElementById('recent-enrollments-body');
+    if (!container) return;
+
+    try {
+        const response = await fetch('/api/recent-enrollments');
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        const enrollments = data.enrollments || [];
+
+        if (enrollments.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:#6B7280;">No enrollment data available.</div>';
+            return;
+        }
+
+        let html = '<table class="recent-enrollments-table"><thead><tr>';
+        html += '<th>Name</th><th>Program</th><th>Weeks</th><th>Enrolled</th>';
+        html += '</tr></thead><tbody>';
+
+        enrollments.forEach(function(e) {
+            const dateStr = e.enrollment_date ? new Date(e.enrollment_date + 'T00:00:00').toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) : '—';
+            html += '<tr>';
+            html += '<td style="font-weight:600;">' + e.name + '</td>';
+            html += '<td>' + e.programs + '</td>';
+            html += '<td style="text-align:center;">' + e.total_weeks + '</td>';
+            html += '<td>' + dateStr + '</td>';
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('Error loading recent enrollments:', error);
+        container.innerHTML = '<div style="color:#EF4444;text-align:center;padding:20px;">Unable to load recent enrollments.</div>';
+    }
+}
+
+// Load retention rate and recent enrollments on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Load retention rate asynchronously (it can take a few seconds)
     setTimeout(loadRetentionRate, 1000);
+    // Load recent enrollments
+    setTimeout(loadRecentEnrollments, 1200);
 });
 
 // ==================== FINANCE TAB FUNCTIONS ====================
@@ -1988,49 +2029,69 @@ function loadAttendanceDetail(program) {
     document.getElementById('att-admin-detail').style.display = 'block';
     document.getElementById('att-detail-body').innerHTML = '<div style="text-align:center;padding:20px;color:#6B7280;">Loading...</div>';
 
+    // Store current program + date for KC toggle
+    window._attDetailProgram = program;
+    window._attDetailDate = dateVal;
+
     fetch(url).then(function(r) { return r.json(); }).then(function(data) {
         const campers = data.campers || [];
 
-        // Simplified detail: Status (checkpoint 1) + KC Before (cp 4) + KC After (cp 5)
+        // Detail: Status (cp 1) + KC eligibility badge + KC Before (cp 4) + KC After (cp 5)
         let html = '<table class="att-detail-table"><thead><tr>';
-        html += '<th>Camper</th><th>Status</th><th>KC Before</th><th>KC After</th>';
+        html += '<th>Camper</th><th>Status</th><th>KC</th><th>KC Before</th><th>KC After</th>';
         html += '</tr></thead><tbody>';
 
         campers.forEach(function(c) {
             html += '<tr><td style="font-weight:500;white-space:nowrap;">' + c.name + '</td>';
 
-            // Main status (checkpoint 1)
+            // Main status (checkpoint 1) — clickable for admins
             const att = c.attendance['1'] || {};
-            const status = att.status || '—';
+            const status = att.status || '';
             let cls = 'att-status-badge';
             if (status === 'present') cls += ' present';
             else if (status === 'absent') cls += ' absent';
             else if (status === 'late') cls += ' late';
             else if (status === 'early_pickup') cls += ' early';
-            const statusLabels = { present: '✓ Present', absent: '✗ Absent', late: 'LA', early_pickup: 'EP' };
-            const label = statusLabels[status] || '—';
-            html += '<td style="text-align:center;"><span class="' + cls + '">' + label + '</span></td>';
+            const statusLabels = { present: '\u2713 Present', absent: '\u2717 Absent', late: 'LA', early_pickup: 'EP' };
+            const label = statusLabels[status] || '\u2014';
+            html += '<td style="text-align:center;">';
+            html += '<button class="' + cls + ' att-status-clickable" data-status="' + (status || 'unmarked') + '" ';
+            html += 'onclick="toggleAdminStatus(\'' + c.person_id + '\', this, \'' + program.replace(/'/g, "\\'") + '\')">';
+            html += label + '</button></td>';
 
-            // KC Before (checkpoint 4)
-            const kcBefore = c.attendance['4'] || {};
-            const kcbStatus = kcBefore.status || '';
-            if (kcbStatus === 'present') {
-                html += '<td style="text-align:center;"><span class="att-status-badge kc">KC ✓</span></td>';
-            } else if (kcbStatus) {
-                html += '<td style="text-align:center;"><span class="att-status-badge">—</span></td>';
+            // KC eligibility badge
+            if (c.has_kc) {
+                html += '<td style="text-align:center;"><span class="att-kc-badge">KC</span></td>';
             } else {
-                html += '<td style="text-align:center;color:#9CA3AF;">—</td>';
+                html += '<td style="text-align:center;color:#D1D5DB;">\u2014</td>';
             }
 
-            // KC After (checkpoint 5)
+            // KC Before (checkpoint 4) — clickable toggle if has_kc
+            const kcBefore = c.attendance['4'] || {};
+            const kcbStatus = kcBefore.status || '';
+            if (c.has_kc) {
+                const kcbActive = kcbStatus === 'present';
+                html += '<td style="text-align:center;">';
+                html += '<button class="att-kc-toggle' + (kcbActive ? ' active' : '') + '" ';
+                html += 'onclick="toggleAdminKC(\'' + c.person_id + '\', 4, this, \'' + program.replace(/'/g, "\\'") + '\')">';
+                html += kcbActive ? '\u2713' : '\u25CB';
+                html += '</button></td>';
+            } else {
+                html += '<td style="text-align:center;color:#D1D5DB;">\u2014</td>';
+            }
+
+            // KC After (checkpoint 5) — clickable toggle if has_kc
             const kcAfter = c.attendance['5'] || {};
             const kcaStatus = kcAfter.status || '';
-            if (kcaStatus === 'present') {
-                html += '<td style="text-align:center;"><span class="att-status-badge kc">KC ✓</span></td>';
-            } else if (kcaStatus) {
-                html += '<td style="text-align:center;"><span class="att-status-badge">—</span></td>';
+            if (c.has_kc) {
+                const kcaActive = kcaStatus === 'present';
+                html += '<td style="text-align:center;">';
+                html += '<button class="att-kc-toggle' + (kcaActive ? ' active' : '') + '" ';
+                html += 'onclick="toggleAdminKC(\'' + c.person_id + '\', 5, this, \'' + program.replace(/'/g, "\\'") + '\')">';
+                html += kcaActive ? '\u2713' : '\u25CB';
+                html += '</button></td>';
             } else {
-                html += '<td style="text-align:center;color:#9CA3AF;">—</td>';
+                html += '<td style="text-align:center;color:#D1D5DB;">\u2014</td>';
             }
 
             html += '</tr>';
@@ -2042,6 +2103,82 @@ function loadAttendanceDetail(program) {
         document.getElementById('att-detail-body').innerHTML = html;
     }).catch(function(err) {
         document.getElementById('att-detail-body').innerHTML = '<div style="color:#EF4444;">Error loading detail.</div>';
+    });
+}
+
+// Toggle KC Before/After attendance for admin view
+function toggleAdminKC(personId, checkpointId, btnEl, program) {
+    const isActive = btnEl.classList.contains('active');
+    const newStatus = isActive ? 'not_recorded' : 'present';
+    const dateVal = window._attDetailDate || '';
+
+    // Optimistic UI toggle
+    btnEl.classList.toggle('active');
+    btnEl.textContent = isActive ? '\u25CB' : '\u2713';
+
+    fetch('/api/attendance/record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            person_id: personId,
+            program_name: program,
+            checkpoint_id: checkpointId,
+            status: newStatus,
+            date: dateVal
+        })
+    }).then(function(r) {
+        if (!r.ok) throw new Error('Failed');
+        return r.json();
+    }).then(function(data) {
+        if (!data.success) throw new Error(data.error || 'Failed');
+    }).catch(function(err) {
+        // Revert on failure
+        btnEl.classList.toggle('active');
+        btnEl.textContent = isActive ? '\u2713' : '\u25CB';
+        console.error('KC toggle error:', err);
+    });
+}
+
+// Toggle main attendance status (checkpoint 1) for admin view
+// Cycles: unmarked → present → absent → late → early_pickup → unmarked
+function toggleAdminStatus(personId, btnEl, program) {
+    const STATUS_CYCLE = ['unmarked', 'present', 'absent', 'late', 'early_pickup'];
+    const STATUS_LABELS = { present: '\u2713 Present', absent: '\u2717 Absent', late: 'LA', early_pickup: 'EP', unmarked: '\u2014' };
+    const STATUS_CLASSES = { present: 'present', absent: 'absent', late: 'late', early_pickup: 'early' };
+    const dateVal = window._attDetailDate || '';
+
+    const current = btnEl.dataset.status || 'unmarked';
+    const idx = STATUS_CYCLE.indexOf(current);
+    const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+
+    // Optimistic UI update
+    btnEl.dataset.status = next;
+    btnEl.textContent = STATUS_LABELS[next] || '\u2014';
+    btnEl.className = 'att-status-badge att-status-clickable';
+    if (STATUS_CLASSES[next]) btnEl.classList.add(STATUS_CLASSES[next]);
+
+    fetch('/api/attendance/record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            person_id: personId,
+            program_name: program,
+            checkpoint_id: 1,
+            status: next,
+            date: dateVal
+        })
+    }).then(function(r) {
+        if (!r.ok) throw new Error('Failed');
+        return r.json();
+    }).then(function(data) {
+        if (!data.success) throw new Error(data.error || 'Failed');
+    }).catch(function(err) {
+        // Revert on failure
+        btnEl.dataset.status = current;
+        btnEl.textContent = STATUS_LABELS[current] || '\u2014';
+        btnEl.className = 'att-status-badge att-status-clickable';
+        if (STATUS_CLASSES[current]) btnEl.classList.add(STATUS_CLASSES[current]);
+        console.error('Status toggle error:', err);
     });
 }
 

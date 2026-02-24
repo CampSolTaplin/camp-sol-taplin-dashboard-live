@@ -1722,7 +1722,7 @@ def _sync_bac_to_cache(persons_cache=None):
     try:
         api = CampMinderAPIClient()
 
-        # Part 1: BAC from financial transactions
+        # BAC from financial transactions (the authoritative source)
         print("BAC sync: fetching financial transactions...")
         transactions = api.get_transaction_details(2026)
         bac_persons = {}
@@ -1737,31 +1737,18 @@ def _sync_bac_to_cache(persons_cache=None):
             if pid and week_match:
                 bac_persons.setdefault(pid, set()).add(int(week_match.group(1)))
 
-        # Part 2: ECA from session enrollments
-        print("BAC sync: fetching ECA session data...")
-        attendees = api.get_attendees(2026, api.client_id, status=6)
-        eca_session_to_week = {
-            1369500: 1, 1369501: 2, 1369502: 3, 1369503: 4,
-            1369504: 5, 1369505: 6, 1369506: 7, 1369507: 8, 1369508: 9
-        }
-        eca_persons = {}
-        for att in attendees:
-            pid = att.get('PersonID')
-            for sps in att.get('SessionProgramStatus', []):
-                sid = sps.get('SessionID')
-                status_id = sps.get('StatusID')
-                if sid in eca_session_to_week and status_id in [2, 4]:
-                    eca_persons.setdefault(pid, set()).add(eca_session_to_week[sid])
+        # Clear stale bac_weeks from ALL persons first, then set only valid ones
+        for str_pid in persons_cache:
+            if 'bac_weeks' in persons_cache[str_pid]:
+                del persons_cache[str_pid]['bac_weeks']
 
-        # Part 3: Merge into persons_cache
-        all_kc_persons = set(bac_persons.keys()) | set(eca_persons.keys())
-        for pid in all_kc_persons:
+        # Set bac_weeks only for persons with actual BAC financial transactions
+        for pid in bac_persons:
             str_pid = str(pid)
-            combined = sorted(bac_persons.get(pid, set()) | eca_persons.get(pid, set()))
             if str_pid in persons_cache:
-                persons_cache[str_pid]['bac_weeks'] = combined
+                persons_cache[str_pid]['bac_weeks'] = sorted(bac_persons[pid])
             else:
-                persons_cache[str_pid] = {'bac_weeks': combined}
+                persons_cache[str_pid] = {'bac_weeks': sorted(bac_persons[pid])}
 
         # Save to file and update in-memory cache
         global _persons_mem_cache
@@ -1772,7 +1759,7 @@ def _sync_bac_to_cache(persons_cache=None):
         except Exception:
             pass
 
-        print(f"BAC sync complete: {len(bac_persons)} financial, {len(eca_persons)} ECA, {len(all_kc_persons)} total KC persons")
+        print(f"BAC sync complete: {len(bac_persons)} persons with BAC financial transactions")
 
     except Exception as e:
         print(f"Error syncing BAC data: {e}")
@@ -2727,6 +2714,83 @@ def upload_file():
             'error': f'Server error: {str(e)}'
         }), 500
 
+@app.route('/api/recent-enrollments')
+@login_required
+def recent_enrollments():
+    """Return the last 10 campers who registered, with program and week info."""
+    _ensure_enrollment_cache()
+    if not api_cache.get('data') or not api_cache['data'].get('participants'):
+        return jsonify({'enrollments': []})
+
+    participants = api_cache['data']['participants']
+    persons_cache = _load_persons_cache()
+
+    # Flatten all participants across programs/weeks, collecting per-person info
+    person_map = {}  # person_id -> {name, enrollment_date, programs: {prog: [weeks]}}
+    for program, weeks_data in participants.items():
+        for week_str, camper_list in weeks_data.items():
+            for camper in camper_list:
+                pid = str(camper.get('person_id') or camper.get('personId', ''))
+                if not pid:
+                    continue
+                enroll_date = camper.get('enrollment_date', '')
+
+                if pid not in person_map:
+                    # Get name from persons_cache or from participant data
+                    entry = persons_cache.get(pid, {})
+                    if isinstance(entry, dict):
+                        name = f"{entry.get('first_name', '')} {entry.get('last_name', '')}".strip()
+                    else:
+                        name = camper.get('first_name', '') + ' ' + camper.get('last_name', '')
+                        name = name.strip()
+                    if not name:
+                        name = f'Camper {pid}'
+                    person_map[pid] = {
+                        'name': name,
+                        'enrollment_date': enroll_date,
+                        'programs': {}
+                    }
+                else:
+                    # Keep the latest enrollment_date
+                    if enroll_date and enroll_date > person_map[pid]['enrollment_date']:
+                        person_map[pid]['enrollment_date'] = enroll_date
+
+                # Add program/week
+                if program not in person_map[pid]['programs']:
+                    person_map[pid]['programs'][program] = []
+                try:
+                    wk = int(week_str)
+                except ValueError:
+                    wk = week_str
+                if wk not in person_map[pid]['programs'][program]:
+                    person_map[pid]['programs'][program].append(wk)
+
+    # Sort by enrollment_date descending, take top 10
+    sorted_persons = sorted(
+        person_map.values(),
+        key=lambda p: p['enrollment_date'] or '',
+        reverse=True
+    )[:10]
+
+    # Format output
+    results = []
+    for p in sorted_persons:
+        # Summarize programs
+        prog_summaries = []
+        total_weeks = 0
+        for prog, weeks in p['programs'].items():
+            prog_summaries.append(prog)
+            total_weeks += len(weeks)
+        results.append({
+            'name': p['name'],
+            'enrollment_date': p['enrollment_date'],
+            'programs': ', '.join(prog_summaries),
+            'total_weeks': total_weeks
+        })
+
+    return jsonify({'enrollments': results})
+
+
 @app.route('/api/report-data')
 @login_required
 def get_report_data():
@@ -2851,6 +2915,8 @@ def _ensure_enrollment_cache():
 
 def _check_program_access(program_name):
     """Return 403 response if user lacks program access, else None. Admins always pass."""
+    if program_name == 'Kid Connection':
+        return None  # KC is cross-program, accessible to all authenticated users
     if current_user.role != 'admin':
         assignment = UnitLeaderAssignment.query.filter_by(
             username=current_user.id, program_name=program_name
@@ -3057,6 +3123,93 @@ def attendance_campers(program, week):
         'campers': camper_list,
         'total': len(camper_list)
     })
+
+@app.route('/api/attendance/kc')
+@login_required
+def attendance_kc():
+    """Return all KC-eligible campers for a date, split into ECA vs Other Programs."""
+    _ensure_enrollment_cache()
+    target_date = _parse_date_param()
+    week_num = get_current_camp_week(target_date)
+    if not week_num:
+        return jsonify({'eca': [], 'other': [], 'date': target_date.isoformat(), 'week': None})
+
+    week_str = str(week_num)
+    ECA_PROGRAMS = ['Infants', 'Toddler', 'PK2', 'PK3', 'PK4']
+
+    # Load persons cache + auto-sync BAC if needed
+    persons_map = _load_persons_cache()
+    has_any_bac = any(
+        isinstance(v, dict) and v.get('bac_weeks')
+        for v in list(persons_map.values())[:200]
+    )
+    if not has_any_bac and is_api_configured():
+        persons_map = _sync_bac_to_cache(persons_map)
+
+    # Gather all enrolled campers across all programs for this week
+    kc_campers = []
+    seen_pids = set()
+    participants = {}
+    if api_cache.get('data') and api_cache['data'].get('participants'):
+        participants = api_cache['data']['participants']
+
+    for prog_name, weeks_data in participants.items():
+        if week_str not in weeks_data:
+            continue
+        for camper in weeks_data[week_str]:
+            pid = str(camper.get('personId') or camper.get('person_id', ''))
+            if not pid or pid in seen_pids:
+                continue
+
+            # Check KC eligibility
+            entry = persons_map.get(pid)
+            if not isinstance(entry, dict):
+                continue
+            bac_weeks = entry.get('bac_weeks')
+            if not isinstance(bac_weeks, list) or week_num not in bac_weeks:
+                continue
+
+            seen_pids.add(pid)
+            fn = entry.get('first_name', '')
+            ln = entry.get('last_name', '')
+            name = f'{fn} {ln}'.strip() or f'Camper {pid}'
+
+            is_eca = prog_name in ECA_PROGRAMS
+            kc_campers.append({
+                'person_id': pid,
+                'name': name,
+                'program': prog_name,
+                'is_eca': is_eca
+            })
+
+    # Fetch KC attendance records for this date
+    kc_records = AttendanceRecord.query.filter(
+        AttendanceRecord.date == target_date,
+        AttendanceRecord.checkpoint_id.in_([4, 5]),
+        AttendanceRecord.program_name == 'Kid Connection'
+    ).all()
+    kc_att_map = {}
+    for r in kc_records:
+        kc_att_map.setdefault(r.person_id, {})[str(r.checkpoint_id)] = {
+            'status': r.status,
+            'recorded_at': r.recorded_at.isoformat() if r.recorded_at else None
+        }
+
+    for c in kc_campers:
+        c['attendance'] = kc_att_map.get(c['person_id'], {})
+
+    eca_list = sorted([c for c in kc_campers if c['is_eca']],
+                      key=lambda c: c['name'].split()[-1].lower() if c['name'] else '')
+    other_list = sorted([c for c in kc_campers if not c['is_eca']],
+                        key=lambda c: c['name'].split()[-1].lower() if c['name'] else '')
+
+    return jsonify({
+        'eca': eca_list,
+        'other': other_list,
+        'date': target_date.isoformat(),
+        'week': week_num
+    })
+
 
 @app.route('/api/attendance/record', methods=['POST'])
 @login_required
@@ -3398,6 +3551,26 @@ def attendance_detail(program):
     all_pids = [c.get('personId') or c.get('person_id') for c in campers]
     persons_map = _load_and_fetch_persons(all_pids)
 
+    # Auto-sync BAC data if no bac_weeks found (needed for KC buttons)
+    has_any_bac = any(
+        isinstance(persons_map.get(str(c.get('personId') or c.get('person_id'))), dict) and
+        persons_map.get(str(c.get('personId') or c.get('person_id')), {}).get('bac_weeks')
+        for c in campers
+    ) if campers else False
+    if not has_any_bac and campers and is_api_configured():
+        print("Admin attendance detail: No bac_weeks found — auto-syncing BAC data...")
+        persons_map = _sync_bac_to_cache(persons_map)
+
+    # KC eligibility helper
+    def _has_kc(person_id):
+        entry = persons_map.get(str(person_id))
+        if not isinstance(entry, dict):
+            return False
+        bac_weeks = entry.get('bac_weeks')
+        if isinstance(bac_weeks, list) and week_num in bac_weeks:
+            return True
+        return False
+
     # Get records
     records = AttendanceRecord.query.filter_by(
         program_name=program, date=target_date
@@ -3431,6 +3604,7 @@ def attendance_detail(program):
         camper_list.append({
             'person_id': pid,
             'name': name,
+            'has_kc': _has_kc(pid),
             'attendance': att_map.get(pid, {})
         })
     camper_list.sort(key=lambda c: c['name'].split()[-1] if c['name'] else '')

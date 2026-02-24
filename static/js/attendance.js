@@ -14,6 +14,12 @@
     let saveTimers = {};
     let sortMode = 'alpha';        // 'alpha' or 'group'
 
+    // KC (Kid Connection) state
+    let kcEcaCampers = [];
+    let kcOtherCampers = [];
+    let kcActiveTab = 'eca';
+    let kcSortMode = 'alpha';      // 'alpha' or 'program'
+
     // Fixed checkpoint ID = 1 (Morning) for all daily attendance
     const DAILY_CP = '1';
     // KC checkpoint IDs: 4 = KC Before, 5 = KC After
@@ -60,6 +66,7 @@
             // Programs
             programs = progData.programs || [];
             renderProgramGrid();
+            loadKC();
         }).catch(function(err) {
             console.error('Init error:', err);
             showToast('Failed to load data', 'error');
@@ -137,6 +144,7 @@
         document.getElementById('att-date').textContent = d.toLocaleDateString('en-US', opts);
 
         updateLockStatus();
+        loadKC();
 
         // If already viewing a program, reload campers
         if (selectedProgram) {
@@ -190,6 +198,7 @@
         document.getElementById('program-selector').classList.add('active');
         var sortToggle = document.getElementById('att-sort-toggle');
         if (sortToggle) sortToggle.style.display = 'none';
+        loadKC();
     };
 
     // ---- Load Campers ----
@@ -687,6 +696,200 @@
         var div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    }
+
+    // ==================== KID CONNECTION SECTION ====================
+
+    function loadKC() {
+        if (!selectedDate || !selectedWeek) {
+            var sec = document.getElementById('kc-section');
+            if (sec) sec.style.display = 'none';
+            return;
+        }
+
+        fetchJSON('/api/attendance/kc?date=' + selectedDate)
+            .then(function(data) {
+                kcEcaCampers = data.eca || [];
+                kcOtherCampers = data.other || [];
+
+                var total = kcEcaCampers.length + kcOtherCampers.length;
+                var sec = document.getElementById('kc-section');
+
+                if (total === 0) {
+                    if (sec) sec.style.display = 'none';
+                    return;
+                }
+
+                if (sec) sec.style.display = 'block';
+
+                document.getElementById('kc-total-badge').textContent = total;
+                document.getElementById('kc-eca-count').textContent = kcEcaCampers.length;
+                document.getElementById('kc-other-count').textContent = kcOtherCampers.length;
+
+                renderKCList();
+            })
+            .catch(function(err) {
+                console.error('Load KC error:', err);
+            });
+    }
+
+    function renderKCList() {
+        var list = document.getElementById('kc-list');
+        var campersList = (kcActiveTab === 'eca') ? kcEcaCampers : kcOtherCampers;
+
+        if (campersList.length === 0) {
+            list.innerHTML = '<div class="kc-empty">No campers in this category</div>';
+            return;
+        }
+
+        var sorted = campersList.slice();
+
+        if (kcSortMode === 'program') {
+            // Group by program
+            var groups = {};
+            sorted.forEach(function(c) {
+                var prog = c.program || 'Unknown';
+                if (!groups[prog]) groups[prog] = [];
+                groups[prog].push(c);
+            });
+
+            var progNames = Object.keys(groups).sort();
+            var html = '';
+            progNames.forEach(function(prog) {
+                var groupCampers = groups[prog];
+                groupCampers.sort(function(a, b) {
+                    var aLast = a.name.split(' ').slice(-1)[0].toLowerCase();
+                    var bLast = b.name.split(' ').slice(-1)[0].toLowerCase();
+                    return aLast.localeCompare(bLast);
+                });
+
+                html += '<div class="kc-group-header">' +
+                    '<span class="kc-group-label">' + escHTML(prog) + '</span>' +
+                    '<span class="kc-group-count">' + groupCampers.length + '</span>' +
+                '</div>';
+
+                html += groupCampers.map(function(c) { return renderKCRow(c); }).join('');
+            });
+            list.innerHTML = html;
+        } else {
+            // Alphabetical by last name
+            sorted.sort(function(a, b) {
+                var aLast = a.name.split(' ').slice(-1)[0].toLowerCase();
+                var bLast = b.name.split(' ').slice(-1)[0].toLowerCase();
+                return aLast.localeCompare(bLast);
+            });
+            list.innerHTML = sorted.map(function(c) { return renderKCRow(c); }).join('');
+        }
+    }
+
+    function renderKCRow(c) {
+        var att = c.attendance || {};
+        var presentStatus = (att['4'] && att['4'].status) || '';
+        var leftStatus = (att['5'] && att['5'].status) || '';
+
+        var isPresent = presentStatus === 'present';
+        var isLeft = leftStatus === 'present';
+
+        var borderClass = '';
+        if (isPresent && isLeft) borderClass = 'kc-row-both';
+        else if (isPresent) borderClass = 'kc-row-present';
+        else if (isLeft) borderClass = 'kc-row-left';
+
+        var disabledAttr = isDayLocked ? ' disabled' : '';
+
+        var html = '<div class="kc-row ' + borderClass + '" id="kc-row-' + c.person_id + '">';
+        html += '<div class="kc-row-info">';
+        html += '<span class="kc-row-name">' + escHTML(c.name) + '</span>';
+        html += '<span class="kc-row-program">' + escHTML(c.program) + '</span>';
+        html += '</div>';
+        html += '<div class="kc-row-buttons">';
+        html += '<button class="kc-toggle-btn present-btn ' + (isPresent ? 'active' : '') + '"' +
+            ' onclick="toggleKCStatus(\'' + c.person_id + '\', \'4\', this)"' +
+            ' title="Present"' + disabledAttr + '>Present</button>';
+        html += '<button class="kc-toggle-btn left-btn ' + (isLeft ? 'active' : '') + '"' +
+            ' onclick="toggleKCStatus(\'' + c.person_id + '\', \'5\', this)"' +
+            ' title="Left"' + disabledAttr + '>Left</button>';
+        html += '</div></div>';
+        return html;
+    }
+
+    window.toggleKCStatus = function(personId, checkpointId, btnEl) {
+        if (isDayLocked) {
+            showToast('Day is locked — cannot modify', 'error');
+            return;
+        }
+
+        // Find camper in either list
+        var camper = kcEcaCampers.find(function(c) { return c.person_id === personId; }) ||
+                     kcOtherCampers.find(function(c) { return c.person_id === personId; });
+        if (!camper) return;
+
+        if (!camper.attendance) camper.attendance = {};
+        var current = (camper.attendance[checkpointId] && camper.attendance[checkpointId].status) || '';
+        var isToggling = current === 'present';
+
+        if (isToggling) {
+            camper.attendance[checkpointId] = {};
+            if (btnEl) btnEl.classList.remove('active');
+        } else {
+            camper.attendance[checkpointId] = { status: 'present' };
+            if (btnEl) btnEl.classList.add('active');
+        }
+
+        // Update row border
+        var row = document.getElementById('kc-row-' + personId);
+        if (row) {
+            var att = camper.attendance;
+            var isPresent = (att['4'] && att['4'].status === 'present');
+            var isLeft = (att['5'] && att['5'].status === 'present');
+            row.className = 'kc-row';
+            if (isPresent && isLeft) row.classList.add('kc-row-both');
+            else if (isPresent) row.classList.add('kc-row-present');
+            else if (isLeft) row.classList.add('kc-row-left');
+        }
+
+        // Debounced save
+        var timerKey = 'kc_' + personId + '_' + checkpointId;
+        if (saveTimers[timerKey]) clearTimeout(saveTimers[timerKey]);
+        saveTimers[timerKey] = setTimeout(function() {
+            saveKCRecord(personId, isToggling ? 'unmarked' : 'present', checkpointId);
+        }, 300);
+    };
+
+    window.switchKCTab = function(tab) {
+        kcActiveTab = tab;
+        document.getElementById('kc-tab-eca-btn').classList.toggle('active', tab === 'eca');
+        document.getElementById('kc-tab-other-btn').classList.toggle('active', tab === 'other');
+        renderKCList();
+    };
+
+    window.sortKCList = function(mode) {
+        kcSortMode = mode;
+        document.querySelectorAll('.kc-sort-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+        renderKCList();
+    };
+
+    function saveKCRecord(personId, status, checkpointId) {
+        fetch('/api/attendance/record', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                person_id: personId,
+                program_name: 'Kid Connection',
+                checkpoint_id: parseInt(checkpointId),
+                status: status,
+                date: selectedDate
+            })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (!data.success) {
+                showToast('Save failed: ' + (data.error || 'Unknown'), 'error');
+            }
+        }).catch(function(err) {
+            console.error('KC save error:', err);
+            showToast('Network error — could not save', 'error');
+        });
     }
 
 })();

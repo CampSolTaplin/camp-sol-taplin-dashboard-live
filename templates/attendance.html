@@ -44,6 +44,41 @@
             <div class="program-grid" id="program-grid">
                 <!-- Populated by JS -->
             </div>
+
+            <!-- Kid Connection Section -->
+            <div id="kc-section" class="kc-section" style="display:none;">
+                <div class="kc-card">
+                    <div class="kc-header">
+                        <div class="kc-header-left">
+                            <svg class="kc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                            <span class="kc-title">Kid Connection</span>
+                        </div>
+                        <span class="kc-total-badge" id="kc-total-badge">0</span>
+                    </div>
+
+                    <!-- Tabs: ECA vs Other -->
+                    <div class="kc-tabs">
+                        <button class="kc-tab active" id="kc-tab-eca-btn" onclick="switchKCTab('eca')">
+                            Early Childhood <span class="kc-tab-count" id="kc-eca-count">0</span>
+                        </button>
+                        <button class="kc-tab" id="kc-tab-other-btn" onclick="switchKCTab('other')">
+                            Other Programs <span class="kc-tab-count" id="kc-other-count">0</span>
+                        </button>
+                    </div>
+
+                    <!-- Sort Toggle -->
+                    <div class="kc-sort-row">
+                        <button class="kc-sort-btn active" data-mode="alpha" onclick="sortKCList('alpha')">A-Z</button>
+                        <button class="kc-sort-btn" data-mode="program" onclick="sortKCList('program')">By Program</button>
+                    </div>
+
+                    <!-- Camper List -->
+                    <div class="kc-list" id="kc-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
             <div class="att-empty" id="no-programs" style="display:none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 <p>No programs assigned to your account.</p>
