@@ -2635,5 +2635,170 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     /* Finance */
     .finance-category-cards { grid-template-columns: 1fr; }
     .finance-cat-revenue { font-size: 20px; }
+
+    /* Field Trips mobile */
+    .ft-matrix-table { font-size: 11px; }
+    .ft-header-cell { font-size: 11px; padding: 8px 6px; }
+    .ft-cell { min-width: 100px; padding: 6px; }
+    .ft-group-cell { min-width: 90px; }
+    .ft-venue-name { font-size: 11px; max-width: 90px; }
+}
+
+/* ==================== FIELD TRIPS ==================== */
+
+.ft-matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.ft-header-cell {
+    padding: 12px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    color: #374151;
+    background: #F9FAFB;
+    border-bottom: 2px solid #E5E7EB;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.ft-header-cell.ft-sticky-col {
+    left: 0;
+    z-index: 3;
+    text-align: left;
+    background: #F9FAFB;
+}
+
+.ft-week-date {
+    font-size: 10px;
+    font-weight: 400;
+    color: #9CA3AF;
+    margin-top: 2px;
+}
+
+.ft-day-header {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ft-group-cell {
+    padding: 10px 12px;
+    min-width: 120px;
+    background: white;
+    border-bottom: 1px solid #F3F4F6;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.ft-group-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: #111827;
+}
+
+.ft-kid-count {
+    font-size: 11px;
+    color: #9CA3AF;
+    margin-top: 2px;
+}
+
+.ft-cell {
+    min-width: 140px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #F3F4F6;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    vertical-align: top;
+}
+
+.ft-cell:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1;
+    position: relative;
+}
+
+.ft-cell-confirmed {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.ft-cell-pending {
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.ft-cell-empty {
+    background: rgba(249, 250, 251, 1);
+}
+
+.ft-cell-empty:hover {
+    background: rgba(13, 148, 136, 0.05);
+}
+
+.ft-venue-name {
+    font-weight: 500;
+    font-size: 13px;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+}
+
+.ft-badges {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.ft-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.ft-badge-confirmed {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.ft-badge-waiver {
+    background: #FFF7ED;
+    color: #9A3412;
+}
+
+.ft-bus-badge {
+    font-size: 10px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #4338CA;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.ft-empty-label {
+    color: #D1D5DB;
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 0;
+}
+
+.ft-cell-empty:hover .ft-empty-label {
+    color: #0D9488;
 }
 

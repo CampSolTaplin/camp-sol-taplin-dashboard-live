@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Trips Admin - Camp Sol Taplin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover { color: var(--teal); }
+        .admin-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .admin-section h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .venue-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+        .venue-table th {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid #E5E7EB;
+            color: #6B7280;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .venue-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #F3F4F6;
+            vertical-align: middle;
+        }
+        .venue-table tr:hover { background: #F9FAFB; }
+        .venue-table .inactive-row { opacity: 0.5; }
+        .venue-search {
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            width: 280px;
+            max-width: 100%;
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            background: white;
+            transition: all 0.15s;
+        }
+        .btn-sm:hover { background: #F3F4F6; }
+        .btn-sm-primary {
+            background: var(--teal);
+            color: white;
+            border-color: var(--teal);
+        }
+        .btn-sm-primary:hover { background: #0B8276; }
+        .btn-sm-danger { color: #EF4444; border-color: #FCA5A5; }
+        .btn-sm-danger:hover { background: #FEF2F2; }
+        .group-day-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #F3F4F6;
+            flex-wrap: wrap;
+        }
+        .group-day-label {
+            font-weight: 600;
+            min-width: 100px;
+            font-size: 14px;
+        }
+        .group-day-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            flex: 1;
+        }
+        .group-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #F0FDFA;
+            color: #0D9488;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .group-tag .remove-btn {
+            cursor: pointer;
+            font-size: 14px;
+            color: #9CA3AF;
+            margin-left: 2px;
+            line-height: 1;
+        }
+        .group-tag .remove-btn:hover { color: #EF4444; }
+        .add-group-input {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 150px;
+        }
+        /* Inline add venue form */
+        .add-venue-form {
+            display: none;
+            padding: 16px;
+            background: #F9FAFB;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .add-venue-form.visible { display: block; }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .form-row input {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            background: #065F46;
+            color: white;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .toast.error { background: #991B1B; }
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .venue-search { width: 100%; }
+            .group-day-label { min-width: auto; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    {% include '_sidebar.html' %}
+    <div class="content" style="padding: 30px 40px;">
+        <div class="admin-container">
+            <a href="{{ url_for('dashboard') }}" class="btn-back">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to Dashboard
+            </a>
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Field Trips Admin</div>
+                    <div class="page-subtitle">Manage venues, group-day assignments, and trip scheduling</div>
+                </div>
+            </div>
+
+            <!-- Section A: Group-Day Configuration -->
+            <div class="admin-section">
+                <h3>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Group-Day Configuration
+                </h3>
+                <p style="color:#6B7280; font-size:13px; margin-bottom:16px;">Define which groups go on field trips on each day of the week.</p>
+                <div id="group-day-container">
+                    <div style="color:#9CA3AF;">Loading...</div>
+                </div>
+                <div style="margin-top:16px; text-align:right;">
+                    <button class="btn-sm btn-sm-primary" onclick="saveGroupDays()">Save Group-Day Config</button>
+                </div>
+            </div>
+
+            <!-- Section B: Venue Management -->
+            <div class="admin-section">
+                <h3>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Venue Management
+                </h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+                    <input type="text" class="venue-search" id="venue-search" placeholder="Search venues..." oninput="filterVenues()">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <label style="font-size:13px; color:#6B7280; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" id="show-inactive" onchange="loadVenues()"> Show inactive
+                        </label>
+                        <button class="btn-sm btn-sm-primary" onclick="toggleAddVenueForm()">+ Add Venue</button>
+                    </div>
+                </div>
+
+                <div class="add-venue-form" id="add-venue-form">
+                    <div class="form-row">
+                        <input type="text" id="new-venue-name" placeholder="Venue name *">
+                        <input type="text" id="new-venue-address" placeholder="Address">
+                        <input type="text" id="new-venue-waiver" placeholder="Waiver URL">
+                    </div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button class="btn-sm" onclick="toggleAddVenueForm()">Cancel</button>
+                        <button class="btn-sm btn-sm-primary" onclick="createVenue()">Create Venue</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                    <table class="venue-table" id="venue-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Address</th>
+                                <th>Waiver</th>
+                                <th style="width:120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="venue-tbody">
+                            <tr><td colspan="4" style="text-align:center; color:#9CA3AF; padding:30px;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="venue-count" style="margin-top:8px; font-size:12px; color:#9CA3AF;"></div>
+            </div>
+
+            <!-- Section C: Trip Assignment Matrix -->
+            <div class="admin-section">
+                <h3>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                    Trip Assignments
+                </h3>
+                <p style="color:#6B7280; font-size:13px; margin-bottom:16px;">Click any cell to assign or edit a field trip for a group and week.</p>
+                <div id="admin-ft-matrix" style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                    <div style="text-align:center; padding:40px; color:#9CA3AF;">Loading matrix...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+    var allVenues = [];
+    var groupDays = {};
+
+    // ---- Init ----
+    document.addEventListener('DOMContentLoaded', function() {
+        loadGroupDays();
+        loadVenues();
+        loadAdminMatrix();
+    });
+
+    function showToast(msg, isError) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast' + (isError ? ' error' : '');
+        t.style.display = 'block';
+        setTimeout(function() { t.style.display = 'none'; }, 3000);
+    }
+
+    // ---- Group Days ----
+    function loadGroupDays() {
+        fetch('/api/fieldtrips/group-days')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                groupDays = data.group_days || {};
+                renderGroupDays();
+            });
+    }
+
+    function renderGroupDays() {
+        var container = document.getElementById('group-day-container');
+        var days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        var dayColors = {'Monday':'#3B82F6','Tuesday':'#8B5CF6','Wednesday':'#10B981','Thursday':'#F59E0B','Friday':'#EF4444'};
+        var html = '';
+        days.forEach(function(day) {
+            var groups = groupDays[day] || [];
+            html += '<div class="group-day-row" data-day="' + day + '">';
+            html += '<div class="group-day-label" style="color:' + (dayColors[day] || '#374151') + ';">' + day + '</div>';
+            html += '<div class="group-day-tags">';
+            groups.forEach(function(g, idx) {
+                html += '<span class="group-tag">' + esc(g);
+                html += '<span class="remove-btn" onclick="removeGroupFromDay(\'' + day + '\',' + idx + ')">&times;</span>';
+                html += '</span>';
+            });
+            html += '<input type="text" class="add-group-input" placeholder="+ Add group" onkeydown="if(event.key===\'Enter\')addGroupToDay(\'' + day + '\',this)">';
+            html += '</div></div>';
+        });
+        container.innerHTML = html;
+    }
+
+    function addGroupToDay(day, input) {
+        var name = input.value.trim();
+        if (!name) return;
+        if (!groupDays[day]) groupDays[day] = [];
+        if (groupDays[day].indexOf(name) >= 0) {
+            showToast(name + ' already in ' + day, true);
+            return;
+        }
+        groupDays[day].push(name);
+        input.value = '';
+        renderGroupDays();
+    }
+
+    function removeGroupFromDay(day, idx) {
+        if (groupDays[day]) {
+            groupDays[day].splice(idx, 1);
+            renderGroupDays();
+        }
+    }
+
+    function saveGroupDays() {
+        fetch('/api/fieldtrips/group-days', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({group_days: groupDays})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Group-day config saved!');
+                loadAdminMatrix(); // refresh matrix
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown'), true);
+            }
+        });
+    }
+
+    // ---- Venues ----
+    function loadVenues() {
+        var showInactive = document.getElementById('show-inactive').checked;
+        fetch('/api/fieldtrips/venues?include_inactive=' + showInactive)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                allVenues = data.venues || [];
+                renderVenues();
+            });
+    }
+
+    function renderVenues() {
+        var tbody = document.getElementById('venue-tbody');
+        var search = (document.getElementById('venue-search').value || '').toLowerCase();
+        var filtered = allVenues.filter(function(v) {
+            if (!search) return true;
+            return v.name.toLowerCase().indexOf(search) >= 0 ||
+                   (v.address || '').toLowerCase().indexOf(search) >= 0;
+        });
+        var html = '';
+        if (filtered.length === 0) {
+            html = '<tr><td colspan="4" style="text-align:center; color:#9CA3AF; padding:30px;">No venues found.</td></tr>';
+        } else {
+            filtered.forEach(function(v) {
+                var cls = v.active ? '' : ' class="inactive-row"';
+                html += '<tr' + cls + ' id="venue-row-' + v.id + '">';
+                html += '<td><strong>' + esc(v.name) + '</strong>' + (v.active ? '' : ' <span style="color:#EF4444; font-size:11px;">(inactive)</span>') + '</td>';
+                html += '<td style="color:#6B7280; font-size:13px;">' + esc(v.address || '') + '</td>';
+                html += '<td>';
+                if (v.waiver_url) {
+                    html += '<a href="' + esc(v.waiver_url) + '" target="_blank" style="color:#0D9488; font-size:13px;">View</a>';
+                } else {
+                    html += '<span style="color:#d1d5db; font-size:13px;">None</span>';
+                }
+                html += '</td>';
+                html += '<td>';
+                html += '<button class="btn-sm" style="font-size:12px;" onclick="editVenue(' + v.id + ')">Edit</button> ';
+                if (v.active) {
+                    html += '<button class="btn-sm btn-sm-danger" style="font-size:12px;" onclick="deactivateVenue(' + v.id + ',\'' + esc(v.name).replace(/'/g, "\\'") + '\')">Deactivate</button>';
+                } else {
+                    html += '<button class="btn-sm" style="font-size:12px; color:#10B981;" onclick="reactivateVenue(' + v.id + ')">Activate</button>';
+                }
+                html += '</td></tr>';
+            });
+        }
+        tbody.innerHTML = html;
+        document.getElementById('venue-count').textContent = filtered.length + ' of ' + allVenues.length + ' venues';
+    }
+
+    function filterVenues() { renderVenues(); }
+
+    function toggleAddVenueForm() {
+        var form = document.getElementById('add-venue-form');
+        form.classList.toggle('visible');
+    }
+
+    function createVenue() {
+        var name = document.getElementById('new-venue-name').value.trim();
+        var address = document.getElementById('new-venue-address').value.trim();
+        var waiver = document.getElementById('new-venue-waiver').value.trim();
+        if (!name) { showToast('Venue name is required', true); return; }
+
+        fetch('/api/fieldtrips/venues', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name, address: address, waiver_url: waiver})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Venue "' + name + '" created!');
+                document.getElementById('new-venue-name').value = '';
+                document.getElementById('new-venue-address').value = '';
+                document.getElementById('new-venue-waiver').value = '';
+                toggleAddVenueForm();
+                loadVenues();
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown'), true);
+            }
+        });
+    }
+
+    function editVenue(id) {
+        var v = allVenues.find(function(x) { return x.id === id; });
+        if (!v) return;
+        var newName = prompt('Venue name:', v.name);
+        if (newName === null) return;
+        var newAddr = prompt('Address:', v.address || '');
+        if (newAddr === null) return;
+        var newWaiver = prompt('Waiver URL:', v.waiver_url || '');
+        if (newWaiver === null) return;
+
+        fetch('/api/fieldtrips/venues/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: newName.trim(), address: newAddr.trim(), waiver_url: newWaiver.trim()})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Venue updated!');
+                loadVenues();
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown'), true);
+            }
+        });
+    }
+
+    function deactivateVenue(id, name) {
+        if (!confirm('Deactivate venue "' + name + '"? It will no longer appear in dropdowns.')) return;
+        fetch('/api/fieldtrips/venues/' + id, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Venue deactivated');
+                loadVenues();
+            }
+        });
+    }
+
+    function reactivateVenue(id) {
+        fetch('/api/fieldtrips/venues/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({active: true})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Venue reactivated');
+                loadVenues();
+            }
+        });
+    }
+
+    // ---- Admin Matrix ----
+    var adminFtData = null;
+
+    function loadAdminMatrix() {
+        fetch('/api/fieldtrips/matrix')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                adminFtData = data;
+                renderAdminMatrix();
+            });
+    }
+
+    function renderAdminMatrix() {
+        var container = document.getElementById('admin-ft-matrix');
+        if (!adminFtData) return;
+
+        var weeks = adminFtData.weeks || [];
+        var groups = adminFtData.groups || [];
+        var dayColors = {'Monday':'#3B82F6','Tuesday':'#8B5CF6','Wednesday':'#10B981','Thursday':'#F59E0B','Friday':'#EF4444'};
+
+        var html = '<table class="ft-matrix-table">';
+        html += '<thead><tr><th class="ft-header-cell ft-sticky-col">Group</th>';
+        weeks.forEach(function(w) {
+            var dates = adminFtData.week_dates[String(w)];
+            var dateLabel = '';
+            if (dates) {
+                var s = new Date(dates[0] + 'T12:00:00');
+                dateLabel = '<div class="ft-week-date">' + (s.getMonth()+1) + '/' + s.getDate() + '</div>';
+            }
+            html += '<th class="ft-header-cell">W' + w + dateLabel + '</th>';
+        });
+        html += '</tr></thead><tbody>';
+
+        var lastDay = '';
+        groups.forEach(function(g) {
+            if (g.day !== lastDay) {
+                var dc = dayColors[g.day] || '#6B7280';
+                html += '<tr><td colspan="' + (weeks.length + 1) + '" class="ft-day-header" style="background:' + dc + ';">' + g.day + '</td></tr>';
+                lastDay = g.day;
+            }
+            html += '<tr>';
+            html += '<td class="ft-group-cell ft-sticky-col"><div class="ft-group-name">' + esc(g.name) + '</div></td>';
+            weeks.forEach(function(w) {
+                var a = ((adminFtData.assignments || {})[g.name] || {})[String(w)];
+                if (a && a.venue_name) {
+                    var cls = a.confirmed ? 'ft-cell-confirmed' : 'ft-cell-pending';
+                    html += '<td class="ft-cell ' + cls + '" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ')" style="cursor:pointer;">';
+                    html += '<div class="ft-venue-name" title="' + esc(a.venue_name) + '">' + esc(a.venue_name) + '</div>';
+                    var badges = [];
+                    if (a.confirmed) badges.push('<span class="ft-badge ft-badge-confirmed">&#10003;</span>');
+                    var bt = (a.buses_ja || 0) + (a.buses_jcc || 0);
+                    if (bt > 0) badges.push('<span class="ft-bus-badge">' + bt + 'b</span>');
+                    if (badges.length) html += '<div class="ft-badges">' + badges.join('') + '</div>';
+                    html += '</td>';
+                } else {
+                    html += '<td class="ft-cell ft-cell-empty" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ')" style="cursor:pointer;">';
+                    html += '<div class="ft-empty-label">+</div></td>';
+                }
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function adminEditAssignment(groupName, week) {
+        var a = ((adminFtData.assignments || {})[groupName] || {})[String(week)] || {};
+        var venues = allVenues.length > 0 ? allVenues : (adminFtData.venues || []);
+
+        // Find group day and compute default date
+        var groupDay = '';
+        (adminFtData.groups || []).forEach(function(g) { if (g.name === groupName) groupDay = g.day; });
+        var dates = adminFtData.week_dates[String(week)];
+        var defaultDate = '';
+        if (dates) {
+            var dayOffs = {'Monday':0,'Tuesday':1,'Wednesday':2,'Thursday':3,'Friday':4};
+            var off = dayOffs[groupDay];
+            if (off !== undefined) {
+                var d = new Date(dates[0] + 'T12:00:00');
+                d.setDate(d.getDate() + off);
+                defaultDate = d.toISOString().split('T')[0];
+            }
+        }
+
+        // Build a simple modal using prompt-style overlay
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+
+        var modal = document.createElement('div');
+        modal.style.cssText = 'background:white;border-radius:16px;padding:0;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;';
+
+        var mhtml = '<div style="background:linear-gradient(135deg,#0D9488,#14B8A6);color:white;padding:16px 20px;">';
+        mhtml += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        mhtml += '<div><strong style="font-size:16px;">' + esc(groupName) + '</strong><br><span style="opacity:0.8;font-size:12px;">Week ' + week + ' &middot; ' + groupDay + '</span></div>';
+        mhtml += '<span onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))" style="cursor:pointer;font-size:22px;">&times;</span>';
+        mhtml += '</div></div>';
+        mhtml += '<div style="padding:20px;">';
+
+        mhtml += '<label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">VENUE</label>';
+        mhtml += '<select id="admin-ft-venue" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;">';
+        mhtml += '<option value="">-- None --</option>';
+        venues.forEach(function(v) {
+            if (!v.active && v.id !== a.venue_id) return;
+            var sel = a.venue_id === v.id ? ' selected' : '';
+            mhtml += '<option value="' + v.id + '"' + sel + '>' + esc(v.name) + '</option>';
+        });
+        mhtml += '</select>';
+
+        mhtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">';
+        mhtml += '<div><label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">DATE</label>';
+        mhtml += '<input type="date" id="admin-ft-date" value="' + (a.trip_date || defaultDate) + '" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;"></div>';
+        mhtml += '<div style="display:flex;align-items:end;padding-bottom:4px;"><label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;">';
+        mhtml += '<input type="checkbox" id="admin-ft-confirmed" ' + (a.confirmed ? 'checked' : '') + ' style="width:16px;height:16px;accent-color:#10B981;"> Confirmed</label></div>';
+        mhtml += '</div>';
+
+        mhtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">';
+        mhtml += '<div><label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">J&A BUSES</label>';
+        mhtml += '<input type="number" id="admin-ft-bja" value="' + (a.buses_ja || 0) + '" min="0" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;"></div>';
+        mhtml += '<div><label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">JCC BUS</label>';
+        mhtml += '<input type="number" id="admin-ft-bjcc" value="' + (a.buses_jcc || 0) + '" min="0" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;"></div>';
+        mhtml += '</div>';
+
+        mhtml += '<label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">COMMENTS</label>';
+        mhtml += '<textarea id="admin-ft-comments" rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box;">' + esc(a.comments || '') + '</textarea>';
+
+        mhtml += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">';
+        mhtml += '<button class="btn-sm" onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))">Cancel</button>';
+        mhtml += '<button class="btn-sm btn-sm-primary" id="admin-ft-save-btn">Save</button>';
+        mhtml += '</div></div>';
+
+        modal.innerHTML = mhtml;
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        document.getElementById('admin-ft-save-btn').onclick = function() {
+            var venueId = document.getElementById('admin-ft-venue').value;
+            fetch('/api/fieldtrips/assignments', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    group_name: groupName,
+                    week: week,
+                    venue_id: venueId || null,
+                    trip_date: document.getElementById('admin-ft-date').value || null,
+                    confirmed: document.getElementById('admin-ft-confirmed').checked,
+                    buses_ja: parseInt(document.getElementById('admin-ft-bja').value) || 0,
+                    buses_jcc: parseInt(document.getElementById('admin-ft-bjcc').value) || 0,
+                    comments: document.getElementById('admin-ft-comments').value
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    document.body.removeChild(overlay);
+                    if (!adminFtData.assignments[groupName]) adminFtData.assignments[groupName] = {};
+                    adminFtData.assignments[groupName][String(week)] = data.assignment;
+                    renderAdminMatrix();
+                    showToast('Assignment saved!');
+                } else {
+                    showToast('Error: ' + (data.error || 'Unknown'), true);
+                }
+            });
+        };
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(str));
+        return d.innerHTML;
+    }
+    </script>
+</body>
+</html>

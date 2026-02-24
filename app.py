@@ -87,6 +87,7 @@ ALL_PERMISSIONS = [
     'edit_groups', 'download_excel', 'upload_csv',
     'manage_users', 'manage_settings',
     'take_attendance', 'view_attendance',
+    'view_fieldtrips', 'manage_fieldtrips',
 ]
 
 PERMISSION_LABELS = {
@@ -103,6 +104,8 @@ PERMISSION_LABELS = {
     'manage_settings': 'Settings',
     'take_attendance': 'Take Attendance',
     'view_attendance': 'View Attendance (Admin)',
+    'view_fieldtrips': 'View Field Trips',
+    'manage_fieldtrips': 'Manage Field Trips',
 }
 
 ROLE_DEFAULT_PERMISSIONS = {
@@ -110,6 +113,7 @@ ROLE_DEFAULT_PERMISSIONS = {
     'viewer': [
         'view_dashboard', 'view_bydate', 'view_comparison',
         'view_campcomparison', 'view_detailed', 'download_excel',
+        'view_fieldtrips',
     ],
     'unit_leader': [
         'view_campcomparison', 'view_detailed', 'edit_groups',
@@ -163,7 +167,30 @@ class ProgramSetting(db.Model):
 class GlobalSetting(db.Model):
     __tablename__ = 'global_settings'
     key = db.Column(db.String(50), primary_key=True)
-    value = db.Column(db.String(200), nullable=False)
+    value = db.Column(db.Text, nullable=False)
+
+# ==================== FIELD TRIP MODELS ====================
+
+class FieldTripVenue(db.Model):
+    __tablename__ = 'field_trip_venues'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)
+    address = db.Column(db.String(300), nullable=True)
+    waiver_url = db.Column(db.String(500), nullable=True)
+    active = db.Column(db.Boolean, default=True)
+
+class FieldTripAssignment(db.Model):
+    __tablename__ = 'field_trip_assignments'
+    id = db.Column(db.Integer, primary_key=True)
+    group_name = db.Column(db.String(100), nullable=False)
+    week = db.Column(db.Integer, nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('field_trip_venues.id'), nullable=True)
+    trip_date = db.Column(db.Date, nullable=True)
+    confirmed = db.Column(db.Boolean, default=False)
+    comments = db.Column(db.Text, nullable=True)
+    buses_ja = db.Column(db.Integer, default=0)
+    buses_jcc = db.Column(db.Integer, default=0)
+    __table_args__ = (db.UniqueConstraint('group_name', 'week'),)
 
 # ==================== ATTENDANCE MODELS ====================
 
@@ -375,6 +402,82 @@ with app.app_context():
                 db.session.add(UnitLeaderAssignment(
                     username=ul_username, program_name=prog))
             print(f"Created unit leader: {ul_username} -> {', '.join(ul_programs)}")
+
+    # ---- Seed Field Trip Venues ----
+    if FieldTripVenue.query.count() == 0:
+        SEED_VENUES = [
+            ('Altitude Coral Springs', '2035 N University Dr, Coral Springs, FL 33071', None),
+            ('Anhinga Clay Studios', '4600 SW 75 Avenue, Miami, FL 33155', None),
+            ('Arcade Zone Fun Park', '10064 W Oakland Park Blvd, Sunrise, FL 33351', None),
+            ('Beach', '1870 S Ocean Dr, Hallandale Beach, FL 33009', None),
+            ('Bowlero Dania Point', '1841 Way Pointe Pl, Dania Beach, FL 33004', None),
+            ('Boat', '', None),
+            ('CB Smith Water Park', '900 N Flamingo Rd, Pembroke Pines, FL 33028', None),
+            ('Casa', '', None),
+            ('Chuck E. Cheese', '8515 Pines Blvd, Pembroke Pines, FL 33024', None),
+            ('Color Me Mine', '13680 W State Rd 84, Davie, FL 33325', None),
+            ('Dave and Busters', '3000 Oakwood Blvd, Hollywood, FL 33020', None),
+            ('Dezerland Action Park', '14401 NE 19th Ave, North Miami, FL 33181', 'Dezerland Action Park - Waiver.pdf'),
+            ('Diver Mansion', '12885 Biscayne Blvd #3, North Miami, FL 33181', 'https://divermansion.com/north-miami/waiver/'),
+            ('Everglades Holiday Park', '21940 Griffin Rd, Fort Lauderdale, FL 33332', None),
+            ('Flamingo Park', '999 11th St, Miami Beach, FL 33139', None),
+            ('Flippos in Ft. Lauderdale', '1455 SE 17th St, Fort Lauderdale, FL 33316', None),
+            ('Flying Squirrel Trampoline Park', '3305 Corporate Ave, Weston, FL 33331', 'https://waiver.roller.app/FlyingSquirrelWeston/home'),
+            ('Frost Science Museum', '1101 Biscayne Blvd, Miami, FL 33132', None),
+            ('Fundimension', '2129 NW 1st Ct, Miami, FL 33127', None),
+            ('Game Time', '5701 Sunset Dr #330, South Miami, FL 33143', None),
+            ('Kayak at Oleta', '3400 NE 163rd St, North Miami Beach, FL 33160', None),
+            ('Kids Empire', '11401 Pines Blvd #270, Pembroke Pines, FL 33026', None),
+            ('Le Chocolatier', '1840 NE 164th St, North Miami Beach, FL 33162', None),
+            ('Miami Zoo', '12400 SW 152nd St, Miami, FL 33177', None),
+            ("Miami Children's Museum", '980 MacArthur Causeway, Miami, FL 33132', None),
+            ('Miami Seaquarium', '4400 Rickenbacker Causeway, Miami, FL 33149', None),
+            ('Movies', '128 Sunset Dr, Dania Beach, FL 33004', None),
+            ('Museum of Discovery & Science', '401 SW 2nd St, Fort Lauderdale, FL 33312', None),
+            ('Monstar Mini Golf', '8358 Pines Blvd, Pembroke Pines, FL 33024', None),
+            ('MegaJump', '8901 NW 20th St, Doral, FL 33172', None),
+            ('Off the Wall', '4939 Coconut Creek Pkwy, Coconut Creek, FL 33063', 'off the wall gameroom waiver.pdf'),
+            ('Paradox Museum Miami', '2301 N Miami Ave, Miami, FL 33127', None),
+            ('Perez Art Museum Miami', '1103 Biscayne Blvd, Miami, FL 33132', None),
+            ('Pines Ice Arena', '12425 Taft St, Pembroke Pines, FL 33028', None),
+            ('Pinstripes - Aventura', '19505 Biscayne Boulevard, Miami, FL 33180', None),
+            ('Restor Pass', '', None),
+            ('PopStroke', '1314 N Federal Hwy, Delray Beach, FL 33483', None),
+            ('Puttshack', '701 S Miami Ave, Miami, FL 33131', None),
+            ('Rapids', '6566 N Military Trail, Riviera Beach, FL 33407', None),
+            ('REVO Indoor Soccer', '10395 NW 41st St, Doral, FL 33178', None),
+            ('Shark Wake Park', '1440 Eshleman Trail, West Palm Beach, FL 33413', None),
+            ('Spearz Bowling', '5325 S University Dr, Davie, FL 33328', None),
+            ('The Edge Rock Gym', '13972 SW 139th Ct, Miami, FL 33186', 'https://drive.google.com/file/d/1y6EquScWMeq2CzKQK-xHRMfH3KvtQ4dl/view'),
+            ('The Bass Museum', '2100 Collins Ave, Miami Beach, FL 33139', None),
+            ('The Poppet Project', '8650 Biscayne Blvd #29, El Portal, FL 33138', None),
+            ('Tidal Cove Waterpark', '19999 W Country Club Dr, Aventura, FL 33180', None),
+            ('Tigertail Lake', '580 Gulfstream Way, Dania Beach, FL 33004', None),
+            ('Top Golf', '17321 NW 7th Ave, Miami Gardens, FL 33169', None),
+            ('Urban Air', '801 South University Drive, Plantation, FL 33324', 'Urban Air.pdf'),
+            ("Jumpin' Jamboree", '6000 NW 97th Ave #1, Doral, FL 33178', None),
+            ('Jungle Island', '1111 Parrot Jungle Trail, Miami, FL 33132', None),
+            ('Volcano Bay', '6000 Universal Blvd, Orlando, FL 32819', None),
+            ('Venetian Pool', '2701 De Soto Blvd, Coral Gables, FL 33134', None),
+            ('Xtreme Action Park', '5300 Powerline Rd, Fort Lauderdale, FL 33309', 'Xtreme Action Park.pdf'),
+            ('You Make Candy', '633 NE 167th Street, North Miami Beach, FL 33162', None),
+            ('Young at Art Museum', '751 SW 121st Ave, Davie, FL 33325', None),
+        ]
+        for vname, vaddr, vwaiver in SEED_VENUES:
+            db.session.add(FieldTripVenue(name=vname, address=vaddr, waiver_url=vwaiver, active=True))
+        print(f"Seeded {len(SEED_VENUES)} field trip venues")
+
+    # ---- Seed Field Trip Group-Day Mapping ----
+    if not GlobalSetting.query.filter_by(key='fieldtrip_group_days').first():
+        group_days = {
+            'Monday': ['Teen Travel', 'Giborim', 'Madli-Teen'],
+            'Tuesday': ['Teen Travel', 'Tnuah', 'Volleyball', 'Tiny Tnuah', 'Tsofim'],
+            'Wednesday': ['Teen Travel', 'M&M', 'Tennis', 'Chaverim'],
+            'Thursday': ['Teen Travel', 'Gymnastics', 'Art', 'Yeladim', 'Sports Academy', 'Karate'],
+            'Friday': ['Teen Travel', 'Soccer', 'Basketball & Flag Football'],
+        }
+        db.session.add(GlobalSetting(key='fieldtrip_group_days', value=json.dumps(group_days)))
+        print("Seeded field trip group-day mapping")
 
     db.session.commit()
 
@@ -3894,6 +3997,338 @@ def sync_bac_data():
     except Exception as e:
         traceback.print_exc()
         return jsonify({'error': 'An internal error occurred'}), 500
+
+# ==================== FIELD TRIP ROUTES ====================
+
+@app.route('/fieldtrips/admin')
+@login_required
+def admin_fieldtrips():
+    """Admin page for managing field trip venues, group-days, and assignments."""
+    if not current_user.has_permission('manage_fieldtrips'):
+        flash('Access denied.', 'error')
+        return redirect(url_for('dashboard'))
+    return render_template('admin_fieldtrips.html',
+                           user=current_user,
+                           active_page='admin_fieldtrips')
+
+def _get_fieldtrip_group_days():
+    """Return the group-day mapping from GlobalSetting."""
+    gs = GlobalSetting.query.filter_by(key='fieldtrip_group_days').first()
+    if gs:
+        try:
+            return json.loads(gs.value)
+        except Exception:
+            pass
+    return {
+        'Monday': ['Teen Travel', 'Giborim', 'Madli-Teen'],
+        'Tuesday': ['Teen Travel', 'Tnuah', 'Volleyball', 'Tiny Tnuah', 'Tsofim'],
+        'Wednesday': ['Teen Travel', 'M&M', 'Tennis', 'Chaverim'],
+        'Thursday': ['Teen Travel', 'Gymnastics', 'Art', 'Yeladim', 'Sports Academy', 'Karate'],
+        'Friday': ['Teen Travel', 'Soccer', 'Basketball & Flag Football'],
+    }
+
+def _get_fieldtrip_kid_counts():
+    """Compute kid counts per group per week from enrollment cache."""
+    counts = {}  # {group_name: {week: count}}
+    try:
+        cache_path = os.path.join(DATA_FOLDER, 'api_cache.json')
+        if not os.path.exists(cache_path):
+            return counts
+        with open(cache_path, 'r') as f:
+            api_cache = json.load(f)
+        participants = api_cache.get('data', {}).get('participants', [])
+        if not participants:
+            return counts
+
+        # Build a mapping of fieldtrip group names to enrollment program names
+        group_days = _get_fieldtrip_group_days()
+        all_ft_groups = set()
+        for day_groups in group_days.values():
+            all_ft_groups.update(day_groups)
+
+        # Get program settings for weeks_active
+        prog_settings = {ps.program: ps for ps in ProgramSetting.query.all()}
+
+        # For each participant, match to field trip groups by program name
+        for p in participants:
+            prog = p.get('programName', '')
+            weeks = p.get('weeks', [])
+            if not prog or not weeks:
+                continue
+
+            # Map enrollment program names to field trip group names
+            # The field trip groups use shorter/different names
+            ft_group = _map_program_to_ft_group(prog, all_ft_groups)
+            if not ft_group:
+                continue
+
+            for w in weeks:
+                wk = counts.setdefault(ft_group, {})
+                wk[str(w)] = wk.get(str(w), 0) + 1
+    except Exception:
+        traceback.print_exc()
+    return counts
+
+def _map_program_to_ft_group(program_name, ft_groups):
+    """Map an enrollment program name to a field trip group name."""
+    # Direct match
+    if program_name in ft_groups:
+        return program_name
+
+    # Common mappings from enrollment programs to field trip groups
+    PROGRAM_TO_GROUP = {
+        'Madli-Teen': 'Madli-Teen',
+        "Children's Trust Madli-Teen": 'Madli-Teen',
+        'Teen Travel': 'Teen Travel',
+        'Teen Travel: Epic Trip to Orlando': 'Teen Travel',
+        'Tsofim': 'Tsofim',
+        "Children's Trust Tsofim": 'Tsofim',
+        'Yeladim': 'Yeladim',
+        "Children's Trust Yeladim": 'Yeladim',
+        'Chaverim': 'Chaverim',
+        "Children's Trust Chaverim": 'Chaverim',
+        'Giborim': 'Giborim',
+        "Children's Trust Giborim": 'Giborim',
+        'Tnuah 1': 'Tnuah', 'Tnuah 2': 'Tnuah',
+        'Extreme Tnuah': 'Tnuah',
+        'Tiny Tnuah 1': 'Tiny Tnuah', 'Tiny Tnuah 2': 'Tiny Tnuah',
+        'Teeny Tiny Tnuah': 'Tiny Tnuah',
+        'Volleyball': 'Volleyball',
+        'Tennis Academy': 'Tennis', 'Tennis Academy - Half Day': 'Tennis',
+        'Tiny Tumblers Gymnastics': 'Gymnastics',
+        'Recreational Gymnastics': 'Gymnastics',
+        'Competitive Gymnastics Team': 'Gymnastics',
+        'Art Exploration': 'Art',
+        'Sports Academy 1': 'Sports Academy', 'Sports Academy 2': 'Sports Academy',
+        'MMA Camp': 'Karate',
+        'Soccer': 'Soccer',
+        'Basketball': 'Basketball & Flag Football',
+        'Flag Football': 'Basketball & Flag Football',
+        'Music Camp': 'M&M',
+        'Theater Camp': 'M&M',
+    }
+    return PROGRAM_TO_GROUP.get(program_name)
+
+
+@app.route('/api/fieldtrips/matrix')
+@login_required
+def api_fieldtrips_matrix():
+    """Return the full field trips matrix data."""
+    if not current_user.has_permission('view_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    group_days = _get_fieldtrip_group_days()
+    venues = {v.id: {'id': v.id, 'name': v.name, 'address': v.address,
+                      'waiver_url': v.waiver_url}
+              for v in FieldTripVenue.query.filter_by(active=True).all()}
+
+    assignments = FieldTripAssignment.query.all()
+    assignment_map = {}  # {group_name: {week_str: {...}}}
+    for a in assignments:
+        grp = assignment_map.setdefault(a.group_name, {})
+        venue_info = venues.get(a.venue_id, {})
+        grp[str(a.week)] = {
+            'id': a.id,
+            'venue_id': a.venue_id,
+            'venue_name': venue_info.get('name', ''),
+            'address': venue_info.get('address', ''),
+            'waiver_url': venue_info.get('waiver_url', ''),
+            'trip_date': a.trip_date.isoformat() if a.trip_date else None,
+            'confirmed': a.confirmed,
+            'comments': a.comments or '',
+            'buses_ja': a.buses_ja or 0,
+            'buses_jcc': a.buses_jcc or 0,
+        }
+
+    kid_counts = _get_fieldtrip_kid_counts()
+
+    # Build ordered groups list by day
+    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    ordered_groups = []
+    for day in day_order:
+        groups = group_days.get(day, [])
+        for g in groups:
+            ordered_groups.append({'name': g, 'day': day})
+
+    return jsonify({
+        'weeks': list(range(1, 10)),
+        'week_dates': {str(k): v for k, v in CAMP_WEEK_DATES.items()},
+        'day_order': day_order,
+        'group_days': group_days,
+        'groups': ordered_groups,
+        'assignments': assignment_map,
+        'kid_counts': kid_counts,
+        'venues': list(venues.values()),
+        'can_edit': current_user.has_permission('manage_fieldtrips'),
+    })
+
+
+@app.route('/api/fieldtrips/venues', methods=['GET'])
+@login_required
+def api_fieldtrips_venues_list():
+    """List all venues."""
+    if not current_user.has_permission('view_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    show_inactive = request.args.get('include_inactive', 'false') == 'true'
+    query = FieldTripVenue.query
+    if not show_inactive:
+        query = query.filter_by(active=True)
+    venues = query.order_by(FieldTripVenue.name).all()
+    return jsonify({'venues': [
+        {'id': v.id, 'name': v.name, 'address': v.address or '',
+         'waiver_url': v.waiver_url or '', 'active': v.active}
+        for v in venues
+    ]})
+
+
+@app.route('/api/fieldtrips/venues', methods=['POST'])
+@login_required
+def api_fieldtrips_venues_create():
+    """Create a new venue."""
+    if not current_user.has_permission('manage_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    if FieldTripVenue.query.filter_by(name=name).first():
+        return jsonify({'error': f'Venue "{name}" already exists'}), 400
+    v = FieldTripVenue(
+        name=name,
+        address=(data.get('address') or '').strip(),
+        waiver_url=(data.get('waiver_url') or '').strip() or None,
+        active=True
+    )
+    db.session.add(v)
+    db.session.commit()
+    return jsonify({'success': True, 'venue': {'id': v.id, 'name': v.name,
+                    'address': v.address or '', 'waiver_url': v.waiver_url or '', 'active': True}})
+
+
+@app.route('/api/fieldtrips/venues/<int:venue_id>', methods=['PUT'])
+@login_required
+def api_fieldtrips_venues_update(venue_id):
+    """Update a venue."""
+    if not current_user.has_permission('manage_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    v = FieldTripVenue.query.get(venue_id)
+    if not v:
+        return jsonify({'error': 'Venue not found'}), 404
+    data = request.get_json()
+    if 'name' in data:
+        new_name = (data['name'] or '').strip()
+        if new_name and new_name != v.name:
+            existing = FieldTripVenue.query.filter_by(name=new_name).first()
+            if existing and existing.id != v.id:
+                return jsonify({'error': f'Venue "{new_name}" already exists'}), 400
+            v.name = new_name
+    if 'address' in data:
+        v.address = (data['address'] or '').strip()
+    if 'waiver_url' in data:
+        v.waiver_url = (data['waiver_url'] or '').strip() or None
+    if 'active' in data:
+        v.active = bool(data['active'])
+    db.session.commit()
+    return jsonify({'success': True, 'venue': {'id': v.id, 'name': v.name,
+                    'address': v.address or '', 'waiver_url': v.waiver_url or '', 'active': v.active}})
+
+
+@app.route('/api/fieldtrips/venues/<int:venue_id>', methods=['DELETE'])
+@login_required
+def api_fieldtrips_venues_delete(venue_id):
+    """Soft-delete a venue (set active=False)."""
+    if not current_user.has_permission('manage_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    v = FieldTripVenue.query.get(venue_id)
+    if not v:
+        return jsonify({'error': 'Venue not found'}), 404
+    v.active = False
+    db.session.commit()
+    return jsonify({'success': True, 'message': f'Venue "{v.name}" deactivated'})
+
+
+@app.route('/api/fieldtrips/assignments', methods=['PUT'])
+@login_required
+def api_fieldtrips_assignments_upsert():
+    """Create or update a field trip assignment."""
+    if not current_user.has_permission('manage_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    group_name = (data.get('group_name') or '').strip()
+    week = data.get('week')
+    if not group_name or not week:
+        return jsonify({'error': 'group_name and week are required'}), 400
+    week = int(week)
+    if week < 1 or week > 9:
+        return jsonify({'error': 'Week must be 1-9'}), 400
+
+    a = FieldTripAssignment.query.filter_by(group_name=group_name, week=week).first()
+    if not a:
+        a = FieldTripAssignment(group_name=group_name, week=week)
+        db.session.add(a)
+
+    venue_id = data.get('venue_id')
+    if venue_id is not None:
+        a.venue_id = int(venue_id) if venue_id else None
+    if 'trip_date' in data:
+        td = data['trip_date']
+        a.trip_date = date.fromisoformat(td) if td else None
+    if 'confirmed' in data:
+        a.confirmed = bool(data['confirmed'])
+    if 'comments' in data:
+        a.comments = (data['comments'] or '').strip() or None
+    if 'buses_ja' in data:
+        a.buses_ja = int(data['buses_ja'] or 0)
+    if 'buses_jcc' in data:
+        a.buses_jcc = int(data['buses_jcc'] or 0)
+
+    db.session.commit()
+    # Return updated assignment
+    venue = FieldTripVenue.query.get(a.venue_id) if a.venue_id else None
+    return jsonify({'success': True, 'assignment': {
+        'id': a.id,
+        'group_name': a.group_name,
+        'week': a.week,
+        'venue_id': a.venue_id,
+        'venue_name': venue.name if venue else '',
+        'address': venue.address if venue else '',
+        'waiver_url': venue.waiver_url if venue else '',
+        'trip_date': a.trip_date.isoformat() if a.trip_date else None,
+        'confirmed': a.confirmed,
+        'comments': a.comments or '',
+        'buses_ja': a.buses_ja or 0,
+        'buses_jcc': a.buses_jcc or 0,
+    }})
+
+
+@app.route('/api/fieldtrips/group-days', methods=['GET'])
+@login_required
+def api_fieldtrips_group_days_get():
+    """Get the group-day mapping."""
+    if not current_user.has_permission('view_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    return jsonify({'group_days': _get_fieldtrip_group_days()})
+
+
+@app.route('/api/fieldtrips/group-days', methods=['PUT'])
+@login_required
+def api_fieldtrips_group_days_update():
+    """Update the group-day mapping."""
+    if not current_user.has_permission('manage_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    group_days = data.get('group_days')
+    if not isinstance(group_days, dict):
+        return jsonify({'error': 'group_days must be a dict'}), 400
+
+    gs = GlobalSetting.query.filter_by(key='fieldtrip_group_days').first()
+    if gs:
+        gs.value = json.dumps(group_days)
+    else:
+        db.session.add(GlobalSetting(key='fieldtrip_group_days', value=json.dumps(group_days)))
+    db.session.commit()
+    return jsonify({'success': True, 'group_days': group_days})
+
 
 # ==================== ERROR HANDLERS ====================
 
