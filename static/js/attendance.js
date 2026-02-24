@@ -206,9 +206,33 @@
         if (!selectedProgram || !selectedWeek) return;
 
         var list = document.getElementById('camper-list');
-        list.innerHTML = '<div class="att-loading"><div class="att-spinner"></div> Loading campers...</div>';
-
         var url = '/api/attendance/campers/' + encodeURIComponent(selectedProgram) + '/' + selectedWeek + '?date=' + selectedDate;
+
+        // Check for preloaded data — render instantly (names + KC badges, no attendance yet)
+        var preloaded = window.preloadedCampers &&
+                        window.preloadedCampers[selectedProgram] &&
+                        window.preloadedCampers[selectedProgram][String(selectedWeek)];
+
+        if (preloaded && preloaded.length > 0) {
+            campers = preloaded.map(function(c) {
+                return {
+                    person_id: c.person_id,
+                    name: c.name,
+                    has_kc: c.has_kc,
+                    group_number: 0,
+                    attendance: {},
+                    youngest_sibling: null
+                };
+            });
+            document.getElementById('camper-count').textContent = campers.length + ' campers';
+            var sortToggle = document.getElementById('att-sort-toggle');
+            if (sortToggle) sortToggle.style.display = 'flex';
+            renderCamperList();
+        } else {
+            list.innerHTML = '<div class="att-loading"><div class="att-spinner"></div> Loading campers...</div>';
+        }
+
+        // Hydrate with full data (attendance states, groups, siblings) from API
         fetchJSON(url)
             .then(function(data) {
                 campers = data.campers || [];
@@ -219,7 +243,9 @@
             })
             .catch(function(err) {
                 console.error('Load campers error:', err);
-                list.innerHTML = '<div class="att-empty"><p>Failed to load campers</p></div>';
+                if (!preloaded || preloaded.length === 0) {
+                    list.innerHTML = '<div class="att-empty"><p>Failed to load campers</p></div>';
+                }
             });
     }
 

@@ -157,6 +157,7 @@
     <script>
         const CURRENT_USER = "{{ current_user.id }}";
         const IS_ADMIN = {{ 'true' if current_user.role == 'admin' else 'false' }};
+        window.preloadedCampers = {{ preloaded_campers | tojson | safe }};
     </script>
     <script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
 </body>

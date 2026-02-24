@@ -479,6 +479,10 @@ FINANCE_CACHE_TTL_MINUTES = 60
 # In-memory persons cache (avoids reading 200KB+ JSON from disk on every click)
 _persons_mem_cache = None  # Loaded lazily on first use, then kept in memory
 
+# BAC (Before & After Care) background sync state
+_bac_sync_state = {'last_synced_at': None, 'is_syncing': False, 'sync_start': None}
+BAC_SYNC_TTL_MINUTES = 60
+
 # PO (Purchase Order) data cache — persisted to data/po_data.json
 po_cache = {'data': None, 'uploaded_at': None}
 po_cache_path = os.path.join('data', 'po_data.json')
@@ -1838,6 +1842,7 @@ def _sync_bac_to_cache(persons_cache=None):
         except Exception:
             pass
 
+        _bac_sync_state['last_synced_at'] = datetime.now()
         print(f"BAC sync complete: {len(bac_persons)} persons with BAC financial transactions")
 
     except Exception as e:
@@ -1845,6 +1850,51 @@ def _sync_bac_to_cache(persons_cache=None):
         traceback.print_exc()
 
     return persons_cache
+
+
+def _ensure_bac_synced_background():
+    """Trigger BAC sync in a background thread if stale. Never blocks the caller."""
+    global _bac_sync_state
+
+    # Already synced recently?
+    if _bac_sync_state['last_synced_at']:
+        elapsed = (datetime.now() - _bac_sync_state['last_synced_at']).total_seconds()
+        if elapsed < BAC_SYNC_TTL_MINUTES * 60:
+            return  # Still fresh
+
+    # Already syncing? (with 3-min stuck timeout)
+    if _bac_sync_state['is_syncing']:
+        if _bac_sync_state['sync_start'] and \
+           (datetime.now() - _bac_sync_state['sync_start']).total_seconds() > 180:
+            _bac_sync_state['is_syncing'] = False
+        else:
+            return
+
+    if not is_api_configured():
+        return
+
+    _bac_sync_state['is_syncing'] = True
+    _bac_sync_state['sync_start'] = datetime.now()
+
+    def _bg_bac_sync(app_ctx):
+        with app_ctx:
+            try:
+                _sync_bac_to_cache()
+                _bac_sync_state['last_synced_at'] = datetime.now()
+                print("Background BAC sync complete [OK]")
+            except Exception as e:
+                print(f"Background BAC sync error: {e}")
+                traceback.print_exc()
+            finally:
+                _bac_sync_state['is_syncing'] = False
+
+    t = threading.Thread(
+        target=_bg_bac_sync,
+        args=(app.app_context(),),
+        daemon=True
+    )
+    t.start()
+
 
 @app.route('/api/participants/<program>/<int:week>')
 @login_required
@@ -3034,7 +3084,53 @@ def _get_active_checkpoints():
 @login_required
 def attendance_page():
     """Standalone mobile-first attendance page for unit leaders."""
-    return render_template('attendance.html')
+    _ensure_enrollment_cache()
+    _ensure_bac_synced_background()
+
+    # Preload basic camper data for the user's assigned programs (instant JS render)
+    preloaded = {}
+    if api_cache.get('data') and api_cache['data'].get('participants'):
+        participants = api_cache['data']['participants']
+
+        if current_user.role == 'admin':
+            user_programs = list(participants.keys())
+        else:
+            assignments = UnitLeaderAssignment.query.filter_by(
+                username=current_user.id
+            ).all()
+            user_programs = [a.program_name for a in assignments]
+
+        persons_cache = _load_persons_cache()
+
+        for prog in user_programs:
+            if prog not in participants:
+                continue
+            prog_weeks = {}
+            for week_str, week_campers in participants[prog].items():
+                camper_basics = []
+                for c in week_campers:
+                    pid = str(c.get('personId') or c.get('person_id', ''))
+                    entry = persons_cache.get(pid, {})
+                    fn = entry.get('first_name', '') if isinstance(entry, dict) else ''
+                    ln = entry.get('last_name', '') if isinstance(entry, dict) else ''
+                    name = f'{fn} {ln}'.strip() or f'Camper {pid}'
+                    has_kc = False
+                    if isinstance(entry, dict):
+                        bac_weeks = entry.get('bac_weeks')
+                        if isinstance(bac_weeks, list):
+                            try:
+                                has_kc = int(week_str) in bac_weeks
+                            except ValueError:
+                                pass
+                    camper_basics.append({
+                        'person_id': pid,
+                        'name': name,
+                        'has_kc': has_kc,
+                    })
+                prog_weeks[week_str] = camper_basics
+            preloaded[prog] = prog_weeks
+
+    return render_template('attendance.html', preloaded_campers=preloaded)
 
 @app.route('/api/attendance/my-programs')
 @login_required
@@ -3088,24 +3184,18 @@ def attendance_campers(program, week):
     all_pids = [c.get('personId') or c.get('person_id') for c in campers]
     persons_map = _load_and_fetch_persons(all_pids)
 
-    # Auto-sync BAC data if no bac_weeks found (needed for KC buttons)
-    has_any_bac = any(
-        isinstance(persons_map.get(str(c.get('personId') or c.get('person_id'))), dict) and
-        persons_map.get(str(c.get('personId') or c.get('person_id')), {}).get('bac_weeks')
-        for c in campers
-    ) if campers else False
-    if not has_any_bac and campers and is_api_configured():
-        print("No bac_weeks found in persons_cache — auto-syncing BAC data...")
-        persons_map = _sync_bac_to_cache(persons_map)
+    # Trigger BAC sync in background if stale (never blocks this response)
+    _ensure_bac_synced_background()
 
     # Get attendance records for specified date + program
     records = AttendanceRecord.query.filter_by(
         program_name=program, date=target_date
     ).all()
-    # Build lookup: (person_id, checkpoint_id) → status
-    attendance_map = {}
+    # Build nested lookup: person_id → {checkpoint_id_str → record}  (O(1) per camper)
+    attendance_by_person = {}
     for r in records:
-        attendance_map[(r.person_id, r.checkpoint_id)] = {
+        person_att = attendance_by_person.setdefault(r.person_id, {})
+        person_att[str(r.checkpoint_id)] = {
             'status': r.status,
             'notes': r.notes,
             'recorded_at': r.recorded_at.isoformat() if r.recorded_at else None
@@ -3136,8 +3226,8 @@ def attendance_campers(program, week):
             return True
         return False
 
-    # Build reverse lookup: all enrolled person_ids by program+week for sibling matching
-    enrolled_by_program = {}  # {program_name: set_of_person_ids}
+    # Build flat reverse index: person_id → program_name for O(1) sibling lookup
+    enrolled_person_to_program = {}
     if api_cache.get('data') and api_cache['data'].get('participants'):
         all_participants = api_cache['data']['participants']
         for prog_name, weeks_data in all_participants.items():
@@ -3145,7 +3235,8 @@ def attendance_campers(program, week):
                 for c in weeks_data[str(week)]:
                     pid = str(c.get('personId') or c.get('person_id', ''))
                     if pid:
-                        enrolled_by_program.setdefault(prog_name, set()).add(pid)
+                        enrolled_person_to_program[pid] = prog_name
+
     def _find_youngest_enrolled_sibling(person_id):
         """Find the youngest sibling (younger than camper) enrolled this week."""
         entry = persons_map.get(str(person_id))
@@ -3154,32 +3245,26 @@ def attendance_campers(program, week):
         sibling_details = entry.get('sibling_details')
         if not sibling_details or not isinstance(sibling_details, list):
             return None
-        # Get camper's own DOB to compare
         camper_dob = entry.get('date_of_birth', '')
-        # Find siblings that are enrolled this week in any program
         enrolled_siblings = []
         for sib in sibling_details:
             sib_id = str(sib.get('id', ''))
             if not sib_id:
                 continue
             sib_dob = sib.get('dob', '')
-            # Only include siblings younger than the camper (more recent DOB)
             if camper_dob and sib_dob and sib_dob <= camper_dob:
-                continue  # Sibling is same age or older, skip
-            # Check if this sibling is enrolled in any program this week
-            for prog_name, enrolled_ids in enrolled_by_program.items():
-                if sib_id in enrolled_ids:
-                    sib_name = _person_name(sib_id, sib.get('first_name', ''))
-                    enrolled_siblings.append({
-                        'id': sib_id,
-                        'name': sib_name,
-                        'program': prog_name,
-                        'dob': sib_dob
-                    })
-                    break  # Found one program for this sibling, enough
+                continue
+            # O(1) lookup instead of iterating all programs
+            sib_program = enrolled_person_to_program.get(sib_id)
+            if sib_program:
+                sib_name = _person_name(sib_id, sib.get('first_name', ''))
+                enrolled_siblings.append({
+                    'name': sib_name,
+                    'program': sib_program,
+                    'dob': sib_dob
+                })
         if not enrolled_siblings:
             return None
-        # Return the youngest (most recent dob)
         enrolled_siblings.sort(key=lambda s: s.get('dob', ''), reverse=True)
         youngest = enrolled_siblings[0]
         return {'name': youngest['name'], 'program': youngest['program']}
@@ -3197,12 +3282,8 @@ def attendance_campers(program, week):
             'name': name,
             'has_kc': _has_kc(person_id),
             'group_number': group_map.get(str(person_id), 0),
-            'attendance': {}
+            'attendance': attendance_by_person.get(str(person_id), {})
         }
-        # Fill in attendance per checkpoint
-        for key, val in attendance_map.items():
-            if key[0] == str(person_id):
-                camper_data['attendance'][str(key[1])] = val
         # Youngest enrolled sibling
         sib = _find_youngest_enrolled_sibling(person_id)
         if sib:
@@ -3233,14 +3314,9 @@ def attendance_kc():
     week_str = str(week_num)
     ECA_PROGRAMS = ['Infants', 'Toddler', 'PK2', 'PK3', 'PK4']
 
-    # Load persons cache + auto-sync BAC if needed
+    # Load persons cache + trigger BAC sync in background if stale
     persons_map = _load_persons_cache()
-    has_any_bac = any(
-        isinstance(v, dict) and v.get('bac_weeks')
-        for v in list(persons_map.values())[:200]
-    )
-    if not has_any_bac and is_api_configured():
-        persons_map = _sync_bac_to_cache(persons_map)
+    _ensure_bac_synced_background()
 
     # Gather all enrolled campers across all programs for this week
     kc_campers = []
@@ -3647,15 +3723,8 @@ def attendance_detail(program):
     all_pids = [c.get('personId') or c.get('person_id') for c in campers]
     persons_map = _load_and_fetch_persons(all_pids)
 
-    # Auto-sync BAC data if no bac_weeks found (needed for KC buttons)
-    has_any_bac = any(
-        isinstance(persons_map.get(str(c.get('personId') or c.get('person_id'))), dict) and
-        persons_map.get(str(c.get('personId') or c.get('person_id')), {}).get('bac_weeks')
-        for c in campers
-    ) if campers else False
-    if not has_any_bac and campers and is_api_configured():
-        print("Admin attendance detail: No bac_weeks found — auto-syncing BAC data...")
-        persons_map = _sync_bac_to_cache(persons_map)
+    # Trigger BAC sync in background if stale (never blocks this response)
+    _ensure_bac_synced_background()
 
     # KC eligibility helper
     def _has_kc(person_id):
