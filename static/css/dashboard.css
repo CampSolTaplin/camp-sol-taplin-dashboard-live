@@ -1146,14 +1146,73 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     }
 }
 
+/* Mobile Sidebar Toggle */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 200;
+    width: 44px;
+    height: 44px;
+    background: var(--teal-dark);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.sidebar-toggle span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.3s;
+}
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+}
+
 @media (max-width: 768px) {
+    .sidebar-toggle {
+        display: flex;
+    }
     .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 260px;
+        height: 100vh;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 150;
+    }
+    body.sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+    body.sidebar-open .sidebar-overlay {
+        display: block;
+    }
+    body.sidebar-open .sidebar-toggle span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+    body.sidebar-open .sidebar-toggle span:nth-child(2) {
+        opacity: 0;
+    }
+    body.sidebar-open .sidebar-toggle span:nth-child(3) {
+        transform: rotate(-45deg) translate(5px, -5px);
     }
     .main {
         margin-left: 0;
+        padding: 68px 16px 24px 16px;
     }
     .kpi-grid {
         grid-template-columns: 1fr;
@@ -2436,5 +2495,145 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     font-size: 13px;
     color: var(--text);
     min-width: 180px;
+}
+
+/* ==================== MOBILE RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+    /* Touch-friendly targets */
+    .nav-item { padding: 14px 14px; min-height: 44px; }
+    .nav-subitem { padding: 12px 14px 12px 38px; min-height: 44px; }
+    .btn, .btn-sm, .btn-small { min-height: 44px; }
+    .filter-bar select,
+    .filter-group select,
+    .filter-group input[type="date"] {
+        min-height: 44px;
+        font-size: 16px; /* prevents iOS zoom */
+    }
+    .week-cell.clickable { min-height: 44px; min-width: 44px; }
+
+    /* Header */
+    .header { flex-direction: column; align-items: flex-start; }
+    .header h1 { font-size: 20px; }
+    .header-actions { width: 100%; }
+    .header-actions .btn { width: 100%; justify-content: center; }
+
+    /* Modals: full-width on mobile */
+    .modal-content {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 12px 12px 0 0;
+        margin: 0;
+    }
+    .modal.show { align-items: flex-end; }
+    .modal-large { max-width: 100%; }
+    .modal-body { padding: 16px; }
+    .modal-header { padding: 16px; }
+    .modal-close {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .participants-table { font-size: 12px; }
+    .participants-table th,
+    .participants-table td { padding: 6px 8px; }
+
+    /* KPI cards */
+    .kpi-value { font-size: 24px; }
+    .kpi-card { padding: 16px; }
+
+    /* Category summary grid */
+    .category-summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .category-summary-card { padding: 16px; }
+
+    /* Growth stats */
+    .growth-stats { flex-direction: column; gap: 16px; }
+    .growth-value { font-size: 24px; }
+
+    /* Children's Trust KPIs */
+    .ct-summary-row { gap: 12px; }
+    .ct-kpi { min-width: 80px; padding: 12px 8px; }
+    .ct-kpi-value { font-size: 22px; }
+
+    /* All data tables: scrollable */
+    .ct-detail-table,
+    .recent-enrollments-table,
+    .data-table,
+    .comparison-table,
+    .milestone-table,
+    .comparison-matrix {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Enrollment Matrix tighter */
+    .enrollment-matrix { font-size: 11px; }
+    .enrollment-matrix th,
+    .enrollment-matrix td { padding: 6px 4px; }
+    .enrollment-matrix .sticky-col {
+        min-width: 120px;
+        max-width: 140px;
+        font-size: 11px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Scroll hint shadow */
+    .detailed-table-container {
+        position: relative;
+    }
+    .detailed-table-container::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0;
+        width: 24px;
+        height: 100%;
+        background: linear-gradient(to left, rgba(0,0,0,0.06), transparent);
+        pointer-events: none;
+        z-index: 6;
+    }
+
+    /* Finance: pace cards stack */
+    .pace-cards { grid-template-columns: 1fr; }
+    .pace-value { font-size: 28px; }
+    .finance-goal-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    .finance-goal-pct { margin-left: 0; }
+
+    /* Attendance admin grid */
+    .att-admin-grid { font-size: 12px; }
+    .att-admin-grid th,
+    .att-admin-grid td { padding: 8px 8px; }
+    .att-admin-select { min-width: 140px; font-size: 12px; }
+
+    /* Participant actions bar */
+    .participant-actions-bar { flex-direction: column; align-items: stretch; }
+    .participant-action-buttons { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+    .category-summary-grid { grid-template-columns: 1fr; }
+    .kpi-value { font-size: 20px; }
+
+    /* Hide FTC/Goal/% columns in enrollment matrix */
+    .enrollment-matrix .fte-cell,
+    .enrollment-matrix .goal-cell,
+    .enrollment-matrix .percent-cell,
+    .enrollment-matrix th.fte-header,
+    .enrollment-matrix th.goal-header,
+    .enrollment-matrix th.pct-header { display: none; }
+    .enrollment-matrix { font-size: 10px; }
+    .enrollment-matrix .sticky-col { min-width: 100px; }
+
+    /* Finance */
+    .finance-category-cards { grid-template-columns: 1fr; }
+    .finance-cat-revenue { font-size: 20px; }
 }
 

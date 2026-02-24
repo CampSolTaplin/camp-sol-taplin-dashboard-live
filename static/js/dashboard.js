@@ -4,8 +4,21 @@
 let cumulativeChartInstance = null;
 let attendanceTrendChartInstance = null;
 
+// Mobile sidebar: close on nav click + Escape
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.nav-item, .nav-subitem').forEach(function(item) {
+        item.addEventListener('click', function() {
+            document.body.classList.remove('sidebar-open');
+        });
+    });
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') document.body.classList.remove('sidebar-open');
+});
+
 // View Switching
 function switchView(viewName) {
+    document.body.classList.remove('sidebar-open');
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.view === viewName) {

@@ -1,3 +1,9 @@
+<!-- Mobile hamburger button -->
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu" onclick="document.body.classList.toggle('sidebar-open')">
+    <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" onclick="document.body.classList.remove('sidebar-open')"></div>
+
 <aside class="sidebar">
     <div class="logo-section">
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Camp Sol Taplin Logo" class="camp-logo" onerror="this.style.display='none'">

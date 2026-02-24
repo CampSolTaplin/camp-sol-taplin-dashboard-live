@@ -340,6 +340,27 @@
             color: #92400E;
             margin-top: 8px;
         }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .admin-container { padding: 0; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .page-title { font-size: 22px; }
+            .users-table th,
+            .users-table td { padding: 10px 12px; font-size: 13px; }
+            .action-btns { flex-direction: column; gap: 4px; }
+            .btn-small { min-height: 44px; display: flex; align-items: center; justify-content: center; }
+            .modal-content { max-width: 100%; border-radius: 12px 12px 0 0; max-height: 90vh; }
+            .modal.show { align-items: flex-end; }
+            .modal-body { padding: 16px; }
+            .modal-header { padding: 16px; }
+            .modal-close { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+            .permissions-grid { grid-template-columns: 1fr; }
+            .form-group input,
+            .form-group select { font-size: 16px; }
+            .form-actions { flex-direction: column; }
+            .form-actions .btn { width: 100%; min-height: 44px; }
+        }
     </style>
 </head>
 <body>

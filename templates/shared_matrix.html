@@ -86,6 +86,15 @@
         .shared-container .detailed-table-container {
             overflow-x: auto;
         }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .shared-container { padding: 12px; }
+            .shared-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .shared-header h1 { font-size: 18px; }
+            .shared-header img { width: 40px; height: 40px; }
+            .shared-meta { flex-wrap: wrap; }
+        }
     </style>
 </head>
 <body>
