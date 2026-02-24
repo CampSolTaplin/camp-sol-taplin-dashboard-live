@@ -562,6 +562,8 @@ def fetch_live_data(force_refresh: bool = False) -> dict:
             print("Using cached API data")
             api_cache['data'] = cached['data']
             api_cache['fetched_at'] = cached.get('fetched_at')
+            if cached.get('retention'):
+                api_cache['retention'] = cached['retention']
             # Pre-fetch missing persons in background
             _prefetch_all_persons(cached['data'])
             return cached['data']
@@ -592,17 +594,30 @@ def fetch_live_data(force_refresh: bool = False) -> dict:
         fetched_at = datetime.now().isoformat()
         api_cache['data'] = processed_data
         api_cache['fetched_at'] = fetched_at
-        
-        # Save to file
-        save_api_cache({
-            'data': processed_data,
-            'fetched_at': fetched_at
-        })
-        
+
         print(f"API data fetched successfully: {processed_data['summary']['total_enrollment']} campers")
 
         # Pre-fetch all person details in background so clicks are instant
         _prefetch_all_persons(processed_data)
+
+        # Calculate retention rate using the same authenticated client
+        cache_to_save = {
+            'data': processed_data,
+            'fetched_at': fetched_at
+        }
+        try:
+            retention_data = client.get_retention_rate(
+                current_season=CAMPMINDER_SEASON_ID,
+                previous_season=CAMPMINDER_SEASON_ID - 1
+            )
+            api_cache['retention'] = retention_data
+            cache_to_save['retention'] = retention_data
+            print(f"Retention rate: {retention_data.get('retention_rate', 0)}%")
+        except Exception as ret_err:
+            print(f"Warning: Could not calculate retention: {ret_err}")
+
+        # Save to file (includes retention if available)
+        save_api_cache(cache_to_save)
 
         return processed_data
 
@@ -2713,6 +2728,23 @@ def upload_file():
             'success': False, 
             'error': f'Server error: {str(e)}'
         }), 500
+
+@app.route('/api/retention')
+@login_required
+def api_retention():
+    """Return cached retention rate data.
+
+    Retention is calculated during enrollment cache refresh using the same
+    authenticated API client to avoid concurrency/404 issues.
+    """
+    _ensure_enrollment_cache()
+
+    retention = api_cache.get('retention')
+    if retention:
+        return jsonify(retention)
+
+    return jsonify({'error': 'Retention data not yet available. Try refreshing.'}), 503
+
 
 @app.route('/api/recent-enrollments')
 @login_required
