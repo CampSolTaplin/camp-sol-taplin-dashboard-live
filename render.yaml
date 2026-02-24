@@ -25,3 +25,7 @@ services:
         fromDatabase:
           name: camp-sol-taplin-db
           property: connectionString
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false

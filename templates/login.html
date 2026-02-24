@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Camp Sol Taplin</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#00A9CE">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Camp Sol Taplin">
+    <link rel="apple-touch-icon" href="/static/images/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -165,5 +171,10 @@
             Michael-Ann Russell JCC &copy; 2026
         </div>
     </div>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+}
+</script>
 </body>
 </html>

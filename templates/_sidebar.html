@@ -104,3 +104,53 @@
         <span>👤 {{ user.id }} ({{ user.role }})</span>
     </div>
 </aside>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+    .then(function(reg) { console.log('SW registered'); })
+    .catch(function(err) { console.log('SW failed:', err); });
+}
+</script>
+<script src="{{ url_for('static', filename='js/push-notifications.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof CampPush === 'undefined' || !CampPush.isSupported()) return;
+  if (sessionStorage.getItem('push-prompt-dismissed')) return;
+  CampPush.isSubscribed().then(function(subscribed) {
+    if (!subscribed && CampPush.getPermissionState() === 'default') {
+      setTimeout(showPushBanner, 3000);
+    }
+  });
+});
+
+function showPushBanner() {
+  if (document.getElementById('push-prompt')) return;
+  var banner = document.createElement('div');
+  banner.id = 'push-prompt';
+  banner.style.cssText = 'position:fixed;bottom:20px;right:20px;background:white;border-radius:12px;padding:16px 20px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:9999;max-width:340px;font-family:DM Sans,sans-serif;border-left:4px solid #00A9CE;animation:slideIn 0.3s ease;';
+  banner.innerHTML =
+    '<div style="font-weight:600;margin-bottom:6px;">🔔 Enable Notifications?</div>' +
+    '<div style="font-size:13px;color:#6B7A8A;margin-bottom:12px;">Get alerts about enrollment updates and camp announcements.</div>' +
+    '<div style="display:flex;gap:8px;">' +
+      '<button onclick="enablePush()" style="padding:8px 16px;background:#00A9CE;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Enable</button>' +
+      '<button onclick="dismissPush()" style="padding:8px 16px;background:#E2E8F0;color:#1A2B3C;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Not Now</button>' +
+    '</div>';
+  document.body.appendChild(banner);
+}
+
+function enablePush() {
+  var banner = document.getElementById('push-prompt');
+  if (banner) banner.remove();
+  CampPush.subscribe().then(function(result) {
+    if (result.success && typeof showToast === 'function') {
+      showToast('Notifications enabled! ✅', 'success');
+    }
+  });
+}
+
+function dismissPush() {
+  var banner = document.getElementById('push-prompt');
+  if (banner) banner.remove();
+  sessionStorage.setItem('push-prompt-dismissed', 'true');
+}
+</script>

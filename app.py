@@ -74,6 +74,11 @@ CAMPMINDER_SEASON_ID = int(os.environ.get('CAMPMINDER_SEASON_ID', '2026'))
 CACHE_TTL_MINUTES = 15  # Cache data for 15 minutes
 ATTENDANCE_LOCK_HOUR = 17  # 5:00 PM
 
+# VAPID Configuration for Push Notifications
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
+VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '')
+VAPID_CLAIMS = {'sub': 'mailto:campsoltaplin@marjcc.org'}
+
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -225,6 +230,15 @@ class AttendanceRecord(db.Model):
         db.UniqueConstraint('person_id', 'program_name', 'date', 'checkpoint_id'),
         db.Index('idx_attendance_date_program', 'date', 'program_name'),
     )
+
+class PushSubscription(db.Model):
+    __tablename__ = 'push_subscriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(120), db.ForeignKey('users.username'), nullable=False)
+    endpoint = db.Column(db.Text, nullable=False, unique=True)
+    p256dh_key = db.Column(db.Text, nullable=False)
+    auth_key = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ==================== INIT DB & DEFAULT USERS ====================
 
@@ -4337,6 +4351,150 @@ def api_fieldtrips_group_days_update():
         db.session.add(GlobalSetting(key='fieldtrip_group_days', value=json.dumps(group_days)))
     db.session.commit()
     return jsonify({'success': True, 'group_days': group_days})
+
+
+# ==================== PWA SERVICE WORKER ====================
+
+@app.route('/service-worker.js')
+def service_worker():
+    return app.send_static_file('service-worker.js'), 200, {
+        'Content-Type': 'application/javascript',
+        'Service-Worker-Allowed': '/',
+        'Cache-Control': 'no-cache'
+    }
+
+
+# ==================== PUSH NOTIFICATIONS ====================
+
+@app.route('/api/push/vapid-key')
+@login_required
+def push_vapid_key():
+    """Return the VAPID public key for push subscription."""
+    if not VAPID_PUBLIC_KEY:
+        return jsonify({'error': 'Push notifications not configured'}), 503
+    return jsonify({'publicKey': VAPID_PUBLIC_KEY})
+
+
+@app.route('/api/push/subscribe', methods=['POST'])
+@login_required
+def push_subscribe():
+    """Save a push notification subscription."""
+    data = request.get_json()
+    if not data or 'endpoint' not in data:
+        return jsonify({'error': 'Missing subscription data'}), 400
+
+    endpoint = data['endpoint']
+    keys = data.get('keys', {})
+    p256dh = keys.get('p256dh', '')
+    auth = keys.get('auth', '')
+
+    if not p256dh or not auth:
+        return jsonify({'error': 'Missing subscription keys'}), 400
+
+    # Upsert: update if endpoint exists, create otherwise
+    existing = PushSubscription.query.filter_by(endpoint=endpoint).first()
+    if existing:
+        existing.username = current_user.id
+        existing.p256dh_key = p256dh
+        existing.auth_key = auth
+    else:
+        db.session.add(PushSubscription(
+            username=current_user.id,
+            endpoint=endpoint,
+            p256dh_key=p256dh,
+            auth_key=auth
+        ))
+
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/api/push/unsubscribe', methods=['DELETE'])
+@login_required
+def push_unsubscribe():
+    """Remove a push subscription."""
+    data = request.get_json()
+    endpoint = data.get('endpoint', '') if data else ''
+
+    if endpoint:
+        PushSubscription.query.filter_by(endpoint=endpoint).delete()
+    else:
+        PushSubscription.query.filter_by(username=current_user.id).delete()
+
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/api/push/send', methods=['POST'])
+@login_required
+def push_send():
+    """Send push notification. Requires manage_settings permission."""
+    if not current_user.has_permission('manage_settings'):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    if not VAPID_PRIVATE_KEY or not VAPID_PUBLIC_KEY:
+        return jsonify({'error': 'Push notifications not configured. Set VAPID keys in environment.'}), 503
+
+    data = request.get_json()
+    title = data.get('title', 'Camp Sol Taplin')
+    body = data.get('body', '')
+    url = data.get('url', '/')
+    target = data.get('target', 'all')
+
+    if not body:
+        return jsonify({'error': 'Message body is required'}), 400
+
+    # Get target subscriptions
+    if target == 'all':
+        subscriptions = PushSubscription.query.all()
+    else:
+        subscriptions = PushSubscription.query.filter_by(username=target).all()
+
+    if not subscriptions:
+        return jsonify({'error': 'No subscribers found'}), 404
+
+    from pywebpush import webpush, WebPushException
+
+    payload = json.dumps({'title': title, 'body': body, 'url': url})
+    sent = 0
+    failed = 0
+    stale_endpoints = []
+
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info={
+                    'endpoint': sub.endpoint,
+                    'keys': {
+                        'p256dh': sub.p256dh_key,
+                        'auth': sub.auth_key
+                    }
+                },
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims=VAPID_CLAIMS
+            )
+            sent += 1
+        except WebPushException as e:
+            if e.response and e.response.status_code in (404, 410):
+                stale_endpoints.append(sub.endpoint)
+            failed += 1
+        except Exception:
+            failed += 1
+
+    # Clean up stale subscriptions
+    if stale_endpoints:
+        PushSubscription.query.filter(
+            PushSubscription.endpoint.in_(stale_endpoints)
+        ).delete(synchronize_session=False)
+        db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'sent': sent,
+        'failed': failed,
+        'cleaned': len(stale_endpoints)
+    })
 
 
 # ==================== ERROR HANDLERS ====================
