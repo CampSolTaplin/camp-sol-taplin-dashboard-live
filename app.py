@@ -238,6 +238,15 @@ with app.app_context():
         with db.engine.connect() as conn:
             conn.execute(db.text("ALTER TABLE users ADD COLUMN permissions TEXT"))
             conn.commit()
+    # Migrate global_settings.value from VARCHAR(200) to TEXT (PostgreSQL only)
+    if db.engine.dialect.name == 'postgresql':
+        gs_columns = {c['name']: c for c in inspector.get_columns('global_settings')}
+        if 'value' in gs_columns:
+            col_type = str(gs_columns['value'].get('type', ''))
+            if 'VARCHAR' in col_type.upper() or 'CHAR' in col_type.upper():
+                with db.engine.connect() as conn:
+                    conn.execute(db.text("ALTER TABLE global_settings ALTER COLUMN value TYPE TEXT"))
+                    conn.commit()
     # Migrate existing users: backfill permissions from role if not set
     for u in UserAccount.query.all():
         if u.permissions is None:
