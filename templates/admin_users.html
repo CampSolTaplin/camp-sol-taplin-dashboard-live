@@ -387,15 +387,16 @@
                         <td>{{ u.created_at[:10] if u.created_at != 'Unknown' else 'Unknown' }}</td>
                         <td>
                             <div class="action-btns">
-                                <button class="btn-small btn-edit" onclick="openPasswordModal('{{ u.username }}')">
-                                    🔑 Password
-                                </button>
                                 {% if u.username != user.id %}
-                                <button class="btn-small btn-perms" data-username="{{ u.username }}" data-permissions='{{ u.permissions | tojson }}' onclick="openPermsFromButton(this)">
-                                    🔧 Permissions
+                                <button class="btn-small btn-edit" data-username="{{ u.username }}" data-role="{{ u.role }}" data-permissions='{{ u.permissions | tojson }}' onclick="openEditModal(this)">
+                                    ✏️ Edit
                                 </button>
                                 <button class="btn-small btn-delete" onclick="confirmDelete('{{ u.username }}')">
                                     🗑️ Delete
+                                </button>
+                                {% else %}
+                                <button class="btn-small btn-edit" onclick="openPasswordModal('{{ u.username }}')">
+                                    🔑 Password
                                 </button>
                                 {% endif %}
                             </div>
@@ -448,7 +449,7 @@
         </div>
     </div>
 
-    <!-- Change Password Modal -->
+    <!-- Change Password Modal (for self only) -->
     <div id="passwordModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -474,17 +475,30 @@
         </div>
     </div>
 
-    <!-- Edit Permissions Modal -->
-    <div id="permsModal" class="modal">
+    <!-- Unified Edit User Modal -->
+    <div id="editModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🔧 Edit Permissions</h3>
-                <button class="modal-close" onclick="closePermsModal()">&times;</button>
+                <h3>✏️ Edit User</h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="permsUsername">
+                <input type="hidden" id="editOriginalUsername">
                 <div class="form-group">
-                    <label>User: <strong id="permsUserDisplay"></strong></label>
+                    <label>Username</label>
+                    <input type="text" id="editUsername" placeholder="Username" required minlength="3">
+                </div>
+                <div class="form-group">
+                    <label>Password <span style="font-weight:400; color:var(--text-muted); font-size:12px;">(leave blank to keep current)</span></label>
+                    <input type="password" id="editPassword" placeholder="New password (optional)" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="editRole">
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                        <option value="unit_leader">Unit Leader</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <div class="perms-section-label">
@@ -501,8 +515,8 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closePermsModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="savePermissions()">Save Permissions</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUserEdit()">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -609,17 +623,17 @@
             }
         }
 
-        // ========== PERMISSIONS MODAL ==========
-        function openPermsFromButton(btn) {
+        // ========== EDIT USER MODAL ==========
+        function openEditModal(btn) {
             var username = btn.getAttribute('data-username');
+            var role = btn.getAttribute('data-role');
             var currentPerms = JSON.parse(btn.getAttribute('data-permissions'));
-            openPermsModal(username, currentPerms);
-        }
 
-        function openPermsModal(username, currentPerms) {
-            document.getElementById('permsModal').classList.add('show');
-            document.getElementById('permsUsername').value = username;
-            document.getElementById('permsUserDisplay').textContent = username;
+            document.getElementById('editModal').classList.add('show');
+            document.getElementById('editOriginalUsername').value = username;
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editRole').value = role;
 
             // Set checkboxes based on current permissions
             document.querySelectorAll('#editPermsGrid input[type="checkbox"]').forEach(function(cb) {
@@ -627,35 +641,59 @@
             });
         }
 
-        function closePermsModal() {
-            document.getElementById('permsModal').classList.remove('show');
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
         }
 
-        async function savePermissions() {
-            var username = document.getElementById('permsUsername').value;
+        // When role changes, offer to apply role defaults
+        document.getElementById('editRole').addEventListener('change', function() {
+            var newRole = this.value;
+            var defaults = ROLE_DEFAULTS[newRole] || [];
+            if (confirm('Apply default permissions for "' + newRole + '" role?')) {
+                document.querySelectorAll('#editPermsGrid input[type="checkbox"]').forEach(function(cb) {
+                    cb.checked = defaults.indexOf(cb.value) !== -1;
+                });
+            }
+        });
+
+        async function saveUserEdit() {
+            var originalUsername = document.getElementById('editOriginalUsername').value;
+            var newUsername = document.getElementById('editUsername').value.trim();
+            var password = document.getElementById('editPassword').value;
+            var role = document.getElementById('editRole').value;
+
             var permissions = [];
             document.querySelectorAll('#editPermsGrid input[type="checkbox"]:checked').forEach(function(cb) {
                 permissions.push(cb.value);
             });
 
+            var payload = {
+                username: newUsername,
+                role: role,
+                permissions: permissions
+            };
+            if (password) {
+                payload.password = password;
+            }
+
             try {
-                var response = await fetch('/api/users/' + username + '/permissions', {
+                var response = await fetch('/api/users/' + encodeURIComponent(originalUsername), {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ permissions: permissions })
+                    body: JSON.stringify(payload)
                 });
 
                 var data = await response.json();
 
                 if (data.success) {
-                    showAlert('Permissions updated for ' + username, 'success');
-                    closePermsModal();
+                    showAlert(data.message, 'success');
+                    closeEditModal();
                     setTimeout(function() { location.reload(); }, 1000);
                 } else {
-                    showAlert(data.error || 'Error updating permissions', 'error');
+                    showAlert(data.error || 'Error updating user', 'error');
                 }
             } catch (error) {
-                showAlert('Error updating permissions: ' + error.message, 'error');
+                showAlert('Error updating user: ' + error.message, 'error');
             }
         }
 

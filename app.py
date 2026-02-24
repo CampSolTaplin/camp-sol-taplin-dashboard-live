@@ -1113,6 +1113,70 @@ def api_delete_user(username):
         'message': f'User "{username}" deleted successfully'
     })
 
+@app.route('/api/users/<username>', methods=['PUT'])
+@login_required
+def api_update_user(username):
+    """API: Unified user update — username, password, role, permissions."""
+    if not current_user.has_permission('manage_users'):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    username = username.lower()
+    u = UserAccount.query.filter_by(username=username).first()
+    if not u:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json()
+    new_username = data.get('username', '').strip().lower()
+    new_password = data.get('password', '').strip()
+    new_role = data.get('role', '').strip()
+    permissions = data.get('permissions', None)
+
+    # Validate role if provided
+    if new_role and new_role not in ('admin', 'viewer', 'unit_leader'):
+        return jsonify({'error': 'Invalid role'}), 400
+
+    # Validate new username if changed
+    if new_username and new_username != username:
+        if len(new_username) < 3:
+            return jsonify({'error': 'Username must be at least 3 characters'}), 400
+        clean = new_username.replace('_', '').replace('.', '').replace('@', '')
+        if not clean.isalnum():
+            return jsonify({'error': 'Username can only contain letters, numbers, underscores, dots and @'}), 400
+        if UserAccount.query.filter_by(username=new_username).first():
+            return jsonify({'error': 'Username already exists'}), 400
+
+    # Validate password if provided
+    if new_password and len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+
+    # Apply changes
+    if new_role and new_role != u.role:
+        u.role = new_role
+
+    if permissions is not None:
+        valid_perms = [p for p in permissions if p in ALL_PERMISSIONS]
+        u.set_permissions(valid_perms)
+
+    if new_password:
+        u.password_hash = generate_password_hash(new_password)
+
+    # Handle username rename last (PK change)
+    if new_username and new_username != username:
+        # Update foreign keys in UnitLeaderAssignment
+        UnitLeaderAssignment.query.filter_by(username=username).update({'username': new_username})
+        # Update attendance records
+        AttendanceRecord.query.filter_by(username=username).update({'username': new_username})
+        u.username = new_username
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f'User updated successfully',
+        'username': new_username or username
+    })
+
+
 @app.route('/api/users/<username>/password', methods=['PUT'])
 @login_required
 def api_change_password(username):
