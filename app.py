@@ -909,8 +909,6 @@ def fetch_financial_data(force_refresh: bool = False, enrollment_report: dict = 
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        if hasattr(current_user, 'role') and current_user.role == 'unit_leader':
-            return redirect(url_for('attendance_page'))
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
@@ -929,9 +927,6 @@ def login():
         if u and check_password_hash(u.password_hash, password):
             user = User(u.username, u.role, u.get_permissions())
             login_user(user)
-            # Unit leaders go directly to attendance page
-            if u.role == 'unit_leader':
-                return redirect(url_for('attendance_page'))
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid username or password', 'error')
@@ -1441,6 +1436,43 @@ def admin_settings():
                          revenue_goal=int(revenue_goal.value) if revenue_goal and revenue_goal.value != '0' else 0,
                          user=current_user,
                          active_page='camps_goals')
+
+
+@app.route('/admin/notifications')
+@login_required
+def admin_notifications():
+    """Push notifications management page"""
+    if not current_user.has_permission('manage_settings'):
+        flash('Access denied.', 'error')
+        return redirect(url_for('dashboard'))
+    return render_template('admin_notifications.html',
+                         user=current_user,
+                         active_page='admin_notifications',
+                         generated_at=None)
+
+
+@app.route('/api/push/subscribers')
+@login_required
+def push_subscribers():
+    """Get list of users with push subscription info"""
+    if not current_user.has_permission('manage_settings'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    users = UserAccount.query.all()
+    subs = db.session.query(
+        PushSubscription.username,
+        db.func.count(PushSubscription.id)
+    ).group_by(PushSubscription.username).all()
+    sub_counts = dict(subs)
+    return jsonify({
+        'users': [{
+            'username': u.username,
+            'role': u.role,
+            'subscribed': sub_counts.get(u.username, 0) > 0,
+            'sub_count': sub_counts.get(u.username, 0)
+        } for u in users],
+        'total_subscriptions': sum(sub_counts.values())
+    })
+
 
 @app.route('/api/settings', methods=['GET'])
 @login_required
@@ -4444,8 +4476,16 @@ def push_send():
     if not body:
         return jsonify({'error': 'Message body is required'}), 400
 
+    target_users = data.get('target_users', [])
+    target_role = data.get('target_role', '')
+
     # Get target subscriptions
-    if target == 'all':
+    if target_users:
+        subscriptions = PushSubscription.query.filter(PushSubscription.username.in_(target_users)).all()
+    elif target_role:
+        role_users = [u.username for u in UserAccount.query.filter_by(role=target_role).all()]
+        subscriptions = PushSubscription.query.filter(PushSubscription.username.in_(role_users)).all()
+    elif target == 'all':
         subscriptions = PushSubscription.query.all()
     else:
         subscriptions = PushSubscription.query.filter_by(username=target).all()

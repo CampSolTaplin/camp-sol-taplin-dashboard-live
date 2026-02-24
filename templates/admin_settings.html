@@ -361,39 +361,6 @@
                 <button class="btn-save-all" id="saveBtn" onclick="saveAll()">Save All Changes</button>
             </div>
 
-        <!-- Push Notifications Section -->
-        <div class="global-settings" style="margin-top:24px;">
-            <h3 style="font-family:'Outfit',sans-serif;font-weight:700;font-size:18px;margin-bottom:4px;">📲 Push Notifications</h3>
-            <p id="pushStatus" style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
-                Send a notification to all subscribed users.
-            </p>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div>
-                    <label style="font-weight:600;font-size:14px;display:block;margin-bottom:6px;">Title</label>
-                    <input type="text" id="pushTitle" value="Camp Sol Taplin"
-                           style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;width:100%;max-width:400px;box-sizing:border-box;"
-                           placeholder="Notification title">
-                </div>
-                <div>
-                    <label style="font-weight:600;font-size:14px;display:block;margin-bottom:6px;">Message</label>
-                    <textarea id="pushBody" rows="3"
-                              style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;width:100%;max-width:400px;resize:vertical;font-family:inherit;box-sizing:border-box;"
-                              placeholder="Type your notification message..."></textarea>
-                </div>
-                <div>
-                    <label style="font-weight:600;font-size:14px;display:block;margin-bottom:6px;">Link (optional)</label>
-                    <input type="text" id="pushUrl" value="/"
-                           style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;width:100%;max-width:400px;box-sizing:border-box;"
-                           placeholder="URL to open on click (e.g. /dashboard)">
-                </div>
-                <div>
-                    <button onclick="sendPushNotification()" class="btn-save-all"
-                            style="padding:10px 24px;font-size:14px;width:fit-content;">
-                        Send Notification
-                    </button>
-                </div>
-            </div>
-        </div>
         </div>
 
     </main>
@@ -612,36 +579,6 @@
         // Load share link on page load
         loadShareLink();
 
-        // ---- Push Notifications ----
-        async function sendPushNotification() {
-            var title = document.getElementById('pushTitle').value.trim();
-            var body = document.getElementById('pushBody').value.trim();
-            var url = document.getElementById('pushUrl').value.trim() || '/';
-
-            if (!body) {
-                showAlert('Please enter a notification message.', 'error');
-                return;
-            }
-
-            try {
-                var resp = await fetch('/api/push/send', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: title, body: body, url: url, target: 'all' })
-                });
-                var data = await resp.json();
-
-                if (data.success) {
-                    showAlert('Notification sent to ' + data.sent + ' subscriber(s)' +
-                              (data.failed > 0 ? ' (' + data.failed + ' failed)' : ''), 'success');
-                    document.getElementById('pushBody').value = '';
-                } else {
-                    showAlert(data.error || 'Failed to send notification', 'error');
-                }
-            } catch (e) {
-                showAlert('Error: ' + e.message, 'error');
-            }
-        }
     </script>
 </body>
 </html>

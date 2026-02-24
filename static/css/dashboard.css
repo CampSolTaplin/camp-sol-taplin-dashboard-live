@@ -110,10 +110,14 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     flex-shrink: 0;
 }
 
-/* Settings sub-menu */
+/* Collapsible sub-menus */
 .nav-label { cursor: default; opacity: 0.7; pointer-events: none; }
 
-.nav-submenu { display: flex; flex-direction: column; }
+.nav-submenu { display: none; flex-direction: column; }
+.nav-submenu.open { display: flex; }
+
+.submenu-arrow { transition: transform 0.2s; width: 14px; height: 14px; min-width: 14px; margin-left: auto; }
+.submenu-arrow.rotated { transform: rotate(180deg); }
 
 .nav-subitem {
     display: flex; align-items: center; gap: 8px;

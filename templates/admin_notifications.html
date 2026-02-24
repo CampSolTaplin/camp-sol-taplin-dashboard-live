@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Camp Sol Taplin</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#00A9CE">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Camp Sol Taplin">
+    <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .admin-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover { color: var(--teal); }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .card-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            font-weight: 600;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .form-group input[type="text"],
+        .form-group textarea {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .form-group textarea {
+            resize: vertical;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .radio-option input[type="radio"] {
+            accent-color: var(--teal);
+            width: 16px;
+            height: 16px;
+        }
+
+        .role-select {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            min-width: 200px;
+        }
+        .role-select:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        .user-checklist {
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            max-width: 500px;
+        }
+        .user-check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+        .user-check-item:hover {
+            background: var(--bg);
+        }
+        .user-check-item input[type="checkbox"] {
+            accent-color: var(--teal);
+            width: 16px;
+            height: 16px;
+        }
+        .user-check-name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .user-check-role {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .user-check-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: auto;
+        }
+        .badge-subscribed {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        .badge-not-subscribed {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .btn-send {
+            background: var(--teal);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-send:hover {
+            background: var(--teal-dark);
+            transform: translateY(-1px);
+        }
+        .btn-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .subscribers-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .subscribers-table th,
+        .subscribers-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .subscribers-table th {
+            background: var(--bg);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .subscribers-table tr:last-child td {
+            border-bottom: none;
+        }
+        .subscribers-table tr:hover td {
+            background: var(--teal-light);
+        }
+
+        .stat-badges {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .stat-badge {
+            background: var(--bg);
+            padding: 10px 16px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stat-badge-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--teal);
+        }
+        .stat-badge-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        .alert-error {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .select-all-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .admin-container { padding: 0; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .page-title { font-size: 22px; }
+            .form-group input[type="text"],
+            .form-group textarea,
+            .user-checklist { max-width: 100%; }
+            .stat-badges { flex-direction: column; }
+            .btn-send { width: 100%; min-height: 44px; }
+        }
+    </style>
+</head>
+<body>
+    {% include '_sidebar.html' %}
+
+    <main class="main">
+        <div class="admin-container">
+            <a href="{{ url_for('dashboard') }}" class="btn-back">
+                &#8592; Back to Dashboard
+            </a>
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Push Notifications</h1>
+                    <p class="page-subtitle">Send push notifications to subscribed users</p>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Send Notification Card -->
+            <div class="card">
+                <h3>Send Notification</h3>
+                <p class="card-desc">Compose and send a push notification to your users.</p>
+
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="pushTitle" value="Camp Sol Taplin" placeholder="Notification title">
+                </div>
+
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="pushBody" rows="3" placeholder="Type your notification message..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Link (optional)</label>
+                    <input type="text" id="pushUrl" value="/" placeholder="URL to open on click (e.g. /dashboard)">
+                </div>
+
+                <div class="form-group">
+                    <label>Recipients</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="target" value="all" checked onchange="updateRecipientUI()">
+                            All Subscribers
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="target" value="role" onchange="updateRecipientUI()">
+                            By Role
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="target" value="users" onchange="updateRecipientUI()">
+                            Select Users
+                        </label>
+                    </div>
+
+                    <!-- By Role selector -->
+                    <div id="roleSelector" style="display:none; margin-top:8px;">
+                        <select class="role-select" id="roleSelect">
+                            <option value="admin">Admin</option>
+                            <option value="viewer">Viewer</option>
+                            <option value="unit_leader">Unit Leader</option>
+                        </select>
+                    </div>
+
+                    <!-- User checklist -->
+                    <div id="userSelector" style="display:none; margin-top:8px;">
+                        <div class="user-checklist" id="userChecklist">
+                            <div style="padding:12px;color:var(--text-muted);font-size:13px;">Loading users...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-send" id="sendBtn" onclick="sendNotification()">
+                    Send Notification
+                </button>
+            </div>
+
+            <!-- Subscriber Overview Card -->
+            <div class="card">
+                <h3>Subscriber Overview</h3>
+                <p class="card-desc">Users with active push notification subscriptions.</p>
+
+                <div class="stat-badges" id="statBadges">
+                    <div class="stat-badge">
+                        <span class="stat-badge-value" id="totalSubs">-</span>
+                        <span class="stat-badge-label">Total<br>Subscriptions</span>
+                    </div>
+                    <div class="stat-badge">
+                        <span class="stat-badge-value" id="totalUsers">-</span>
+                        <span class="stat-badge-label">Total<br>Users</span>
+                    </div>
+                    <div class="stat-badge">
+                        <span class="stat-badge-value" id="subscribedUsers">-</span>
+                        <span class="stat-badge-label">Users<br>Subscribed</span>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                <table class="subscribers-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Devices</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subscribersBody">
+                        <tr><td colspan="4" style="color:var(--text-muted);font-size:13px;padding:16px;">Loading...</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        var allUsers = [];
+
+        function showAlert(message, type) {
+            var container = document.getElementById('alertContainer');
+            container.innerHTML = '<div class="alert alert-' + type + '">' + message + '</div>';
+            setTimeout(function() { container.innerHTML = ''; }, 5000);
+        }
+
+        function updateRecipientUI() {
+            var selected = document.querySelector('input[name="target"]:checked').value;
+            document.getElementById('roleSelector').style.display = selected === 'role' ? 'block' : 'none';
+            document.getElementById('userSelector').style.display = selected === 'users' ? 'block' : 'none';
+        }
+
+        async function loadSubscribers() {
+            try {
+                var resp = await fetch('/api/push/subscribers');
+                var data = await resp.json();
+                allUsers = data.users || [];
+
+                // Update stats
+                document.getElementById('totalSubs').textContent = data.total_subscriptions;
+                document.getElementById('totalUsers').textContent = allUsers.length;
+                document.getElementById('subscribedUsers').textContent = allUsers.filter(function(u) { return u.subscribed; }).length;
+
+                // Build subscriber table
+                var tbody = document.getElementById('subscribersBody');
+                if (allUsers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);font-size:13px;padding:16px;">No users found.</td></tr>';
+                } else {
+                    tbody.innerHTML = allUsers.map(function(u) {
+                        return '<tr>' +
+                            '<td style="font-weight:500;">' + u.username + '</td>' +
+                            '<td><span style="font-size:12px;background:var(--bg);padding:2px 8px;border-radius:4px;">' + u.role + '</span></td>' +
+                            '<td>' + (u.subscribed
+                                ? '<span class="user-check-badge badge-subscribed">Subscribed</span>'
+                                : '<span class="user-check-badge badge-not-subscribed">Not subscribed</span>') + '</td>' +
+                            '<td>' + u.sub_count + '</td>' +
+                        '</tr>';
+                    }).join('');
+                }
+
+                // Build user checklist
+                var checklist = document.getElementById('userChecklist');
+                var subscribedUsers = allUsers.filter(function(u) { return u.subscribed; });
+                if (subscribedUsers.length === 0) {
+                    checklist.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:13px;">No subscribed users yet.</div>';
+                } else {
+                    checklist.innerHTML =
+                        '<div class="select-all-bar">' +
+                            '<input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)">' +
+                            '<label for="selectAll">Select all (' + subscribedUsers.length + ' subscribed)</label>' +
+                        '</div>' +
+                        subscribedUsers.map(function(u) {
+                            return '<div class="user-check-item">' +
+                                '<input type="checkbox" class="user-cb" value="' + u.username + '" id="uc_' + u.username + '">' +
+                                '<label for="uc_' + u.username + '" style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;">' +
+                                    '<span class="user-check-name">' + u.username + '</span>' +
+                                    '<span class="user-check-role">' + u.role + '</span>' +
+                                    '<span class="user-check-badge badge-subscribed" style="margin-left:auto;">' + u.sub_count + ' device(s)</span>' +
+                                '</label>' +
+                            '</div>';
+                        }).join('');
+                }
+            } catch (e) {
+                console.error('Error loading subscribers:', e);
+            }
+        }
+
+        function toggleSelectAll(checked) {
+            document.querySelectorAll('.user-cb').forEach(function(cb) {
+                cb.checked = checked;
+            });
+        }
+
+        async function sendNotification() {
+            var title = document.getElementById('pushTitle').value.trim();
+            var body = document.getElementById('pushBody').value.trim();
+            var url = document.getElementById('pushUrl').value.trim() || '/';
+            var targetType = document.querySelector('input[name="target"]:checked').value;
+
+            if (!body) {
+                showAlert('Please enter a notification message.', 'error');
+                return;
+            }
+
+            var payload = { title: title, body: body, url: url };
+
+            if (targetType === 'all') {
+                payload.target = 'all';
+            } else if (targetType === 'role') {
+                payload.target_role = document.getElementById('roleSelect').value;
+            } else if (targetType === 'users') {
+                var selectedUsers = [];
+                document.querySelectorAll('.user-cb:checked').forEach(function(cb) {
+                    selectedUsers.push(cb.value);
+                });
+                if (selectedUsers.length === 0) {
+                    showAlert('Please select at least one user.', 'error');
+                    return;
+                }
+                payload.target_users = selectedUsers;
+            }
+
+            var btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                var resp = await fetch('/api/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                var data = await resp.json();
+
+                if (data.success) {
+                    showAlert('Notification sent to ' + data.sent + ' subscriber(s)' +
+                              (data.failed > 0 ? ' (' + data.failed + ' failed)' : ''), 'success');
+                    document.getElementById('pushBody').value = '';
+                } else {
+                    showAlert(data.error || 'Failed to send notification', 'error');
+                }
+            } catch (e) {
+                showAlert('Error: ' + e.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Send Notification';
+        }
+
+        // Load data on page load
+        loadSubscribers();
+    </script>
+</body>
+</html>
