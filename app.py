@@ -927,6 +927,9 @@ def login():
         if u and check_password_hash(u.password_hash, password):
             user = User(u.username, u.role, u.get_permissions())
             login_user(user)
+            # Unit leaders go to attendance in PWA, dashboard in browser
+            if u.role == 'unit_leader' and request.form.get('is_pwa') == '1':
+                return redirect(url_for('attendance_page'))
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid username or password', 'error')

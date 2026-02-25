@@ -164,8 +164,14 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required>
             </div>
+            <input type="hidden" name="is_pwa" id="isPwa" value="0">
             <button type="submit" class="btn btn-primary">Sign In</button>
         </form>
+        <script>
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            document.getElementById('isPwa').value = '1';
+        }
+        </script>
         
         <div class="footer">
             Michael-Ann Russell JCC &copy; 2026
