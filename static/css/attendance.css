@@ -1062,7 +1062,7 @@ body {
         flex-wrap: wrap;
     }
     .camper-info {
-        min-width: 100px;
+        flex: 1 0 100px;
     }
     .status-buttons {
         gap: 4px;
