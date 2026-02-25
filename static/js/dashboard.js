@@ -46,6 +46,9 @@ function switchView(viewName) {
     if (viewName === 'fieldtrips') {
         setTimeout(initFieldTripsView, 100);
     }
+    if (viewName === 'staff') {
+        setTimeout(initStaffView, 100);
+    }
 }
 
 // Filter by category
@@ -2894,5 +2897,262 @@ function _ftEsc(str) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(str));
     return div.innerHTML;
+}
+
+// ==================== STAFF PIPELINE ====================
+
+var staffData = null;
+var staffLoaded = false;
+
+var STAFF_COLUMNS = [
+    { key: 'contract_not_sent', label: 'Contract Not Sent', color: '#9CA3AF', bg: '#F3F4F6' },
+    { key: 'contract_sent', label: 'Contract Sent', color: '#F59E0B', bg: '#FFFBEB' },
+    { key: 'contract_received', label: 'Contract Received', color: '#3B82F6', bg: '#EFF6FF' },
+    { key: 'active', label: 'Active', color: '#10B981', bg: '#ECFDF5' },
+    { key: 'inactive', label: 'Inactive', color: '#EF4444', bg: '#FEF2F2' }
+];
+
+function loadStaffSeason() {
+    staffLoaded = false;
+    staffData = null;
+    // Clear filter dropdowns
+    var posSel = document.getElementById('staff-filter-position');
+    if (posSel) { posSel.innerHTML = '<option value="">All Positions</option>'; }
+    var orgSel = document.getElementById('staff-filter-org');
+    if (orgSel) { orgSel.innerHTML = '<option value="">All Categories</option>'; }
+    initStaffView();
+}
+
+function initStaffView() {
+    if (staffLoaded && staffData) {
+        renderStaffKanban();
+        return;
+    }
+    var kanban = document.getElementById('staff-kanban');
+    if (kanban) kanban.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#9ca3af;"><div class="spinner" style="width:32px; height:32px; border:3px solid #e5e7eb; border-top-color:#3b82f6; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px;"></div><div>Loading staff data...</div></div>';
+
+    var seasonParam = '';
+    var seasonSel = document.getElementById('staff-season');
+    if (seasonSel && seasonSel.value) {
+        seasonParam = '?season=' + seasonSel.value;
+    }
+
+    fetch('/api/staff' + seasonParam)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                kanban.innerHTML = '<div style="text-align:center; padding:60px; color:#EF4444;">Error: ' + data.error + '</div>';
+                return;
+            }
+            staffData = data;
+            staffLoaded = true;
+
+            // Update season selector to show which season loaded
+            if (data.season_id) {
+                var seasonSel = document.getElementById('staff-season');
+                if (seasonSel && !seasonSel.value) {
+                    seasonSel.value = String(data.season_id);
+                }
+            }
+
+            // Populate filter dropdowns
+            var posSel = document.getElementById('staff-filter-position');
+            if (posSel && data.positions) {
+                data.positions.forEach(function(p) {
+                    var opt = document.createElement('option');
+                    opt.value = p; opt.textContent = p;
+                    posSel.appendChild(opt);
+                });
+            }
+            var orgSel = document.getElementById('staff-filter-org');
+            if (orgSel && data.org_categories) {
+                data.org_categories.forEach(function(c) {
+                    var opt = document.createElement('option');
+                    opt.value = c; opt.textContent = c;
+                    orgSel.appendChild(opt);
+                });
+            }
+
+            renderStaffKanban();
+        })
+        .catch(function(err) {
+            kanban.innerHTML = '<div style="text-align:center; padding:60px; color:#EF4444;">Failed to load staff data</div>';
+            console.error('Staff fetch error:', err);
+        });
+}
+
+function getFilteredStaff() {
+    if (!staffData || !staffData.staff) return [];
+    var pos = document.getElementById('staff-filter-position').value;
+    var org = document.getElementById('staff-filter-org').value;
+    var intl = document.getElementById('staff-filter-intl').value;
+    var search = (document.getElementById('staff-search').value || '').toLowerCase();
+
+    return staffData.staff.filter(function(s) {
+        if (pos && s.position1 !== pos && s.position2 !== pos) return false;
+        if (org && s.org_category !== org) return false;
+        if (intl && s.international !== intl) return false;
+        if (search) {
+            var fullName = ((s.first_name || '') + ' ' + (s.last_name || '')).toLowerCase();
+            if (fullName.indexOf(search) === -1) return false;
+        }
+        return true;
+    });
+}
+
+function renderStaffKanban() {
+    var filtered = getFilteredStaff();
+
+    // Group by column
+    var groups = {};
+    STAFF_COLUMNS.forEach(function(col) { groups[col.key] = []; });
+    filtered.forEach(function(s) {
+        if (groups[s.column]) groups[s.column].push(s);
+    });
+
+    // Render summary cards
+    var summaryEl = document.getElementById('staff-summary');
+    if (summaryEl) {
+        var html = '';
+        STAFF_COLUMNS.forEach(function(col) {
+            var count = groups[col.key].length;
+            html += '<div style="flex:1; min-width:120px; background:' + col.bg + '; border-left:4px solid ' + col.color + '; border-radius:10px; padding:12px 16px;">';
+            html += '<div style="font-size:24px; font-weight:700; color:' + col.color + ';">' + count + '</div>';
+            html += '<div style="font-size:12px; color:#6b7280; font-weight:500;">' + col.label + '</div>';
+            html += '</div>';
+        });
+        summaryEl.innerHTML = html;
+    }
+
+    // Render kanban
+    var kanban = document.getElementById('staff-kanban');
+    if (!kanban) return;
+
+    var html = '';
+    STAFF_COLUMNS.forEach(function(col) {
+        var cards = groups[col.key];
+        html += '<div class="kanban-column">';
+        html += '<div class="kanban-column-header" style="border-bottom:3px solid ' + col.color + ';">';
+        html += '<span>' + col.label + '</span>';
+        html += '<span class="kanban-count" style="background:' + col.color + ';">' + cards.length + '</span>';
+        html += '</div>';
+        html += '<div class="kanban-cards">';
+
+        if (cards.length === 0) {
+            html += '<div style="text-align:center; padding:24px 12px; color:#d1d5db; font-size:13px;">No staff</div>';
+        }
+
+        cards.forEach(function(s) {
+            var position = s.position1 || 'No Position';
+            var badge = '';
+            if (s.international === 'International') {
+                badge = '<span class="staff-badge staff-badge-intl">INTL</span>';
+            } else if (s.international === 'Domestic') {
+                badge = '<span class="staff-badge staff-badge-domestic">DOM</span>';
+            }
+
+            var statusBadge = '';
+            if (s.status_id === 2) statusBadge = '<span class="staff-badge" style="background:#FEF3C7;color:#92400E;">Resigned</span>';
+            if (s.status_id === 3) statusBadge = '<span class="staff-badge" style="background:#FEE2E2;color:#991B1B;">Dismissed</span>';
+            if (s.status_id === 4) statusBadge = '<span class="staff-badge" style="background:#F3F4F6;color:#6B7280;">Cancelled</span>';
+
+            html += '<div class="kanban-card" onclick="showStaffDetail(' + s.person_id + ')" style="border-left:3px solid ' + col.color + ';">';
+            html += '<div class="kanban-card-name">' + _ftEsc(s.first_name + ' ' + s.last_name) + '</div>';
+            html += '<div class="kanban-card-position">' + _ftEsc(position) + '</div>';
+            html += '<div class="kanban-card-badges">' + badge + statusBadge + '</div>';
+            if (s.hire_date) {
+                html += '<div class="kanban-card-date">Hired: ' + s.hire_date + '</div>';
+            }
+            html += '</div>';
+        });
+
+        html += '</div></div>';
+    });
+
+    kanban.innerHTML = html;
+}
+
+function filterStaff() {
+    renderStaffKanban();
+}
+
+function showStaffDetail(personId) {
+    if (!staffData || !staffData.staff) return;
+    var s = staffData.staff.find(function(x) { return x.person_id === personId; });
+    if (!s) return;
+
+    var col = STAFF_COLUMNS.find(function(c) { return c.key === s.column; }) || STAFF_COLUMNS[0];
+
+    var html = '';
+    html += '<div style="background:' + col.color + '; color:white; padding:20px 24px;">';
+    html += '<div style="display:flex; justify-content:space-between; align-items:start;">';
+    html += '<div>';
+    html += '<h3 style="margin:0; font-family:Outfit,sans-serif; font-size:20px; font-weight:700;">' + _ftEsc(s.first_name + ' ' + s.last_name) + '</h3>';
+    html += '<div style="opacity:0.9; margin-top:4px; font-size:14px;">' + _ftEsc(s.position1 || 'No Position');
+    if (s.position2) html += ' / ' + _ftEsc(s.position2);
+    html += '</div>';
+    html += '</div>';
+    html += '<button onclick="closeStaffModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">×</button>';
+    html += '</div></div>';
+
+    html += '<div style="padding:20px 24px;">';
+
+    // Status & type
+    html += '<div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">';
+    html += '<span style="background:' + col.bg + '; color:' + col.color + '; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">' + col.label + '</span>';
+    if (s.international) {
+        var intlColor = s.international === 'International' ? '#7C3AED' : '#0891B2';
+        html += '<span style="background:' + (s.international === 'International' ? '#F5F3FF' : '#ECFEFF') + '; color:' + intlColor + '; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">' + s.international + '</span>';
+    }
+    if (s.years) {
+        html += '<span style="background:#F0FDF4; color:#166534; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">' + s.years + ' yr' + (s.years > 1 ? 's' : '') + '</span>';
+    }
+    html += '</div>';
+
+    // Contact
+    html += '<div style="margin-bottom:16px;">';
+    html += '<div style="font-weight:600; font-size:13px; color:#6b7280; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Contact</div>';
+    if (s.email) html += '<div style="font-size:14px; margin-bottom:4px;">📧 <a href="mailto:' + _ftEsc(s.email) + '" style="color:#3B82F6;">' + _ftEsc(s.email) + '</a></div>';
+    if (s.phone) html += '<div style="font-size:14px;">📱 ' + _ftEsc(s.phone) + '</div>';
+    if (!s.email && !s.phone) html += '<div style="font-size:14px; color:#9ca3af;">No contact info</div>';
+    html += '</div>';
+
+    // Organization
+    html += '<div style="margin-bottom:16px;">';
+    html += '<div style="font-weight:600; font-size:13px; color:#6b7280; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Organization</div>';
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">';
+    html += _staffInfoCell('Category', s.org_category || '—');
+    html += _staffInfoCell('Bunk Staff', s.bunk_staff === true ? 'Yes' : s.bunk_staff === false ? 'No' : '—');
+    html += _staffInfoCell('Salary', s.salary ? '$' + Number(s.salary).toLocaleString() : '—');
+    html += _staffInfoCell('Status', s.status || '—');
+    html += '</div></div>';
+
+    // Dates
+    html += '<div style="margin-bottom:8px;">';
+    html += '<div style="font-weight:600; font-size:13px; color:#6b7280; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Dates</div>';
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">';
+    html += _staffInfoCell('Hire Date', s.hire_date || '—');
+    html += _staffInfoCell('Employment Start', s.employment_start || '—');
+    html += _staffInfoCell('Employment End', s.employment_end || '—');
+    html += _staffInfoCell('Contract Sent', s.contract_out || '—');
+    html += _staffInfoCell('Contract Received', s.contract_in || '—');
+    html += _staffInfoCell('Contract Due', s.contract_due || '—');
+    html += '</div></div>';
+
+    html += '</div>';
+
+    document.getElementById('staff-modal-body').innerHTML = html;
+    document.getElementById('staff-detail-modal').style.display = 'flex';
+}
+
+function _staffInfoCell(label, value) {
+    return '<div style="background:#F9FAFB; border-radius:8px; padding:8px 12px;">' +
+        '<div style="font-size:11px; color:#9ca3af; margin-bottom:2px;">' + label + '</div>' +
+        '<div style="font-size:14px; font-weight:500;">' + _ftEsc(String(value)) + '</div>' +
+        '</div>';
+}
+
+function closeStaffModal() {
+    document.getElementById('staff-detail-modal').style.display = 'none';
 }
 

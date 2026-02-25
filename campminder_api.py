@@ -893,6 +893,52 @@ class CampMinderAPIClient:
         info = self._extract_week_info(session_name, sort_order)
         return info['weeks'][0] if info['weeks'] else 0
 
+    # ==================== STAFF API ====================
+
+    def get_staff_positions(self, client_id: int = None) -> List[Dict]:
+        """Get all staff positions.
+        Returns list of {ID, Name, ProgramAreaID, ProgramAreaName}"""
+        client_id = client_id or self.client_id
+        return self._paginated_request('/staff/positions', {
+            'clientid': client_id,
+        })
+
+    def get_staff_org_categories(self, client_id: int = None) -> List[Dict]:
+        """Get all staff organizational categories.
+        Returns list of {ID, Name}"""
+        client_id = client_id or self.client_id
+        return self._paginated_request('/staff/organizationalcategories', {
+            'clientid': client_id,
+        })
+
+    def get_staff_program_areas(self, client_id: int = None) -> List[Dict]:
+        """Get all staff program areas.
+        Returns list of {ID, Name}"""
+        client_id = client_id or self.client_id
+        return self._paginated_request('/staff/programareas', {
+            'clientid': client_id,
+        })
+
+    def get_staff_list(self, season_id: int, status: int = 1,
+                       client_id: int = None) -> List[Dict]:
+        """Get staff list filtered by season and status.
+
+        Args:
+            season_id: Season year (e.g. 2026)
+            status: 1=Active, 2=Resigned, 3=Dismissed, 4=Cancelled
+            client_id: Client ID
+
+        Returns:
+            List of staff records with PersonID, StatusID, Position IDs,
+            HireDate, ContractOutDate, ContractInDate, Salary, etc.
+        """
+        client_id = client_id or self.client_id
+        return self._paginated_request('/staff/', {
+            'clientid': client_id,
+            'seasonid': season_id,
+            'status': status,
+        })
+
 
 class EnrollmentDataProcessor:
     """Process enrollment data into dashboard-ready format"""

@@ -93,6 +93,7 @@ ALL_PERMISSIONS = [
     'manage_users', 'manage_settings',
     'take_attendance', 'view_attendance',
     'view_fieldtrips', 'manage_fieldtrips',
+    'view_staff',
 ]
 
 PERMISSION_LABELS = {
@@ -111,6 +112,7 @@ PERMISSION_LABELS = {
     'view_attendance': 'View Attendance (Admin)',
     'view_fieldtrips': 'View Field Trips',
     'manage_fieldtrips': 'Manage Field Trips',
+    'view_staff': 'View Staff Pipeline',
 }
 
 ROLE_DEFAULT_PERMISSIONS = {
@@ -4623,6 +4625,212 @@ def api_fieldtrips_group_days_update():
         db.session.add(GlobalSetting(key='fieldtrip_group_days', value=json.dumps(group_days)))
     db.session.commit()
     return jsonify({'success': True, 'group_days': group_days})
+
+
+# ==================== STAFF PIPELINE ====================
+
+_staff_cache = {'data': None, 'fetched_at': None}
+_staff_cache_ttl = 900  # 15 minutes
+
+
+def fetch_staff_data(season_id=None, force_refresh=False):
+    """Fetch staff data from CampMinder Staff API with caching."""
+    global _staff_cache
+    if not force_refresh and _staff_cache['data'] and _staff_cache['fetched_at']:
+        age = (datetime.now() - _staff_cache['fetched_at']).total_seconds()
+        if age < _staff_cache_ttl:
+            # If a different season was requested, don't use cache
+            if season_id and _staff_cache['data'].get('season_id') != season_id:
+                pass  # fall through to fetch
+            else:
+                return _staff_cache['data']
+
+    try:
+        client = CampMinderAPIClient(CAMPMINDER_API_KEY, CAMPMINDER_SUBSCRIPTION_KEY)
+
+        # Auto-detect season: try current year first, fall back
+        if not season_id:
+            current_year = date.today().year
+            for try_year in [current_year, current_year - 1]:
+                test = client._make_request('/staff/', {
+                    'clientid': client.client_id,
+                    'seasonid': try_year,
+                    'status': 1,
+                    'pagenumber': 1,
+                    'pagesize': 1
+                })
+                if test and test.get('TotalCount', 0) > 0:
+                    season_id = try_year
+                    break
+            if not season_id:
+                season_id = current_year
+
+        # Fetch all statuses
+        all_staff = []
+        for status_id in [1, 2, 3, 4]:
+            try:
+                results = client.get_staff_list(season_id, status=status_id)
+                all_staff.extend(results)
+            except Exception as e:
+                logger.warning(f"Failed to fetch staff status {status_id}: {e}")
+
+        if not all_staff:
+            return {'staff': [], 'positions': {}, 'org_categories': {}, 'summary': {}}
+
+        # Fetch lookup tables
+        positions_raw = client.get_staff_positions() or []
+        org_cats_raw = client.get_staff_org_categories() or []
+
+        positions_map = {p['ID']: p.get('Name', '') for p in positions_raw}
+        org_cats_map = {c['ID']: c.get('Name', '') for c in org_cats_raw}
+
+        # Fetch person details for names/contact
+        person_ids = list(set(s.get('PersonID') for s in all_staff if s.get('PersonID')))
+        persons_raw = client.get_persons_batch(
+            person_ids,
+            include_contact_details=True,
+            include_relatives=False,
+            include_camper_details=False
+        ) if person_ids else []
+
+        # Build person lookup
+        persons_map = {}
+        for p in persons_raw:
+            pid = p.get('ID') or p.get('PersonID')
+            if not pid:
+                continue
+            # Extract name (API returns Name: {First, Last, Preferred})
+            name_obj = p.get('Name', {}) or {}
+            first_name = name_obj.get('First', '') or ''
+            last_name = name_obj.get('Last', '') or ''
+            # Extract contact info
+            email = ''
+            phone = ''
+            contact = p.get('ContactDetails', {}) or {}
+            emails_list = contact.get('Emails', []) or []
+            if emails_list:
+                email = emails_list[0].get('Address', '')
+            phones_list = contact.get('PhoneNumbers', []) or []
+            if phones_list:
+                phone = phones_list[0].get('Number', '')
+            persons_map[pid] = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'email': email,
+                'phone': phone,
+            }
+
+        # Build staff list with computed columns
+        today_str = date.today().isoformat()
+        staff_list = []
+        for s in all_staff:
+            pid = s.get('PersonID')
+            person = persons_map.get(pid, {})
+            status_id = s.get('StatusID', 0)
+
+            # Determine kanban column
+            if status_id in (2, 3, 4):
+                column = 'inactive'
+            elif not s.get('ContractOutDate'):
+                column = 'contract_not_sent'
+            elif not s.get('ContractInDate'):
+                column = 'contract_sent'
+            elif s.get('EmploymentStartDate') and s['EmploymentStartDate'] <= today_str:
+                column = 'active'
+            else:
+                column = 'contract_received'
+
+            staff_list.append({
+                'person_id': pid,
+                'first_name': person.get('first_name', ''),
+                'last_name': person.get('last_name', ''),
+                'email': person.get('email', ''),
+                'phone': person.get('phone', ''),
+                'status': s.get('StatusName', ''),
+                'status_id': status_id,
+                'position1': positions_map.get(s.get('Position1ID'), ''),
+                'position2': positions_map.get(s.get('Position2ID'), ''),
+                'org_category': org_cats_map.get(s.get('OrganizationalCategoryID'), ''),
+                'hire_date': s.get('HireDate', ''),
+                'employment_start': s.get('EmploymentStartDate', ''),
+                'employment_end': s.get('EmploymentEndDate', ''),
+                'contract_out': s.get('ContractOutDate', ''),
+                'contract_in': s.get('ContractInDate', ''),
+                'contract_due': s.get('ContractDueDate', ''),
+                'international': s.get('International', ''),
+                'years': s.get('Years', 0),
+                'salary': s.get('Salary', 0),
+                'bunk_staff': s.get('BunkStaff'),
+                'column': column,
+            })
+
+        # Sort by last name
+        staff_list.sort(key=lambda x: (x['last_name'] or '', x['first_name'] or ''))
+
+        # Summary counts
+        summary = {
+            'total': len(staff_list),
+            'contract_not_sent': sum(1 for s in staff_list if s['column'] == 'contract_not_sent'),
+            'contract_sent': sum(1 for s in staff_list if s['column'] == 'contract_sent'),
+            'contract_received': sum(1 for s in staff_list if s['column'] == 'contract_received'),
+            'active': sum(1 for s in staff_list if s['column'] == 'active'),
+            'inactive': sum(1 for s in staff_list if s['column'] == 'inactive'),
+        }
+
+        # Unique positions and org categories for filters
+        unique_positions = sorted(set(
+            s['position1'] for s in staff_list if s['position1']
+        ) | set(
+            s['position2'] for s in staff_list if s['position2']
+        ))
+        unique_org_cats = sorted(set(
+            s['org_category'] for s in staff_list if s['org_category']
+        ))
+
+        result = {
+            'staff': staff_list,
+            'positions': unique_positions,
+            'org_categories': unique_org_cats,
+            'summary': summary,
+            'season_id': season_id,
+        }
+
+        _staff_cache['data'] = result
+        _staff_cache['fetched_at'] = datetime.now()
+
+        # Save cache to disk
+        try:
+            cache_path = os.path.join(os.path.dirname(__file__), 'data', 'staff_cache.json')
+            with open(cache_path, 'w') as f:
+                json.dump(result, f, indent=2, default=str)
+        except Exception:
+            pass
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Failed to fetch staff data: {e}")
+        traceback.print_exc()
+        # Try disk cache
+        try:
+            cache_path = os.path.join(os.path.dirname(__file__), 'data', 'staff_cache.json')
+            if os.path.exists(cache_path):
+                with open(cache_path, 'r') as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {'staff': [], 'positions': [], 'org_categories': [], 'summary': {}}
+
+
+@app.route('/api/staff')
+@login_required
+def api_staff():
+    """Return staff data for the Kanban pipeline."""
+    if not current_user.has_permission('view_staff'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    season = request.args.get('season', type=int)
+    data = fetch_staff_data(season_id=season)
+    return jsonify(data)
 
 
 # ==================== PWA SERVICE WORKER ====================
