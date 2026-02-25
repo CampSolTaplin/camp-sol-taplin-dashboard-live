@@ -1,7 +1,7 @@
 {
-  "name": "Camp Sol Taplin Dashboard",
-  "short_name": "Camp Sol",
-  "description": "Enrollment dashboard for Camp Sol Taplin at Michael-Ann Russell JCC",
+  "name": "CST Staff App",
+  "short_name": "CST Staff",
+  "description": "Staff app for Camp Sol Taplin at Michael-Ann Russell JCC",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8FAFB",

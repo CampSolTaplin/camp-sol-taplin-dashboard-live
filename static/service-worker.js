@@ -1,4 +1,4 @@
-var CACHE_NAME = 'camp-sol-v1';
+var CACHE_NAME = 'cst-staff-v2';
 var STATIC_ASSETS = [
   '/static/css/dashboard.css',
   '/static/css/attendance.css',
