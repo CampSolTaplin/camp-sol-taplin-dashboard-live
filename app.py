@@ -4141,35 +4141,28 @@ def _get_fieldtrip_kid_counts():
             return counts
         with open(cache_path, 'r') as f:
             api_cache = json.load(f)
-        participants = api_cache.get('data', {}).get('participants', [])
+        participants = api_cache.get('data', {}).get('participants', {})
         if not participants:
             return counts
 
-        # Build a mapping of fieldtrip group names to enrollment program names
+        # Build set of all field trip group names
         group_days = _get_fieldtrip_group_days()
         all_ft_groups = set()
         for day_groups in group_days.values():
             all_ft_groups.update(day_groups)
 
-        # Get program settings for weeks_active
-        prog_settings = {ps.program: ps for ps in ProgramSetting.query.all()}
-
-        # For each participant, match to field trip groups by program name
-        for p in participants:
-            prog = p.get('programName', '')
-            weeks = p.get('weeks', [])
-            if not prog or not weeks:
+        # participants structure: {program_name: {week_str: [camper_list]}}
+        for prog_name, weeks_data in participants.items():
+            if not isinstance(weeks_data, dict):
                 continue
-
-            # Map enrollment program names to field trip group names
-            # The field trip groups use shorter/different names
-            ft_group = _map_program_to_ft_group(prog, all_ft_groups)
+            ft_group = _map_program_to_ft_group(prog_name, all_ft_groups)
             if not ft_group:
                 continue
-
-            for w in weeks:
-                wk = counts.setdefault(ft_group, {})
-                wk[str(w)] = wk.get(str(w), 0) + 1
+            for wk_str, camper_list in weeks_data.items():
+                count = len(camper_list) if isinstance(camper_list, list) else 0
+                if count > 0:
+                    wk = counts.setdefault(ft_group, {})
+                    wk[wk_str] = wk.get(wk_str, 0) + count
     except Exception:
         traceback.print_exc()
     return counts
@@ -4414,6 +4407,13 @@ def api_fieldtrips_assignments_upsert():
     if 'trip_date' in data:
         td = data['trip_date']
         a.trip_date = date.fromisoformat(td) if td else None
+    # Auto-calculate trip_date from week + day if not provided
+    if not a.trip_date and day and week in CAMP_WEEK_DATES:
+        day_offsets = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4}
+        off = day_offsets.get(day)
+        if off is not None:
+            start = date.fromisoformat(CAMP_WEEK_DATES[week][0])
+            a.trip_date = start + timedelta(days=off)
     if 'confirmed' in data:
         a.confirmed = bool(data['confirmed'])
     if 'comments' in data:

@@ -2744,8 +2744,19 @@ function showFieldTripDetail(groupName, week, day) {
 
         html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">';
         html += '<div>';
+        // Auto-calculate default date from week + day
+        var defaultDate = '';
+        if (dates) {
+            var dayOffs = {'Monday':0,'Tuesday':1,'Wednesday':2,'Thursday':3,'Friday':4};
+            var off = dayOffs[day || groupDay];
+            if (off !== undefined) {
+                var dd = new Date(dates[0] + 'T12:00:00');
+                dd.setDate(dd.getDate() + off);
+                defaultDate = dd.toISOString().split('T')[0];
+            }
+        }
         html += '<label style="display:block; font-size:12px; font-weight:600; color:#6B7280; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Trip Date</label>';
-        html += '<input type="date" id="ft-edit-date" value="' + (assignment.trip_date || '') + '" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-family:\'DM Sans\',sans-serif; font-size:14px; box-sizing:border-box;">';
+        html += '<input type="date" id="ft-edit-date" value="' + (assignment.trip_date || defaultDate) + '" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-family:\'DM Sans\',sans-serif; font-size:14px; box-sizing:border-box;">';
         html += '</div>';
         html += '<div style="display:flex; align-items:center; padding-top:20px;">';
         html += '<label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; font-family:\'DM Sans\',sans-serif;">';
