@@ -2641,12 +2641,18 @@ function renderFieldTripsMatrix() {
 
         // Week cells
         weeks.forEach(function(w) {
-            var assignment = ((ftData.assignments || {})[g.name] || {})[String(w)];
+            var activeWeeks = (ftData.weeks_active || {})[g.name] || [1,2,3,4,5,6,7,8,9];
+            var isActive = activeWeeks.indexOf(w) >= 0;
+            if (!isActive) {
+                html += '<td class="ft-cell ft-cell-disabled"><div class="ft-empty-label">&mdash;</div></td>';
+                return;
+            }
+            var assignment = (((ftData.assignments || {})[g.name] || {})[g.day] || {})[String(w)];
             var kidCount = (ftData.kid_counts[g.name] || {})[String(w)] || 0;
 
             if (assignment && assignment.venue_name) {
                 var cellClass = assignment.confirmed ? 'ft-cell-confirmed' : 'ft-cell-pending';
-                html += '<td class="ft-cell ' + cellClass + '" onclick="showFieldTripDetail(\'' + _ftEsc(g.name).replace(/'/g, "\\'") + '\',' + w + ')">';
+                html += '<td class="ft-cell ' + cellClass + '" onclick="showFieldTripDetail(\'' + _ftEsc(g.name).replace(/'/g, "\\'") + '\',' + w + ',\'' + g.day + '\')">';
                 html += '<div class="ft-venue-name" title="' + _ftEsc(assignment.venue_name) + '">' + _ftEsc(assignment.venue_name) + '</div>';
                 if (kidCount > 0) {
                     html += '<div class="ft-kid-count">' + kidCount + ' kids</div>';
@@ -2661,7 +2667,7 @@ function renderFieldTripsMatrix() {
             } else {
                 html += '<td class="ft-cell ft-cell-empty"';
                 if (ftData.can_edit) {
-                    html += ' onclick="showFieldTripDetail(\'' + _ftEsc(g.name).replace(/'/g, "\\'") + '\',' + w + ')"';
+                    html += ' onclick="showFieldTripDetail(\'' + _ftEsc(g.name).replace(/'/g, "\\'") + '\',' + w + ',\'' + g.day + '\')"';
                 }
                 html += '>';
                 if (ftData.can_edit) {
@@ -2684,12 +2690,12 @@ function filterFieldTrips() {
     renderFieldTripsMatrix();
 }
 
-function showFieldTripDetail(groupName, week) {
+function showFieldTripDetail(groupName, week, day) {
     var modal = document.getElementById('ft-detail-modal');
     var body = document.getElementById('ft-modal-body');
     if (!modal || !body || !ftData) return;
 
-    var assignment = ((ftData.assignments || {})[groupName] || {})[String(week)] || {};
+    var assignment = (((ftData.assignments || {})[groupName] || {})[day] || {})[String(week)] || {};
     var kidCount = (ftData.kid_counts[groupName] || {})[String(week)] || 0;
     var canEdit = ftData.can_edit;
     var dates = ftData.week_dates[String(week)];
@@ -2774,7 +2780,7 @@ function showFieldTripDetail(groupName, week) {
 
         html += '<div style="display:flex; gap:8px; justify-content:flex-end;">';
         html += '<button onclick="closeFtModal()" style="padding:10px 20px; border:1px solid #d1d5db; border-radius:8px; background:white; cursor:pointer; font-family:\'DM Sans\',sans-serif; font-size:14px;">Cancel</button>';
-        html += '<button onclick="saveFieldTripAssignment(\'' + _ftEsc(groupName).replace(/'/g, "\\'") + '\',' + week + ')" style="padding:10px 20px; border:none; border-radius:8px; background:#0D9488; color:white; cursor:pointer; font-family:\'DM Sans\',sans-serif; font-size:14px; font-weight:600;">Save</button>';
+        html += '<button onclick="saveFieldTripAssignment(\'' + _ftEsc(groupName).replace(/'/g, "\\'") + '\',' + week + ',\'' + (day || '') + '\')" style="padding:10px 20px; border:none; border-radius:8px; background:#0D9488; color:white; cursor:pointer; font-family:\'DM Sans\',sans-serif; font-size:14px; font-weight:600;">Save</button>';
         html += '</div>';
     } else {
         // Read-only view
@@ -2835,7 +2841,7 @@ function closeFtModal() {
     if (modal) modal.style.display = 'none';
 }
 
-function saveFieldTripAssignment(groupName, week) {
+function saveFieldTripAssignment(groupName, week, day) {
     var venueId = document.getElementById('ft-edit-venue').value;
     var tripDate = document.getElementById('ft-edit-date').value;
     var confirmed = document.getElementById('ft-edit-confirmed').checked;
@@ -2849,6 +2855,7 @@ function saveFieldTripAssignment(groupName, week) {
         body: JSON.stringify({
             group_name: groupName,
             week: week,
+            day: day || '',
             venue_id: venueId || null,
             trip_date: tripDate || null,
             confirmed: confirmed,
@@ -2860,9 +2867,11 @@ function saveFieldTripAssignment(groupName, week) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            // Update local data
+            // Update local data with 3-level structure: group -> day -> week
             if (!ftData.assignments[groupName]) ftData.assignments[groupName] = {};
-            ftData.assignments[groupName][String(week)] = data.assignment;
+            var dayKey = day || '';
+            if (!ftData.assignments[groupName][dayKey]) ftData.assignments[groupName][dayKey] = {};
+            ftData.assignments[groupName][dayKey][String(week)] = data.assignment;
             closeFtModal();
             renderFieldTripsMatrix();
         } else {

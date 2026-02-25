@@ -189,13 +189,14 @@ class FieldTripAssignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     group_name = db.Column(db.String(100), nullable=False)
     week = db.Column(db.Integer, nullable=False)
+    day = db.Column(db.String(10), nullable=True)
     venue_id = db.Column(db.Integer, db.ForeignKey('field_trip_venues.id'), nullable=True)
     trip_date = db.Column(db.Date, nullable=True)
     confirmed = db.Column(db.Boolean, default=False)
     comments = db.Column(db.Text, nullable=True)
     buses_ja = db.Column(db.Integer, default=0)
     buses_jcc = db.Column(db.Integer, default=0)
-    __table_args__ = (db.UniqueConstraint('group_name', 'week'),)
+    __table_args__ = (db.UniqueConstraint('group_name', 'week', 'day'),)
 
 # ==================== ATTENDANCE MODELS ====================
 
@@ -261,6 +262,52 @@ with app.app_context():
                 with db.engine.connect() as conn:
                     conn.execute(db.text("ALTER TABLE global_settings ALTER COLUMN value TYPE TEXT"))
                     conn.commit()
+    # Migrate field_trip_assignments: add 'day' column if missing
+    if 'field_trip_assignments' in inspector.get_table_names():
+        fta_cols = [c['name'] for c in inspector.get_columns('field_trip_assignments')]
+        if 'day' not in fta_cols:
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE field_trip_assignments ADD COLUMN day VARCHAR(10)"))
+                conn.commit()
+            if db.engine.dialect.name == 'postgresql':
+                # Drop old unique constraint and add new one with day
+                constraints = inspector.get_unique_constraints('field_trip_assignments')
+                with db.engine.connect() as conn:
+                    for c in constraints:
+                        if set(c['column_names']) == {'group_name', 'week'}:
+                            conn.execute(db.text(
+                                "ALTER TABLE field_trip_assignments DROP CONSTRAINT " + c['name']
+                            ))
+                    conn.execute(db.text(
+                        "ALTER TABLE field_trip_assignments ADD CONSTRAINT uq_fta_group_week_day UNIQUE (group_name, week, day)"
+                    ))
+                    conn.commit()
+            # Backfill day on existing records with NULL day
+            null_day_records = FieldTripAssignment.query.filter_by(day=None).all()
+            if null_day_records:
+                gs = GlobalSetting.query.filter_by(key='fieldtrip_group_days').first()
+                gd = {}
+                if gs:
+                    try:
+                        gd = json.loads(gs.value)
+                    except Exception:
+                        pass
+                if not gd:
+                    gd = {
+                        'Monday': ['Teen Travel', 'Giborim', 'Madli-Teen'],
+                        'Tuesday': ['Teen Travel', 'Tnuah', 'Volleyball', 'Tiny Tnuah', 'Tsofim'],
+                        'Wednesday': ['Teen Travel', 'M&M', 'Tennis', 'Chaverim'],
+                        'Thursday': ['Teen Travel', 'Gymnastics', 'Art', 'Yeladim', 'Sports Academy', 'Karate'],
+                        'Friday': ['Teen Travel', 'Soccer', 'Basketball & Flag Football'],
+                    }
+                group_to_day = {}
+                for day_name, groups in gd.items():
+                    for g in groups:
+                        if g not in group_to_day:
+                            group_to_day[g] = day_name
+                for a in null_day_records:
+                    a.day = group_to_day.get(a.group_name, 'Monday')
+                db.session.commit()
     # Migrate existing users: backfill permissions from role if not set
     for u in UserAccount.query.all():
         if u.permissions is None:
@@ -4168,6 +4215,35 @@ def _map_program_to_ft_group(program_name, ft_groups):
     return PROGRAM_TO_GROUP.get(program_name)
 
 
+def _get_ft_group_weeks_active():
+    """Return {group_name: [list of active week ints]} for field trip groups."""
+    group_days = _get_fieldtrip_group_days()
+    all_ft_groups = set()
+    for day_groups in group_days.values():
+        all_ft_groups.update(day_groups)
+
+    group_weeks = {g: set() for g in all_ft_groups}
+    prog_settings = {ps.program: ps for ps in ProgramSetting.query.all()}
+
+    for prog_name, ps in prog_settings.items():
+        if not ps.active:
+            continue
+        ft_group = _map_program_to_ft_group(prog_name, all_ft_groups)
+        if ft_group and ft_group in group_weeks:
+            weeks_str = ps.weeks_active or '1,2,3,4,5,6,7,8,9'
+            for w in weeks_str.split(','):
+                w = w.strip()
+                if w:
+                    group_weeks[ft_group].add(int(w))
+
+    # Groups with no matching ProgramSetting get all weeks (safe default)
+    for g in all_ft_groups:
+        if not group_weeks[g]:
+            group_weeks[g] = set(range(1, 10))
+
+    return {g: sorted(list(ws)) for g, ws in group_weeks.items()}
+
+
 @app.route('/api/fieldtrips/matrix')
 @login_required
 def api_fieldtrips_matrix():
@@ -4181,11 +4257,12 @@ def api_fieldtrips_matrix():
               for v in FieldTripVenue.query.filter_by(active=True).all()}
 
     assignments = FieldTripAssignment.query.all()
-    assignment_map = {}  # {group_name: {week_str: {...}}}
+    assignment_map = {}  # {group_name: {day: {week_str: {...}}}}
     for a in assignments:
         grp = assignment_map.setdefault(a.group_name, {})
+        day_map = grp.setdefault(a.day or 'Monday', {})
         venue_info = venues.get(a.venue_id, {})
-        grp[str(a.week)] = {
+        day_map[str(a.week)] = {
             'id': a.id,
             'venue_id': a.venue_id,
             'venue_name': venue_info.get('name', ''),
@@ -4196,9 +4273,11 @@ def api_fieldtrips_matrix():
             'comments': a.comments or '',
             'buses_ja': a.buses_ja or 0,
             'buses_jcc': a.buses_jcc or 0,
+            'day': a.day or 'Monday',
         }
 
     kid_counts = _get_fieldtrip_kid_counts()
+    weeks_active = _get_ft_group_weeks_active()
 
     # Build ordered groups list by day
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -4216,6 +4295,7 @@ def api_fieldtrips_matrix():
         'groups': ordered_groups,
         'assignments': assignment_map,
         'kid_counts': kid_counts,
+        'weeks_active': weeks_active,
         'venues': list(venues.values()),
         'can_edit': current_user.has_permission('manage_fieldtrips'),
     })
@@ -4314,16 +4394,19 @@ def api_fieldtrips_assignments_upsert():
     data = request.get_json()
     group_name = (data.get('group_name') or '').strip()
     week = data.get('week')
+    day = (data.get('day') or '').strip()
     if not group_name or not week:
         return jsonify({'error': 'group_name and week are required'}), 400
     week = int(week)
     if week < 1 or week > 9:
         return jsonify({'error': 'Week must be 1-9'}), 400
 
-    a = FieldTripAssignment.query.filter_by(group_name=group_name, week=week).first()
+    a = FieldTripAssignment.query.filter_by(group_name=group_name, week=week, day=day or None).first()
     if not a:
-        a = FieldTripAssignment(group_name=group_name, week=week)
+        a = FieldTripAssignment(group_name=group_name, week=week, day=day or None)
         db.session.add(a)
+    if day:
+        a.day = day
 
     venue_id = data.get('venue_id')
     if venue_id is not None:
@@ -4347,6 +4430,7 @@ def api_fieldtrips_assignments_upsert():
         'id': a.id,
         'group_name': a.group_name,
         'week': a.week,
+        'day': a.day or '',
         'venue_id': a.venue_id,
         'venue_name': venue.name if venue else '',
         'address': venue.address if venue else '',

@@ -558,21 +558,47 @@
                 lastDay = g.day;
             }
             html += '<tr>';
-            html += '<td class="ft-group-cell ft-sticky-col"><div class="ft-group-name">' + esc(g.name) + '</div></td>';
+            // Group name cell with total camper count
+            var kidTotal = 0;
             weeks.forEach(function(w) {
-                var a = ((adminFtData.assignments || {})[g.name] || {})[String(w)];
+                kidTotal += (adminFtData.kid_counts[g.name] || {})[String(w)] || 0;
+            });
+            html += '<td class="ft-group-cell ft-sticky-col"><div class="ft-group-name">' + esc(g.name) + '</div>';
+            if (kidTotal > 0) {
+                html += '<div class="ft-kid-count">' + kidTotal + ' campers (incl. CT)</div>';
+            }
+            html += '</td>';
+
+            // Week cells
+            var activeWeeks = (adminFtData.weeks_active || {})[g.name] || [1,2,3,4,5,6,7,8,9];
+            weeks.forEach(function(w) {
+                var isActive = activeWeeks.indexOf(w) >= 0;
+                if (!isActive) {
+                    html += '<td class="ft-cell ft-cell-disabled"><div class="ft-empty-label">&mdash;</div></td>';
+                    return;
+                }
+                var a = (((adminFtData.assignments || {})[g.name] || {})[g.day] || {})[String(w)];
+                var kidCount = (adminFtData.kid_counts[g.name] || {})[String(w)] || 0;
                 if (a && a.venue_name) {
                     var cls = a.confirmed ? 'ft-cell-confirmed' : 'ft-cell-pending';
-                    html += '<td class="ft-cell ' + cls + '" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ')" style="cursor:pointer;">';
+                    html += '<td class="ft-cell ' + cls + '" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ',\'' + g.day + '\')" style="cursor:pointer;">';
                     html += '<div class="ft-venue-name" title="' + esc(a.venue_name) + '">' + esc(a.venue_name) + '</div>';
                     var badges = [];
                     if (a.confirmed) badges.push('<span class="ft-badge ft-badge-confirmed">&#10003;</span>');
                     var bt = (a.buses_ja || 0) + (a.buses_jcc || 0);
                     if (bt > 0) badges.push('<span class="ft-bus-badge">' + bt + 'b</span>');
+                    if (kidCount > 0) badges.push('<span class="ft-bus-badge" style="background:#E0F2FE;color:#0369A1;">' + kidCount + '</span>');
                     if (badges.length) html += '<div class="ft-badges">' + badges.join('') + '</div>';
+                    if (a.comments) {
+                        var shortComment = a.comments.length > 25 ? a.comments.substring(0, 25) + '...' : a.comments;
+                        html += '<div class="ft-comment-preview" title="' + esc(a.comments) + '">&#128172; ' + esc(shortComment) + '</div>';
+                    }
                     html += '</td>';
                 } else {
-                    html += '<td class="ft-cell ft-cell-empty" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ')" style="cursor:pointer;">';
+                    html += '<td class="ft-cell ft-cell-empty" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ',\'' + g.day + '\')" style="cursor:pointer;">';
+                    if (kidCount > 0) {
+                        html += '<div class="ft-kid-count" style="color:#9CA3AF;font-size:11px;">' + kidCount + ' kids</div>';
+                    }
                     html += '<div class="ft-empty-label">+</div></td>';
                 }
             });
@@ -582,24 +608,24 @@
         container.innerHTML = html;
     }
 
-    function adminEditAssignment(groupName, week) {
-        var a = ((adminFtData.assignments || {})[groupName] || {})[String(week)] || {};
+    function adminEditAssignment(groupName, week, day) {
+        var a = (((adminFtData.assignments || {})[groupName] || {})[day] || {})[String(week)] || {};
         var venues = allVenues.length > 0 ? allVenues : (adminFtData.venues || []);
 
-        // Find group day and compute default date
-        var groupDay = '';
-        (adminFtData.groups || []).forEach(function(g) { if (g.name === groupName) groupDay = g.day; });
+        // Compute default date from day + week dates
         var dates = adminFtData.week_dates[String(week)];
         var defaultDate = '';
         if (dates) {
             var dayOffs = {'Monday':0,'Tuesday':1,'Wednesday':2,'Thursday':3,'Friday':4};
-            var off = dayOffs[groupDay];
+            var off = dayOffs[day];
             if (off !== undefined) {
                 var d = new Date(dates[0] + 'T12:00:00');
                 d.setDate(d.getDate() + off);
                 defaultDate = d.toISOString().split('T')[0];
             }
         }
+
+        var kidCount = (adminFtData.kid_counts[groupName] || {})[String(week)] || 0;
 
         // Build a simple modal using prompt-style overlay
         var overlay = document.createElement('div');
@@ -611,9 +637,13 @@
 
         var mhtml = '<div style="background:linear-gradient(135deg,#0D9488,#14B8A6);color:white;padding:16px 20px;">';
         mhtml += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-        mhtml += '<div><strong style="font-size:16px;">' + esc(groupName) + '</strong><br><span style="opacity:0.8;font-size:12px;">Week ' + week + ' &middot; ' + groupDay + '</span></div>';
+        mhtml += '<div><strong style="font-size:16px;">' + esc(groupName) + '</strong><br><span style="opacity:0.8;font-size:12px;">Week ' + week + ' &middot; ' + day + '</span></div>';
         mhtml += '<span onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))" style="cursor:pointer;font-size:22px;">&times;</span>';
-        mhtml += '</div></div>';
+        mhtml += '</div>';
+        if (kidCount > 0) {
+            mhtml += '<div style="margin-top:6px;font-size:13px;opacity:0.9;">' + kidCount + ' campers enrolled (incl. CT)</div>';
+        }
+        mhtml += '</div>';
         mhtml += '<div style="padding:20px;">';
 
         mhtml += '<label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">VENUE</label>';
@@ -660,6 +690,7 @@
                 body: JSON.stringify({
                     group_name: groupName,
                     week: week,
+                    day: day,
                     venue_id: venueId || null,
                     trip_date: document.getElementById('admin-ft-date').value || null,
                     confirmed: document.getElementById('admin-ft-confirmed').checked,
@@ -673,7 +704,8 @@
                 if (data.success) {
                     document.body.removeChild(overlay);
                     if (!adminFtData.assignments[groupName]) adminFtData.assignments[groupName] = {};
-                    adminFtData.assignments[groupName][String(week)] = data.assignment;
+                    if (!adminFtData.assignments[groupName][day]) adminFtData.assignments[groupName][day] = {};
+                    adminFtData.assignments[groupName][day][String(week)] = data.assignment;
                     renderAdminMatrix();
                     showToast('Assignment saved!');
                 } else {
