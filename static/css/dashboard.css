@@ -38,11 +38,13 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     top: 0;
     width: 240px;
     height: 100vh;
+    height: 100dvh;
     background: linear-gradient(180deg, #006B82 0%, #004D5E 100%);
     padding: 20px 14px;
     display: flex;
     flex-direction: column;
     z-index: 100;
+    overflow: hidden;
 }
 
 .logo-section {
@@ -74,6 +76,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 .nav-section {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
@@ -1197,6 +1200,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
         top: 0;
         width: 260px;
         height: 100vh;
+        height: 100dvh;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         z-index: 150;
