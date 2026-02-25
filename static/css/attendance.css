@@ -1055,6 +1055,30 @@ body {
     }
 }
 
+/* ==================== MOBILE (below tablet) ==================== */
+
+@media (max-width: 767px) {
+    .camper-row {
+        flex-wrap: wrap;
+    }
+    .camper-info {
+        flex: 1 0 100px;
+    }
+    .status-buttons {
+        gap: 4px;
+        margin-left: auto;
+    }
+    .status-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 12px;
+        border-radius: 8px;
+    }
+    .status-btn.kc_btn {
+        font-size: 10px;
+    }
+}
+
 /* ==================== DESKTOP (1024px+) ==================== */
 
 @media (min-width: 1024px) {
