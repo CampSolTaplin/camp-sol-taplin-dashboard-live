@@ -2628,16 +2628,7 @@ function renderFieldTripsMatrix() {
 
         html += '<tr class="ft-group-row" data-day="' + g.day + '">';
         // Group name cell
-        var kidTotal = 0;
-        weeks.forEach(function(w) {
-            var cnt = (ftData.kid_counts[g.name] || {})[String(w)] || 0;
-            kidTotal += cnt;
-        });
-        html += '<td class="ft-group-cell ft-sticky-col"><div class="ft-group-name">' + _ftEsc(g.name) + '</div>';
-        if (kidTotal > 0) {
-            html += '<div class="ft-kid-count">' + kidTotal + ' campers</div>';
-        }
-        html += '</td>';
+        html += '<td class="ft-group-cell ft-sticky-col"><div class="ft-group-name">' + _ftEsc(g.name) + '</div></td>';
 
         // Week cells
         weeks.forEach(function(w) {
@@ -2660,8 +2651,6 @@ function renderFieldTripsMatrix() {
                 var badges = [];
                 if (assignment.confirmed) badges.push('<span class="ft-badge ft-badge-confirmed">&#10003;</span>');
                 if (assignment.waiver_url) badges.push('<span class="ft-badge ft-badge-waiver" title="Waiver required">W</span>');
-                var busTotal = (assignment.buses_ja || 0) + (assignment.buses_jcc || 0);
-                if (busTotal > 0) badges.push('<span class="ft-bus-badge">' + busTotal + ' bus</span>');
                 if (badges.length) html += '<div class="ft-badges">' + badges.join('') + '</div>';
                 html += '</td>';
             } else {
@@ -2723,7 +2712,8 @@ function showFieldTripDetail(groupName, week, day) {
     html += '<button onclick="closeFtModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>';
     html += '</div>';
     if (kidCount > 0) {
-        html += '<div style="margin-top:8px; font-size:13px; opacity:0.9;">' + kidCount + ' campers enrolled</div>';
+        var ctLabel = (ftData.has_ct || {})[groupName] ? ' (incl. CT)' : '';
+        html += '<div style="margin-top:8px; font-size:13px; opacity:0.9;">' + kidCount + ' campers enrolled' + ctLabel + '</div>';
     }
     html += '</div>';
 
@@ -2763,16 +2753,6 @@ function showFieldTripDetail(groupName, week, day) {
         html += '<input type="checkbox" id="ft-edit-confirmed" ' + (assignment.confirmed ? 'checked' : '') + ' style="width:18px; height:18px; accent-color:#10B981;"> Confirmed</label>';
         html += '</div></div>';
 
-        html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">';
-        html += '<div>';
-        html += '<label style="display:block; font-size:12px; font-weight:600; color:#6B7280; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">J&A Buses</label>';
-        html += '<input type="number" id="ft-edit-buses-ja" value="' + (assignment.buses_ja || 0) + '" min="0" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-family:\'DM Sans\',sans-serif; font-size:14px; box-sizing:border-box;">';
-        html += '</div>';
-        html += '<div>';
-        html += '<label style="display:block; font-size:12px; font-weight:600; color:#6B7280; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">JCC Bus</label>';
-        html += '<input type="number" id="ft-edit-buses-jcc" value="' + (assignment.buses_jcc || 0) + '" min="0" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-family:\'DM Sans\',sans-serif; font-size:14px; box-sizing:border-box;">';
-        html += '</div></div>';
-
         html += '<div style="margin-bottom:16px;">';
         html += '<label style="display:block; font-size:12px; font-weight:600; color:#6B7280; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Comments</label>';
         html += '<textarea id="ft-edit-comments" rows="3" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-family:\'DM Sans\',sans-serif; font-size:14px; resize:vertical; box-sizing:border-box;">' + _ftEsc(assignment.comments || '') + '</textarea>';
@@ -2789,10 +2769,16 @@ function showFieldTripDetail(groupName, week, day) {
             html += '</div>';
         }
 
-        html += '<div style="display:flex; gap:8px; justify-content:flex-end;">';
+        html += '<div style="display:flex; gap:8px; justify-content:space-between;">';
+        if (assignment.id) {
+            html += '<button onclick="deleteFieldTripAssignment(' + assignment.id + ',\'' + _ftEsc(groupName).replace(/'/g, "\\'") + '\',' + week + ',\'' + (day || '') + '\')" style="padding:10px 20px; border:1px solid #FECACA; border-radius:8px; background:white; color:#DC2626; cursor:pointer; font-family:\'DM Sans\',sans-serif; font-size:14px;">Delete</button>';
+        } else {
+            html += '<div></div>';
+        }
+        html += '<div style="display:flex; gap:8px;">';
         html += '<button onclick="closeFtModal()" style="padding:10px 20px; border:1px solid #d1d5db; border-radius:8px; background:white; cursor:pointer; font-family:\'DM Sans\',sans-serif; font-size:14px;">Cancel</button>';
         html += '<button onclick="saveFieldTripAssignment(\'' + _ftEsc(groupName).replace(/'/g, "\\'") + '\',' + week + ',\'' + (day || '') + '\')" style="padding:10px 20px; border:none; border-radius:8px; background:#0D9488; color:white; cursor:pointer; font-family:\'DM Sans\',sans-serif; font-size:14px; font-weight:600;">Save</button>';
-        html += '</div>';
+        html += '</div></div>';
     } else {
         // Read-only view
         if (assignment.venue_name) {
@@ -2804,10 +2790,6 @@ function showFieldTripDetail(groupName, week, day) {
             html += '<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px; font-size:13px; ' + (assignment.confirmed ? 'background:#D1FAE5; color:#065F46;' : 'background:#FEF3C7; color:#92400E;') + '">';
             html += assignment.confirmed ? '&#10003; Confirmed' : '&#9679; Pending';
             html += '</span>';
-            var busTotal = (assignment.buses_ja || 0) + (assignment.buses_jcc || 0);
-            if (busTotal > 0) {
-                html += '<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px; font-size:13px; background:#EEF2FF; color:#3730A3;">' + busTotal + ' buses</span>';
-            }
             if (assignment.waiver_url) {
                 html += '<a href="' + _ftEsc(assignment.waiver_url) + '" target="_blank" style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px; font-size:13px; background:#FFF7ED; color:#9A3412; text-decoration:none;">Waiver</a>';
             }
@@ -2856,8 +2838,6 @@ function saveFieldTripAssignment(groupName, week, day) {
     var venueId = document.getElementById('ft-edit-venue').value;
     var tripDate = document.getElementById('ft-edit-date').value;
     var confirmed = document.getElementById('ft-edit-confirmed').checked;
-    var busesJa = document.getElementById('ft-edit-buses-ja').value;
-    var busesJcc = document.getElementById('ft-edit-buses-jcc').value;
     var comments = document.getElementById('ft-edit-comments').value;
 
     fetch('/api/fieldtrips/assignments', {
@@ -2870,8 +2850,6 @@ function saveFieldTripAssignment(groupName, week, day) {
             venue_id: venueId || null,
             trip_date: tripDate || null,
             confirmed: confirmed,
-            buses_ja: parseInt(busesJa) || 0,
-            buses_jcc: parseInt(busesJcc) || 0,
             comments: comments
         })
     })
@@ -2890,6 +2868,25 @@ function saveFieldTripAssignment(groupName, week, day) {
         }
     })
     .catch(function(err) { alert('Save failed: ' + err.message); });
+}
+
+function deleteFieldTripAssignment(assignmentId, groupName, week, day) {
+    if (!confirm('Delete this assignment?')) return;
+    fetch('/api/fieldtrips/assignments/' + assignmentId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            var dayKey = day || '';
+            if (ftData.assignments[groupName] && ftData.assignments[groupName][dayKey]) {
+                delete ftData.assignments[groupName][dayKey][String(week)];
+            }
+            closeFtModal();
+            renderFieldTripsMatrix();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(function(err) { alert('Delete failed: ' + err.message); });
 }
 
 function _ftEsc(str) {

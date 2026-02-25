@@ -4208,6 +4208,23 @@ def _map_program_to_ft_group(program_name, ft_groups):
     return PROGRAM_TO_GROUP.get(program_name)
 
 
+def _get_ft_groups_with_ct():
+    """Return dict {group_name: bool} indicating which FT groups have Children's Trust counterparts."""
+    PROGRAM_TO_GROUP = {
+        "Children's Trust Madli-Teen": 'Madli-Teen',
+        "Children's Trust Tsofim": 'Tsofim',
+        "Children's Trust Yeladim": 'Yeladim',
+        "Children's Trust Chaverim": 'Chaverim',
+        "Children's Trust Giborim": 'Giborim',
+    }
+    ct_groups = set(PROGRAM_TO_GROUP.values())
+    group_days = _get_fieldtrip_group_days()
+    all_ft_groups = set()
+    for day_groups in group_days.values():
+        all_ft_groups.update(day_groups)
+    return {g: (g in ct_groups) for g in all_ft_groups}
+
+
 def _get_ft_group_weeks_active():
     """Return {group_name: [list of active week ints]} for field trip groups."""
     group_days = _get_fieldtrip_group_days()
@@ -4280,6 +4297,8 @@ def api_fieldtrips_matrix():
         for g in groups:
             ordered_groups.append({'name': g, 'day': day})
 
+    has_ct = _get_ft_groups_with_ct()
+
     return jsonify({
         'weeks': list(range(1, 10)),
         'week_dates': {str(k): v for k, v in CAMP_WEEK_DATES.items()},
@@ -4289,6 +4308,7 @@ def api_fieldtrips_matrix():
         'assignments': assignment_map,
         'kid_counts': kid_counts,
         'weeks_active': weeks_active,
+        'has_ct': has_ct,
         'venues': list(venues.values()),
         'can_edit': current_user.has_permission('manage_fieldtrips'),
     })
@@ -4441,6 +4461,134 @@ def api_fieldtrips_assignments_upsert():
         'buses_ja': a.buses_ja or 0,
         'buses_jcc': a.buses_jcc or 0,
     }})
+
+
+@app.route('/api/fieldtrips/assignments/<int:assignment_id>', methods=['DELETE'])
+@login_required
+def api_fieldtrips_assignments_delete(assignment_id):
+    """Delete a field trip assignment."""
+    if not current_user.has_permission('manage_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    a = FieldTripAssignment.query.get(assignment_id)
+    if not a:
+        return jsonify({'error': 'Assignment not found'}), 404
+    db.session.delete(a)
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/api/fieldtrips/calculate-buses', methods=['POST'])
+@login_required
+def api_fieldtrips_calculate_buses():
+    """Calculate optimal bus allocation for a given week."""
+    if not current_user.has_permission('view_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    week = int(data.get('week', 0))
+    if week < 1 or week > 9:
+        return jsonify({'error': 'Week must be 1-9'}), 400
+
+    # Get all assignments for this week that have a venue
+    assignments = FieldTripAssignment.query.filter_by(week=week).filter(
+        FieldTripAssignment.venue_id.isnot(None)
+    ).all()
+    if not assignments:
+        return jsonify({'week': week, 'days': {}})
+
+    # Get kid counts and venue info
+    kid_counts = _get_fieldtrip_kid_counts()
+    venues_map = {v.id: v for v in FieldTripVenue.query.all()}
+
+    # Group assignments by day → venue
+    import math
+    day_venues = {}  # {day: {venue_id: {'venue_name':..., 'groups':[], 'kids':0}}}
+    for a in assignments:
+        day = a.day or 'Unknown'
+        venue = venues_map.get(a.venue_id)
+        if not venue:
+            continue
+        if day not in day_venues:
+            day_venues[day] = {}
+        if a.venue_id not in day_venues[day]:
+            day_venues[day][a.venue_id] = {
+                'venue_name': venue.name,
+                'groups': [],
+                'kids': 0,
+            }
+        entry = day_venues[day][a.venue_id]
+        group_kids = (kid_counts.get(a.group_name) or {}).get(str(week), 0)
+        entry['groups'].append(a.group_name)
+        entry['kids'] += group_kids
+
+    # For each day, calculate bus allocation
+    JCC_BUS_CAPACITY = 22
+    COACH_BUS_CAPACITY = 55
+    MAX_JCC_PER_DAY = 2
+
+    result_days = {}
+    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+    for day in day_order:
+        if day not in day_venues:
+            continue
+        venue_entries = []
+        for vid, info in day_venues[day].items():
+            kids = info['kids']
+            adults = math.ceil(kids / 4) if kids > 0 else 0
+            total_people = kids + adults
+            venue_entries.append({
+                'venue_name': info['venue_name'],
+                'groups': info['groups'],
+                'kids': kids,
+                'total_people': total_people,
+                'coach_buses': 0,
+                'jcc_buses': 0,
+            })
+
+        # Greedy JCC bus allocation to minimize coach buses
+        jcc_remaining = MAX_JCC_PER_DAY
+
+        # For each venue, compute coaches needed without JCC and potential savings
+        for v in venue_entries:
+            v['_base_coaches'] = math.ceil(v['total_people'] / COACH_BUS_CAPACITY) if v['total_people'] > 0 else 0
+
+        # Greedily assign JCC buses — pick venue where 1 JCC bus saves the most coaches
+        for _ in range(jcc_remaining):
+            best_saving = 0
+            best_idx = -1
+            for i, v in enumerate(venue_entries):
+                if v['total_people'] <= 0:
+                    continue
+                current_jcc = v['jcc_buses']
+                people_after = v['total_people'] - (current_jcc + 1) * JCC_BUS_CAPACITY
+                coaches_with_extra_jcc = math.ceil(people_after / COACH_BUS_CAPACITY) if people_after > 0 else 0
+                people_now = v['total_people'] - current_jcc * JCC_BUS_CAPACITY
+                coaches_now = math.ceil(people_now / COACH_BUS_CAPACITY) if people_now > 0 else 0
+                saving = coaches_now - coaches_with_extra_jcc
+                if saving > best_saving:
+                    best_saving = saving
+                    best_idx = i
+            if best_idx >= 0 and best_saving > 0:
+                venue_entries[best_idx]['jcc_buses'] += 1
+            else:
+                break
+
+        # Calculate final coach buses for each venue
+        day_total_coach = 0
+        day_total_jcc = 0
+        for v in venue_entries:
+            remaining = v['total_people'] - v['jcc_buses'] * JCC_BUS_CAPACITY
+            v['coach_buses'] = math.ceil(remaining / COACH_BUS_CAPACITY) if remaining > 0 else 0
+            del v['_base_coaches']
+            day_total_coach += v['coach_buses']
+            day_total_jcc += v['jcc_buses']
+
+        result_days[day] = {
+            'venues': venue_entries,
+            'totals': {'coach_buses': day_total_coach, 'jcc_buses': day_total_jcc}
+        }
+
+    return jsonify({'week': week, 'days': result_days})
 
 
 @app.route('/api/fieldtrips/group-days', methods=['GET'])

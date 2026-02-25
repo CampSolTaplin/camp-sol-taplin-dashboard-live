@@ -283,6 +283,17 @@
                     Trip Assignments
                 </h3>
                 <p style="color:#6B7280; font-size:13px; margin-bottom:16px;">Click any cell to assign or edit a field trip for a group and week.</p>
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                    <select id="bus-calc-week" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px;">
+                        <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option>
+                        <option value="4">Week 4</option><option value="5">Week 5</option><option value="6">Week 6</option>
+                        <option value="7">Week 7</option><option value="8">Week 8</option><option value="9">Week 9</option>
+                    </select>
+                    <button onclick="calculateBuses()" class="btn-sm btn-sm-primary" style="display:inline-flex; align-items:center; gap:6px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h2M11 15h2"/><circle cx="7" cy="6" r="2"/><circle cx="17" cy="6" r="2"/></svg>
+                        Calculate Buses
+                    </button>
+                </div>
                 <div id="admin-ft-matrix" style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
                     <div style="text-align:center; padding:40px; color:#9CA3AF;">Loading matrix...</div>
                 </div>
@@ -558,16 +569,8 @@
                 lastDay = g.day;
             }
             html += '<tr>';
-            // Group name cell with total camper count
-            var kidTotal = 0;
-            weeks.forEach(function(w) {
-                kidTotal += (adminFtData.kid_counts[g.name] || {})[String(w)] || 0;
-            });
-            html += '<td class="ft-group-cell ft-sticky-col"><div class="ft-group-name">' + esc(g.name) + '</div>';
-            if (kidTotal > 0) {
-                html += '<div class="ft-kid-count">' + kidTotal + ' campers (incl. CT)</div>';
-            }
-            html += '</td>';
+            // Group name cell
+            html += '<td class="ft-group-cell ft-sticky-col"><div class="ft-group-name">' + esc(g.name) + '</div></td>';
 
             // Week cells
             var activeWeeks = (adminFtData.weeks_active || {})[g.name] || [1,2,3,4,5,6,7,8,9];
@@ -585,8 +588,6 @@
                     html += '<div class="ft-venue-name" title="' + esc(a.venue_name) + '">' + esc(a.venue_name) + '</div>';
                     var badges = [];
                     if (a.confirmed) badges.push('<span class="ft-badge ft-badge-confirmed">&#10003;</span>');
-                    var bt = (a.buses_ja || 0) + (a.buses_jcc || 0);
-                    if (bt > 0) badges.push('<span class="ft-bus-badge">' + bt + 'b</span>');
                     if (kidCount > 0) badges.push('<span class="ft-bus-badge" style="background:#E0F2FE;color:#0369A1;">' + kidCount + '</span>');
                     if (badges.length) html += '<div class="ft-badges">' + badges.join('') + '</div>';
                     if (a.comments) {
@@ -641,7 +642,8 @@
         mhtml += '<span onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))" style="cursor:pointer;font-size:22px;">&times;</span>';
         mhtml += '</div>';
         if (kidCount > 0) {
-            mhtml += '<div style="margin-top:6px;font-size:13px;opacity:0.9;">' + kidCount + ' campers enrolled (incl. CT)</div>';
+            var ctLabel = (adminFtData.has_ct || {})[groupName] ? ' (incl. CT)' : '';
+            mhtml += '<div style="margin-top:6px;font-size:13px;opacity:0.9;">' + kidCount + ' campers enrolled' + ctLabel + '</div>';
         }
         mhtml += '</div>';
         mhtml += '<div style="padding:20px;">';
@@ -663,20 +665,19 @@
         mhtml += '<input type="checkbox" id="admin-ft-confirmed" ' + (a.confirmed ? 'checked' : '') + ' style="width:16px;height:16px;accent-color:#10B981;"> Confirmed</label></div>';
         mhtml += '</div>';
 
-        mhtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">';
-        mhtml += '<div><label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">J&A BUSES</label>';
-        mhtml += '<input type="number" id="admin-ft-bja" value="' + (a.buses_ja || 0) + '" min="0" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;"></div>';
-        mhtml += '<div><label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">JCC BUS</label>';
-        mhtml += '<input type="number" id="admin-ft-bjcc" value="' + (a.buses_jcc || 0) + '" min="0" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;"></div>';
-        mhtml += '</div>';
-
         mhtml += '<label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px;">COMMENTS</label>';
         mhtml += '<textarea id="admin-ft-comments" rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box;">' + esc(a.comments || '') + '</textarea>';
 
-        mhtml += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">';
+        mhtml += '<div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px;">';
+        if (a.id) {
+            mhtml += '<button class="btn-sm" id="admin-ft-delete-btn" style="color:#DC2626;border-color:#FECACA;">Delete</button>';
+        } else {
+            mhtml += '<div></div>';
+        }
+        mhtml += '<div style="display:flex;gap:8px;">';
         mhtml += '<button class="btn-sm" onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))">Cancel</button>';
         mhtml += '<button class="btn-sm btn-sm-primary" id="admin-ft-save-btn">Save</button>';
-        mhtml += '</div></div>';
+        mhtml += '</div></div></div>';
 
         modal.innerHTML = mhtml;
         overlay.appendChild(modal);
@@ -694,8 +695,6 @@
                     venue_id: venueId || null,
                     trip_date: document.getElementById('admin-ft-date').value || null,
                     confirmed: document.getElementById('admin-ft-confirmed').checked,
-                    buses_ja: parseInt(document.getElementById('admin-ft-bja').value) || 0,
-                    buses_jcc: parseInt(document.getElementById('admin-ft-bjcc').value) || 0,
                     comments: document.getElementById('admin-ft-comments').value
                 })
             })
@@ -713,6 +712,28 @@
                 }
             });
         };
+
+        // Delete handler
+        var delBtn = document.getElementById('admin-ft-delete-btn');
+        if (delBtn) {
+            delBtn.onclick = function() {
+                if (!confirm('Delete this assignment?')) return;
+                fetch('/api/fieldtrips/assignments/' + a.id, { method: 'DELETE' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        document.body.removeChild(overlay);
+                        if (adminFtData.assignments[groupName] && adminFtData.assignments[groupName][day]) {
+                            delete adminFtData.assignments[groupName][day][String(week)];
+                        }
+                        renderAdminMatrix();
+                        showToast('Assignment deleted');
+                    } else {
+                        showToast('Error: ' + (data.error || 'Unknown'), true);
+                    }
+                });
+            };
+        }
     }
 
     function esc(str) {
@@ -720,6 +741,100 @@
         var d = document.createElement('div');
         d.appendChild(document.createTextNode(str));
         return d.innerHTML;
+    }
+
+    function calculateBuses() {
+        var week = parseInt(document.getElementById('bus-calc-week').value);
+        fetch('/api/fieldtrips/calculate-buses', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ week: week })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) { showToast('Error: ' + data.error, true); return; }
+            showBusResults(data);
+        })
+        .catch(function(err) { showToast('Failed: ' + err.message, true); });
+    }
+
+    function showBusResults(data) {
+        var dayColors = {'Monday':'#3B82F6','Tuesday':'#8B5CF6','Wednesday':'#10B981','Thursday':'#F59E0B','Friday':'#EF4444'};
+        var dayOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+
+        var modal = document.createElement('div');
+        modal.style.cssText = 'background:white;border-radius:16px;padding:0;max-width:700px;width:95%;max-height:90vh;overflow-y:auto;';
+
+        var h = '<div style="background:linear-gradient(135deg,#1E40AF,#3B82F6);color:white;padding:20px 24px;">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        h += '<div><strong style="font-size:18px;">Bus Allocation</strong><br><span style="opacity:0.8;font-size:13px;">Week ' + data.week + '</span></div>';
+        h += '<span onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))" style="cursor:pointer;font-size:22px;">&times;</span>';
+        h += '</div></div>';
+        h += '<div style="padding:20px;">';
+
+        var totalCoach = 0, totalJcc = 0;
+        var hasDays = false;
+
+        dayOrder.forEach(function(day) {
+            var dayData = (data.days || {})[day];
+            if (!dayData || !dayData.venues || dayData.venues.length === 0) return;
+            hasDays = true;
+            var dc = dayColors[day] || '#6B7280';
+            h += '<div style="margin-bottom:16px;">';
+            h += '<div style="background:' + dc + ';color:white;padding:8px 14px;border-radius:8px 8px 0 0;font-weight:600;font-size:14px;">' + day + '</div>';
+            h += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+            h += '<thead><tr style="background:#F9FAFB;"><th style="text-align:left;padding:8px;border-bottom:1px solid #E5E7EB;">Venue</th>';
+            h += '<th style="text-align:left;padding:8px;border-bottom:1px solid #E5E7EB;">Groups</th>';
+            h += '<th style="text-align:center;padding:8px;border-bottom:1px solid #E5E7EB;">Kids</th>';
+            h += '<th style="text-align:center;padding:8px;border-bottom:1px solid #E5E7EB;">People</th>';
+            h += '<th style="text-align:center;padding:8px;border-bottom:1px solid #E5E7EB;">Coach</th>';
+            h += '<th style="text-align:center;padding:8px;border-bottom:1px solid #E5E7EB;">JCC</th>';
+            h += '</tr></thead><tbody>';
+
+            dayData.venues.forEach(function(v) {
+                h += '<tr>';
+                h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;font-weight:500;">' + esc(v.venue_name) + '</td>';
+                h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;color:#6B7280;">' + v.groups.join(', ') + '</td>';
+                h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;text-align:center;">' + v.kids + '</td>';
+                h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;text-align:center;font-weight:600;">' + v.total_people + '</td>';
+                h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;text-align:center;">';
+                if (v.coach_buses > 0) h += '<span style="background:#DBEAFE;color:#1E40AF;padding:2px 8px;border-radius:12px;font-weight:600;">' + v.coach_buses + '</span>';
+                else h += '<span style="color:#D1D5DB;">0</span>';
+                h += '</td>';
+                h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;text-align:center;">';
+                if (v.jcc_buses > 0) h += '<span style="background:#D1FAE5;color:#065F46;padding:2px 8px;border-radius:12px;font-weight:600;">' + v.jcc_buses + '</span>';
+                else h += '<span style="color:#D1D5DB;">0</span>';
+                h += '</td></tr>';
+            });
+
+            // Day totals row
+            h += '<tr style="background:#F9FAFB;font-weight:600;">';
+            h += '<td colspan="4" style="padding:8px;text-align:right;">Day Total:</td>';
+            h += '<td style="padding:8px;text-align:center;">' + dayData.totals.coach_buses + '</td>';
+            h += '<td style="padding:8px;text-align:center;">' + dayData.totals.jcc_buses + '</td>';
+            h += '</tr></tbody></table></div>';
+
+            totalCoach += dayData.totals.coach_buses;
+            totalJcc += dayData.totals.jcc_buses;
+        });
+
+        if (!hasDays) {
+            h += '<div style="text-align:center;padding:30px;color:#9CA3AF;">No field trips assigned for Week ' + data.week + '.</div>';
+        } else {
+            h += '<div style="background:#F0F9FF;border-radius:12px;padding:16px;display:flex;justify-content:space-around;text-align:center;">';
+            h += '<div><div style="font-size:24px;font-weight:700;color:#1E40AF;">' + totalCoach + '</div><div style="font-size:12px;color:#6B7280;">Coach Buses</div></div>';
+            h += '<div><div style="font-size:24px;font-weight:700;color:#065F46;">' + totalJcc + '</div><div style="font-size:12px;color:#6B7280;">JCC Buses</div></div>';
+            h += '</div>';
+        }
+
+        h += '</div>';
+        modal.innerHTML = h;
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
     }
     </script>
 </body>
