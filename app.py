@@ -4512,6 +4512,7 @@ def api_fieldtrips_calculate_buses():
         if a.venue_id not in day_venues[day]:
             day_venues[day][a.venue_id] = {
                 'venue_name': venue.name,
+                'address': venue.address or '',
                 'groups': [],
                 'kids': 0,
             }
@@ -4538,6 +4539,7 @@ def api_fieldtrips_calculate_buses():
             total_people = kids + adults
             venue_entries.append({
                 'venue_name': info['venue_name'],
+                'address': info['address'],
                 'groups': info['groups'],
                 'kids': kids,
                 'total_people': total_people,
@@ -4553,9 +4555,11 @@ def api_fieldtrips_calculate_buses():
             v['_base_coaches'] = math.ceil(v['total_people'] / COACH_BUS_CAPACITY) if v['total_people'] > 0 else 0
 
         # Greedily assign JCC buses — pick venue where 1 JCC bus saves the most coaches
+        # Tiebreaker: prefer venue with fewer kids (smaller groups get JCC first)
         for _ in range(jcc_remaining):
             best_saving = 0
             best_idx = -1
+            best_kids = float('inf')
             for i, v in enumerate(venue_entries):
                 if v['total_people'] <= 0:
                     continue
@@ -4565,9 +4569,10 @@ def api_fieldtrips_calculate_buses():
                 people_now = v['total_people'] - current_jcc * JCC_BUS_CAPACITY
                 coaches_now = math.ceil(people_now / COACH_BUS_CAPACITY) if people_now > 0 else 0
                 saving = coaches_now - coaches_with_extra_jcc
-                if saving > best_saving:
+                if saving > best_saving or (saving == best_saving and saving > 0 and v['kids'] < best_kids):
                     best_saving = saving
                     best_idx = i
+                    best_kids = v['kids']
             if best_idx >= 0 and best_saving > 0:
                 venue_entries[best_idx]['jcc_buses'] += 1
             else:

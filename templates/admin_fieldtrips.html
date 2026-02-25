@@ -193,6 +193,32 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .toast.error { background: #991B1B; }
+        .section-toggle-btn {
+            margin-left: auto;
+            background: none;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px 8px;
+            font-size: 12px;
+            color: #6B7280;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s;
+        }
+        .section-toggle-btn:hover { background: #F3F4F6; }
+        .section-toggle-btn svg { transition: transform 0.3s; }
+        .section-collapsible {
+            overflow: hidden;
+            transition: max-height 0.35s ease, opacity 0.35s ease;
+            max-height: 2000px;
+            opacity: 1;
+        }
+        .section-collapsible.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
         @media (max-width: 768px) {
             .form-row { grid-template-columns: 1fr; }
             .venue-search { width: 100%; }
@@ -230,53 +256,7 @@
                 </div>
             </div>
 
-            <!-- Section B: Venue Management -->
-            <div class="admin-section">
-                <h3>
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    Venue Management
-                </h3>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
-                    <input type="text" class="venue-search" id="venue-search" placeholder="Search venues..." oninput="filterVenues()">
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <label style="font-size:13px; color:#6B7280; display:flex; align-items:center; gap:4px;">
-                            <input type="checkbox" id="show-inactive" onchange="loadVenues()"> Show inactive
-                        </label>
-                        <button class="btn-sm btn-sm-primary" onclick="toggleAddVenueForm()">+ Add Venue</button>
-                    </div>
-                </div>
-
-                <div class="add-venue-form" id="add-venue-form">
-                    <div class="form-row">
-                        <input type="text" id="new-venue-name" placeholder="Venue name *">
-                        <input type="text" id="new-venue-address" placeholder="Address">
-                        <input type="text" id="new-venue-waiver" placeholder="Waiver URL">
-                    </div>
-                    <div style="display:flex; gap:8px; justify-content:flex-end;">
-                        <button class="btn-sm" onclick="toggleAddVenueForm()">Cancel</button>
-                        <button class="btn-sm btn-sm-primary" onclick="createVenue()">Create Venue</button>
-                    </div>
-                </div>
-
-                <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
-                    <table class="venue-table" id="venue-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Address</th>
-                                <th>Waiver</th>
-                                <th style="width:120px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="venue-tbody">
-                            <tr><td colspan="4" style="text-align:center; color:#9CA3AF; padding:30px;">Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div id="venue-count" style="margin-top:8px; font-size:12px; color:#9CA3AF;"></div>
-            </div>
-
-            <!-- Section C: Trip Assignment Matrix -->
+            <!-- Section B: Trip Assignment Matrix -->
             <div class="admin-section">
                 <h3>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
@@ -296,6 +276,58 @@
                 </div>
                 <div id="admin-ft-matrix" style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
                     <div style="text-align:center; padding:40px; color:#9CA3AF;">Loading matrix...</div>
+                </div>
+            </div>
+
+            <!-- Section C: Venue Management (collapsible, starts collapsed) -->
+            <div class="admin-section">
+                <h3 style="display:flex; align-items:center;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span style="margin-left:8px;">Venue Management</span>
+                    <button class="section-toggle-btn" id="venue-section-toggle" onclick="toggleVenueSection()">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                        <span id="venue-toggle-label">Show</span>
+                    </button>
+                </h3>
+                <div class="section-collapsible collapsed" id="venue-section-body">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+                        <input type="text" class="venue-search" id="venue-search" placeholder="Search venues..." oninput="filterVenues()">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <label style="font-size:13px; color:#6B7280; display:flex; align-items:center; gap:4px;">
+                                <input type="checkbox" id="show-inactive" onchange="loadVenues()"> Show inactive
+                            </label>
+                            <button class="btn-sm btn-sm-primary" onclick="toggleAddVenueForm()">+ Add Venue</button>
+                        </div>
+                    </div>
+
+                    <div class="add-venue-form" id="add-venue-form">
+                        <div class="form-row">
+                            <input type="text" id="new-venue-name" placeholder="Venue name *">
+                            <input type="text" id="new-venue-address" placeholder="Address">
+                            <input type="text" id="new-venue-waiver" placeholder="Waiver URL">
+                        </div>
+                        <div style="display:flex; gap:8px; justify-content:flex-end;">
+                            <button class="btn-sm" onclick="toggleAddVenueForm()">Cancel</button>
+                            <button class="btn-sm btn-sm-primary" onclick="createVenue()">Create Venue</button>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                        <table class="venue-table" id="venue-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Address</th>
+                                    <th>Waiver</th>
+                                    <th style="width:120px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="venue-tbody">
+                                <tr><td colspan="4" style="text-align:center; color:#9CA3AF; padding:30px;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="venue-count" style="margin-top:8px; font-size:12px; color:#9CA3AF;"></div>
                 </div>
             </div>
         </div>
@@ -767,7 +799,7 @@
         overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
 
         var modal = document.createElement('div');
-        modal.style.cssText = 'background:white;border-radius:16px;padding:0;max-width:700px;width:95%;max-height:90vh;overflow-y:auto;';
+        modal.style.cssText = 'background:white;border-radius:16px;padding:0;max-width:860px;width:95%;max-height:90vh;overflow-y:auto;';
 
         var h = '<div style="background:linear-gradient(135deg,#1E40AF,#3B82F6);color:white;padding:20px 24px;">';
         h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
@@ -787,7 +819,9 @@
             h += '<div style="margin-bottom:16px;">';
             h += '<div style="background:' + dc + ';color:white;padding:8px 14px;border-radius:8px 8px 0 0;font-weight:600;font-size:14px;">' + day + '</div>';
             h += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-            h += '<thead><tr style="background:#F9FAFB;"><th style="text-align:left;padding:8px;border-bottom:1px solid #E5E7EB;">Venue</th>';
+            h += '<thead><tr style="background:#F9FAFB;">';
+            h += '<th style="text-align:left;padding:8px;border-bottom:1px solid #E5E7EB;">Venue</th>';
+            h += '<th style="text-align:left;padding:8px;border-bottom:1px solid #E5E7EB;">Address</th>';
             h += '<th style="text-align:left;padding:8px;border-bottom:1px solid #E5E7EB;">Groups</th>';
             h += '<th style="text-align:center;padding:8px;border-bottom:1px solid #E5E7EB;">Kids</th>';
             h += '<th style="text-align:center;padding:8px;border-bottom:1px solid #E5E7EB;">People</th>';
@@ -798,6 +832,7 @@
             dayData.venues.forEach(function(v) {
                 h += '<tr>';
                 h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;font-weight:500;">' + esc(v.venue_name) + '</td>';
+                h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;color:#6B7280;font-size:12px;">' + esc(v.address || '') + '</td>';
                 h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;color:#6B7280;">' + v.groups.join(', ') + '</td>';
                 h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;text-align:center;">' + v.kids + '</td>';
                 h += '<td style="padding:8px;border-bottom:1px solid #F3F4F6;text-align:center;font-weight:600;">' + v.total_people + '</td>';
@@ -811,9 +846,8 @@
                 h += '</td></tr>';
             });
 
-            // Day totals row
             h += '<tr style="background:#F9FAFB;font-weight:600;">';
-            h += '<td colspan="4" style="padding:8px;text-align:right;">Day Total:</td>';
+            h += '<td colspan="5" style="padding:8px;text-align:right;">Day Total:</td>';
             h += '<td style="padding:8px;text-align:center;">' + dayData.totals.coach_buses + '</td>';
             h += '<td style="padding:8px;text-align:center;">' + dayData.totals.jcc_buses + '</td>';
             h += '</tr></tbody></table></div>';
@@ -829,12 +863,156 @@
             h += '<div><div style="font-size:24px;font-weight:700;color:#1E40AF;">' + totalCoach + '</div><div style="font-size:12px;color:#6B7280;">Coach Buses</div></div>';
             h += '<div><div style="font-size:24px;font-weight:700;color:#065F46;">' + totalJcc + '</div><div style="font-size:12px;color:#6B7280;">JCC Buses</div></div>';
             h += '</div>';
+
+            // Action buttons
+            h += '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #E5E7EB;">';
+            h += '<button id="bus-print-btn" class="btn-sm" style="display:inline-flex;align-items:center;gap:6px;">';
+            h += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+            h += 'Print</button>';
+            h += '<button id="bus-download-btn" class="btn-sm" style="display:inline-flex;align-items:center;gap:6px;">';
+            h += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+            h += 'Download</button>';
+            h += '<button id="bus-email-btn" class="btn-sm btn-sm-primary" style="display:inline-flex;align-items:center;gap:6px;">';
+            h += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+            h += 'Email</button>';
+            h += '</div>';
         }
 
         h += '</div>';
         modal.innerHTML = h;
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
+
+        // Attach button handlers
+        var printBtn = document.getElementById('bus-print-btn');
+        if (printBtn) printBtn.onclick = function() { printBusReport(data); };
+        var dlBtn = document.getElementById('bus-download-btn');
+        if (dlBtn) dlBtn.onclick = function() { downloadBusReport(data); };
+        var emailBtn = document.getElementById('bus-email-btn');
+        if (emailBtn) emailBtn.onclick = function() { emailBusReport(data); };
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function generateReportHTML(data) {
+        var dayColors = {'Monday':'#3B82F6','Tuesday':'#8B5CF6','Wednesday':'#10B981','Thursday':'#F59E0B','Friday':'#EF4444'};
+        var dayOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+        var weekRange = '';
+        if (adminFtData && adminFtData.week_dates) {
+            var wd = adminFtData.week_dates[String(data.week)];
+            if (wd) {
+                var s = new Date(wd[0] + 'T12:00:00'), e = new Date(wd[1] + 'T12:00:00');
+                var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                weekRange = mo[s.getMonth()] + ' ' + s.getDate() + ' - ' + mo[e.getMonth()] + ' ' + e.getDate() + ', ' + e.getFullYear();
+            }
+        }
+        var logoUrl = window.location.origin + '/static/images/logo.png';
+        var genDate = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+        var r = '<!DOCTYPE html><html><head><meta charset="UTF-8">';
+        r += '<title>Field Trips Week ' + data.week + ' - Camp Sol Taplin</title>';
+        r += '<style>';
+        r += '@page{size:landscape;margin:0.5in}';
+        r += 'body{font-family:Arial,sans-serif;font-size:11pt;color:#1F2937;margin:20px}';
+        r += '.hdr{display:flex;align-items:center;gap:20px;padding-bottom:12px;border-bottom:3px solid #00A9CE;margin-bottom:20px}';
+        r += '.hdr img{height:60px} .hdr .t{flex:1} .hdr h1{margin:0;font-size:22pt;color:#00A9CE}';
+        r += '.hdr .sub{font-size:12pt;color:#6B7280;margin-top:2px} .hdr .meta{text-align:right;font-size:10pt;color:#9CA3AF}';
+        r += '.day{margin-bottom:20px;page-break-inside:avoid}';
+        r += '.dayh{padding:6px 12px;color:white;font-weight:bold;font-size:12pt;border-radius:4px 4px 0 0}';
+        r += 'table{width:100%;border-collapse:collapse}';
+        r += 'th{text-align:left;padding:6px 10px;background:#F9FAFB;border-bottom:2px solid #E5E7EB;font-size:9pt;text-transform:uppercase;letter-spacing:.5px;color:#6B7280}';
+        r += 'th.c{text-align:center} td{padding:6px 10px;border-bottom:1px solid #F3F4F6;font-size:10pt;vertical-align:top} td.c{text-align:center}';
+        r += '.bc{background:#DBEAFE;color:#1E40AF;padding:1px 8px;border-radius:10px;font-weight:700}';
+        r += '.bj{background:#D1FAE5;color:#065F46;padding:1px 8px;border-radius:10px;font-weight:700}';
+        r += '.tr{background:#F9FAFB;font-weight:700}';
+        r += '.gs{margin-top:20px;background:#F0F9FF;border-radius:8px;padding:16px;display:flex;gap:40px;page-break-inside:avoid}';
+        r += '.gs .st{text-align:center} .gs .n{font-size:28pt;font-weight:700} .gs .l{font-size:10pt;color:#6B7280}';
+        r += '@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}';
+        r += '</style></head><body>';
+        r += '<div class="hdr"><img src="' + logoUrl + '" alt="Logo"><div class="t"><h1>Field Trips &mdash; Week ' + data.week + '</h1>';
+        r += '<div class="sub">' + weekRange + '</div></div><div class="meta">Generated: ' + genDate + '</div></div>';
+
+        var gc = 0, gj = 0;
+        dayOrder.forEach(function(day) {
+            var dd = (data.days || {})[day];
+            if (!dd || !dd.venues || dd.venues.length === 0) return;
+            var dc = dayColors[day] || '#6B7280';
+            r += '<div class="day"><div class="dayh" style="background:' + dc + '">' + day + '</div>';
+            r += '<table><thead><tr><th style="width:16%">Venue</th><th style="width:20%">Address</th><th style="width:24%">Groups</th>';
+            r += '<th class="c" style="width:8%">Kids</th><th class="c" style="width:10%">People</th><th class="c" style="width:10%">Coach</th><th class="c" style="width:10%">JCC</th></tr></thead><tbody>';
+            dd.venues.forEach(function(v) {
+                r += '<tr><td><strong>' + escHtml(v.venue_name) + '</strong></td>';
+                r += '<td style="color:#6B7280;font-size:9pt">' + escHtml(v.address || '') + '</td>';
+                r += '<td style="color:#6B7280">' + v.groups.join(', ') + '</td>';
+                r += '<td class="c">' + v.kids + '</td><td class="c"><strong>' + v.total_people + '</strong></td>';
+                r += '<td class="c">' + (v.coach_buses > 0 ? '<span class="bc">' + v.coach_buses + '</span>' : '0') + '</td>';
+                r += '<td class="c">' + (v.jcc_buses > 0 ? '<span class="bj">' + v.jcc_buses + '</span>' : '0') + '</td></tr>';
+            });
+            r += '<tr class="tr"><td colspan="5" style="text-align:right">Day Total:</td>';
+            r += '<td class="c"><span class="bc">' + dd.totals.coach_buses + '</span></td>';
+            r += '<td class="c"><span class="bj">' + dd.totals.jcc_buses + '</span></td></tr>';
+            r += '</tbody></table></div>';
+            gc += dd.totals.coach_buses;
+            gj += dd.totals.jcc_buses;
+        });
+
+        r += '<div class="gs">';
+        r += '<div class="st"><div class="n" style="color:#1E40AF">' + gc + '</div><div class="l">Coach Buses</div></div>';
+        r += '<div class="st"><div class="n" style="color:#065F46">' + gj + '</div><div class="l">JCC Buses</div></div>';
+        r += '<div class="st"><div class="n" style="color:#374151">' + (gc + gj) + '</div><div class="l">Total Buses</div></div>';
+        r += '</div></body></html>';
+        return r;
+    }
+
+    function printBusReport(data) {
+        var html = generateReportHTML(data);
+        var win = window.open('', '_blank', 'width=1100,height=750');
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(function() { win.print(); }, 400);
+    }
+
+    function downloadBusReport(data) {
+        var html = generateReportHTML(data);
+        var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'FieldTrips-Week' + data.week + '.html';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    }
+
+    function emailBusReport(data) {
+        downloadBusReport(data);
+        setTimeout(function() {
+            var subject = encodeURIComponent('Field Trips - Week ' + data.week);
+            var body = encodeURIComponent(
+                'Hola Jose,\n\nAqui estan los fieldtrips de la proxima semana. ' +
+                'Cualquier duda me dejas saber.\n\nMuchas Gracias'
+            );
+            window.location.href = 'mailto:info@jabusservice.com,campsoltaplin@marjcc.org?subject=' + subject + '&body=' + body;
+        }, 500);
+    }
+
+    function toggleVenueSection() {
+        var body = document.getElementById('venue-section-body');
+        var label = document.getElementById('venue-toggle-label');
+        var icon = document.querySelector('#venue-section-toggle svg');
+        if (body.classList.contains('collapsed')) {
+            body.classList.remove('collapsed');
+            label.textContent = 'Hide';
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            body.classList.add('collapsed');
+            label.textContent = 'Show';
+            icon.style.transform = 'rotate(0deg)';
+        }
     }
     </script>
 </body>
