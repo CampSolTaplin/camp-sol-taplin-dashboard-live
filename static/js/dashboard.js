@@ -25,14 +25,29 @@ function switchView(viewName) {
             item.classList.add('active');
         }
     });
-    
+    // Handle subitem active states
+    document.querySelectorAll('.nav-subitem').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.view === viewName) {
+            item.classList.add('active');
+        }
+    });
+
     document.querySelectorAll('.view-content').forEach(content => content.classList.remove('active'));
-    
+
     const viewElement = document.getElementById(viewName + '-view');
     if (viewElement) {
         viewElement.classList.add('active');
     }
-    
+
+    // Auto-open staff submenu for staff sub-views
+    if (viewName === 'staff' || viewName === 'orgchart') {
+        var staffSub = document.getElementById('staff-submenu');
+        if (staffSub) staffSub.classList.add('open');
+        var staffArrow = staffSub ? staffSub.previousElementSibling.querySelector('.submenu-arrow') : null;
+        if (staffArrow) staffArrow.classList.add('rotated');
+    }
+
     // Initialize charts when switching views
     if (viewName === 'bydate') {
         setTimeout(initCumulativeChart, 100);
@@ -48,6 +63,9 @@ function switchView(viewName) {
     }
     if (viewName === 'staff') {
         setTimeout(initStaffView, 100);
+    }
+    if (viewName === 'orgchart') {
+        setTimeout(initOrgChart, 100);
     }
 }
 
@@ -3077,8 +3095,14 @@ function filterStaff() {
 }
 
 function showStaffDetail(personId) {
-    if (!staffData || !staffData.staff) return;
-    var s = staffData.staff.find(function(x) { return x.person_id === personId; });
+    // Search in both staffData (Pipeline) and orgChartData (Org Chart)
+    var s = null;
+    if (staffData && staffData.staff) {
+        s = staffData.staff.find(function(x) { return x.person_id === personId; });
+    }
+    if (!s && orgChartData && orgChartData.staff) {
+        s = orgChartData.staff.find(function(x) { return x.person_id === personId; });
+    }
     if (!s) return;
 
     var col = STAFF_COLUMNS.find(function(c) { return c.key === s.column; }) || STAFF_COLUMNS[0];
@@ -3154,5 +3178,178 @@ function _staffInfoCell(label, value) {
 
 function closeStaffModal() {
     document.getElementById('staff-detail-modal').style.display = 'none';
+}
+
+// ==================== STAFF ORG CHART ====================
+
+var ORGCHART_POSITIONS = [
+    'Unit Leader',
+    'Sr. Counselor',
+    'Older Jr. Counselor',
+    'Jr. Counselor',
+    'Volunteer'
+];
+
+var orgChartData = null;
+var orgChartLoaded = false;
+
+function matchOrgChartPosition(positionName) {
+    if (!positionName) return null;
+    var lower = positionName.toLowerCase().trim();
+    if (lower.includes('unit leader')) return 'Unit Leader';
+    if ((lower.includes('sr.') || lower.includes('sr ') || lower.includes('senior')) && lower.includes('counselor')) return 'Sr. Counselor';
+    if (lower.includes('older') && (lower.includes('jr') || lower.includes('junior'))) return 'Older Jr. Counselor';
+    if ((lower.includes('jr') || lower.includes('junior')) && lower.includes('counselor') && !lower.includes('older') && !lower.includes('sr') && !lower.includes('senior')) return 'Jr. Counselor';
+    if (lower.includes('volunteer')) return 'Volunteer';
+    return null;
+}
+
+function loadOrgChartSeason() {
+    orgChartLoaded = false;
+    orgChartData = null;
+    initOrgChart();
+}
+
+function initOrgChart() {
+    if (orgChartLoaded && orgChartData) {
+        renderOrgChart(orgChartData);
+        return;
+    }
+
+    var content = document.getElementById('orgchart-content');
+    if (content) content.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#9ca3af;"><div class="spinner" style="width:32px; height:32px; border:3px solid #e5e7eb; border-top-color:#3b82f6; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px;"></div><div>Loading org chart...</div></div>';
+
+    var seasonParam = '';
+    var seasonSel = document.getElementById('orgchart-season');
+    if (seasonSel && seasonSel.value) {
+        seasonParam = '?season=' + seasonSel.value;
+    }
+
+    fetch('/api/staff' + seasonParam)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                content.innerHTML = '<div style="text-align:center; padding:60px; color:#EF4444;">Error: ' + data.error + '</div>';
+                return;
+            }
+            orgChartData = data;
+            orgChartLoaded = true;
+
+            // Update season selector
+            if (data.season_id) {
+                var sel = document.getElementById('orgchart-season');
+                if (sel && !sel.value) {
+                    sel.value = String(data.season_id);
+                }
+            }
+
+            renderOrgChart(data);
+        })
+        .catch(function(err) {
+            content.innerHTML = '<div style="text-align:center; padding:60px; color:#EF4444;">Failed to load org chart data</div>';
+            console.error('Org chart fetch error:', err);
+        });
+}
+
+function renderOrgChart(data) {
+    var content = document.getElementById('orgchart-content');
+    if (!content || !data || !data.staff) return;
+
+    // Filter to active staff only (status_id 1)
+    var activeStaff = data.staff.filter(function(s) {
+        return s.status_id === 1;
+    });
+
+    // Build grid: orgCategory -> position -> [staff]
+    var grid = {};
+    var orgCats = [];
+
+    activeStaff.forEach(function(s) {
+        var cat = s.org_category || 'Unassigned';
+
+        // Check position1
+        var pos1Match = matchOrgChartPosition(s.position1);
+        // Check position2
+        var pos2Match = matchOrgChartPosition(s.position2);
+
+        if (!pos1Match && !pos2Match) return; // Not one of our 5 target positions
+
+        if (!grid[cat]) {
+            grid[cat] = {};
+            orgCats.push(cat);
+        }
+
+        if (pos1Match) {
+            if (!grid[cat][pos1Match]) grid[cat][pos1Match] = [];
+            grid[cat][pos1Match].push(s);
+        }
+        if (pos2Match && pos2Match !== pos1Match) {
+            if (!grid[cat][pos2Match]) grid[cat][pos2Match] = [];
+            grid[cat][pos2Match].push(s);
+        }
+    });
+
+    orgCats.sort();
+
+    // If no data
+    if (orgCats.length === 0) {
+        content.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#9ca3af;"><div style="font-size:36px; margin-bottom:12px;">📋</div><div style="font-size:15px;">No staff with matching positions found for this season</div><div style="font-size:13px; margin-top:8px; color:#d1d5db;">Looking for: ' + ORGCHART_POSITIONS.join(', ') + '</div></div>';
+        var statusEl = document.getElementById('orgchart-status');
+        if (statusEl) statusEl.textContent = '0 camps · 0 positions filled';
+        return;
+    }
+
+    // Build table HTML
+    var html = '<div class="orgchart-wrapper">';
+    html += '<table class="orgchart-table">';
+
+    // Header row
+    html += '<thead><tr>';
+    html += '<th class="orgchart-camp-header">Camp / Department</th>';
+    ORGCHART_POSITIONS.forEach(function(pos) {
+        html += '<th>' + _ftEsc(pos) + '</th>';
+    });
+    html += '</tr></thead>';
+
+    // Body rows
+    html += '<tbody>';
+    var totalFilled = 0;
+    var totalVacant = 0;
+
+    orgCats.forEach(function(cat) {
+        html += '<tr>';
+        html += '<td class="orgchart-camp-cell">' + _ftEsc(cat) + '</td>';
+
+        ORGCHART_POSITIONS.forEach(function(pos) {
+            var staff = (grid[cat] && grid[cat][pos]) ? grid[cat][pos] : [];
+            if (staff.length > 0) {
+                totalFilled++;
+                html += '<td class="orgchart-cell orgchart-filled">';
+                staff.forEach(function(s) {
+                    html += '<div class="orgchart-person">';
+                    html += '<span class="orgchart-person-name" onclick="showStaffDetail(' + s.person_id + ')">' + _ftEsc(s.first_name + ' ' + s.last_name) + '</span>';
+                    html += '</div>';
+                });
+                html += '</td>';
+            } else {
+                totalVacant++;
+                html += '<td class="orgchart-cell orgchart-vacant">';
+                html += '<span class="orgchart-vacant-label">Vacant</span>';
+                html += '</td>';
+            }
+        });
+
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    content.innerHTML = html;
+
+    // Update status badge
+    var statusEl = document.getElementById('orgchart-status');
+    if (statusEl) {
+        statusEl.textContent = orgCats.length + ' camps × ' + ORGCHART_POSITIONS.length + ' positions · ' + totalFilled + ' filled, ' + totalVacant + ' vacant';
+    }
 }
 

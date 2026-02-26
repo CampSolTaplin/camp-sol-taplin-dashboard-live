@@ -2954,3 +2954,96 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     }
 }
 
+/* ===== Staff Org Chart Grid ===== */
+.orgchart-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+}
+
+.orgchart-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.orgchart-table thead th {
+    background: var(--bg);
+    padding: 12px 14px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.orgchart-camp-header {
+    text-align: left !important;
+    min-width: 180px;
+}
+
+.orgchart-camp-cell {
+    font-weight: 600;
+    padding: 12px 14px;
+    background: var(--bg);
+    white-space: nowrap;
+    border-right: 2px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.orgchart-cell {
+    padding: 10px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    vertical-align: top;
+    min-width: 150px;
+}
+
+.orgchart-filled {
+    background: #F0FDF4;
+}
+
+.orgchart-vacant {
+    background: #FEF2F2;
+}
+
+.orgchart-vacant-label {
+    color: var(--danger);
+    font-size: 12px;
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.orgchart-person {
+    padding: 3px 0;
+}
+
+.orgchart-person-name {
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--teal-dark);
+}
+
+.orgchart-person-name:hover {
+    text-decoration: underline;
+}
+
+.orgchart-person + .orgchart-person {
+    border-top: 1px dashed var(--border);
+    margin-top: 3px;
+    padding-top: 3px;
+}
+

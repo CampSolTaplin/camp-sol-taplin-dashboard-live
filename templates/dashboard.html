@@ -1498,11 +1498,35 @@
                 </div>
             </div>
 
-            <!-- Staff Detail Modal -->
-            <div id="staff-detail-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeStaffModal()">
-                <div class="modal-content" style="max-width:550px; border-radius:16px; padding:0; overflow:hidden;">
-                    <div id="staff-modal-body"></div>
+        </div>
+
+        <!-- ===== STAFF ORG CHART VIEW ===== -->
+        <div id="orgchart-view" class="view-content">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                <h2 style="font-family:'Outfit',sans-serif; font-weight:700; margin:0;">Staff Org Chart</h2>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <select id="orgchart-season" onchange="loadOrgChartSeason()" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; font-weight:600;">
+                        <option value="">Auto</option>
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                    <span id="orgchart-status" style="font-size:12px; color:#6B7A8A;"></span>
                 </div>
+            </div>
+
+            <div id="orgchart-content">
+                <div style="text-align:center; padding:60px 20px; color:#9ca3af;">
+                    <div style="font-size:36px; margin-bottom:12px;">📊</div>
+                    <div style="font-size:15px;">Loading org chart...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Detail Modal (shared by Pipeline + Org Chart) -->
+        <div id="staff-detail-modal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;" onclick="if(event.target===this)closeStaffModal()">
+            <div class="modal-content" style="max-width:550px; border-radius:16px; padding:0; overflow:hidden;">
+                <div id="staff-modal-body"></div>
             </div>
         </div>
         {% endif %}
