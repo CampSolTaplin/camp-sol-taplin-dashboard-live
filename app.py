@@ -1136,6 +1136,11 @@ def dashboard():
         'po_uploaded_at': po_cache.get('uploaded_at'),
     }
 
+    # Preload staff data from disk cache (instant, no API call)
+    staff_preloaded = None
+    if current_user.has_permission('view_staff'):
+        staff_preloaded = _load_staff_disk_cache()
+
     return render_template('dashboard.html',
                          report=report_data,
                          generated_at=generated_at,
@@ -1156,6 +1161,7 @@ def dashboard():
                          finance_data=finance_data,
                          budget_data=budget_context,
                          camp_week_dates=CAMP_WEEK_DATES,
+                         staff_preloaded=staff_preloaded,
                          user=current_user)
 
 # ==================== USER MANAGEMENT ROUTES ====================
@@ -4633,6 +4639,18 @@ _staff_cache = {'data': None, 'fetched_at': None}
 _staff_cache_ttl = 900  # 15 minutes
 
 
+def _load_staff_disk_cache():
+    """Load staff data from disk cache (instant, no API calls)."""
+    cache_path = os.path.join(os.path.dirname(__file__), 'data', 'staff_cache.json')
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
+
+
 def fetch_staff_data(season_id=None, force_refresh=False):
     """Fetch staff data from CampMinder Staff API with caching."""
     global _staff_cache
@@ -4762,7 +4780,19 @@ def fetch_staff_data(season_id=None, force_refresh=False):
                 'salary': s.get('Salary', 0),
                 'bunk_staff': s.get('BunkStaff'),
                 'column': column,
+                'weeks_worked': None,
             })
+
+            # Calculate weeks worked from employment dates
+            emp_start = s.get('EmploymentStartDate', '')
+            emp_end = s.get('EmploymentEndDate', '')
+            if emp_start and emp_end:
+                try:
+                    d1 = date.fromisoformat(emp_start[:10])
+                    d2 = date.fromisoformat(emp_end[:10])
+                    staff_list[-1]['weeks_worked'] = max(0, (d2 - d1).days // 7)
+                except (ValueError, TypeError):
+                    pass
 
         # Sort by last name
         staff_list.sort(key=lambda x: (x['last_name'] or '', x['first_name'] or ''))

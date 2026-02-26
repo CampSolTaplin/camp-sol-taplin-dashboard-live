@@ -1531,6 +1531,10 @@
         </div>
         {% endif %}
 
+    {% if staff_preloaded %}
+    <script>var staffPreloaded = {{ staff_preloaded | tojson }};</script>
+    {% endif %}
+
     </main>
 
     <!-- Upload Modal -->

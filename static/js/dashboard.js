@@ -2946,6 +2946,45 @@ function initStaffView() {
         renderStaffKanban();
         return;
     }
+
+    // Use preloaded data from disk cache if available (instant, no API call)
+    var _ssSel = document.getElementById('staff-season');
+    var _ssVal = _ssSel ? _ssSel.value : '';
+    var _preloadMatch = typeof staffPreloaded !== 'undefined' && staffPreloaded && (!_ssVal || String(staffPreloaded.season_id) === _ssVal);
+    if (_preloadMatch) {
+        staffData = staffPreloaded;
+        staffLoaded = true;
+        // Populate filter dropdowns
+        var posSel = document.getElementById('staff-filter-position');
+        if (posSel && staffData.positions) {
+            staffData.positions.forEach(function(p) {
+                var opt = document.createElement('option');
+                opt.value = p; opt.textContent = p;
+                posSel.appendChild(opt);
+            });
+        }
+        var orgSel = document.getElementById('staff-filter-org');
+        if (orgSel && staffData.org_categories) {
+            staffData.org_categories.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                orgSel.appendChild(opt);
+            });
+        }
+        if (staffData.season_id) {
+            var sel = document.getElementById('staff-season');
+            if (sel && !sel.value) sel.value = String(staffData.season_id);
+        }
+        renderStaffKanban();
+        // Fetch fresh data in background
+        fetch('/api/staff')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.error) { staffData = data; staffLoaded = true; }
+            }).catch(function(){});
+        return;
+    }
+
     var kanban = document.getElementById('staff-kanban');
     if (kanban) kanban.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#9ca3af;"><div class="spinner" style="width:32px; height:32px; border:3px solid #e5e7eb; border-top-color:#3b82f6; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px;"></div><div>Loading staff data...</div></div>';
 
@@ -3131,13 +3170,23 @@ function showStaffDetail(personId) {
     if (s.years) {
         html += '<span style="background:#F0FDF4; color:#166534; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">' + s.years + ' yr' + (s.years > 1 ? 's' : '') + '</span>';
     }
+    if (s.weeks_worked != null) {
+        html += '<span style="background:#EFF6FF; color:#1E40AF; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">' + s.weeks_worked + ' wk' + (s.weeks_worked !== 1 ? 's' : '') + '</span>';
+    }
     html += '</div>';
 
     // Contact
     html += '<div style="margin-bottom:16px;">';
     html += '<div style="font-weight:600; font-size:13px; color:#6b7280; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Contact</div>';
     if (s.email) html += '<div style="font-size:14px; margin-bottom:4px;">📧 <a href="mailto:' + _ftEsc(s.email) + '" style="color:#3B82F6;">' + _ftEsc(s.email) + '</a></div>';
-    if (s.phone) html += '<div style="font-size:14px;">📱 ' + _ftEsc(s.phone) + '</div>';
+    if (s.phone) {
+        var cleanPhone = s.phone.replace(/[^0-9+]/g, '');
+        if (cleanPhone.length === 10) cleanPhone = '1' + cleanPhone;
+        html += '<div style="font-size:14px; display:flex; align-items:center; gap:8px;">📱 ' + _ftEsc(s.phone);
+        html += ' <a href="https://wa.me/' + cleanPhone + '" target="_blank" style="display:inline-flex; align-items:center; gap:4px; background:#25D366; color:white; padding:3px 10px; border-radius:14px; font-size:12px; font-weight:600; text-decoration:none;">';
+        html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.61.61l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.387 0-4.596-.768-6.398-2.073l-.447-.338-2.848.954.954-2.848-.338-.447A9.953 9.953 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>';
+        html += 'WhatsApp</a></div>';
+    }
     if (!s.email && !s.phone) html += '<div style="font-size:14px; color:#9ca3af;">No contact info</div>';
     html += '</div>';
 
@@ -3146,7 +3195,6 @@ function showStaffDetail(personId) {
     html += '<div style="font-weight:600; font-size:13px; color:#6b7280; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Organization</div>';
     html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">';
     html += _staffInfoCell('Category', s.org_category || '—');
-    html += _staffInfoCell('Bunk Staff', s.bunk_staff === true ? 'Yes' : s.bunk_staff === false ? 'No' : '—');
     html += _staffInfoCell('Salary', s.salary ? '$' + Number(s.salary).toLocaleString() : '—');
     html += _staffInfoCell('Status', s.status || '—');
     html += '</div></div>';
@@ -3213,6 +3261,20 @@ function loadOrgChartSeason() {
 function initOrgChart() {
     if (orgChartLoaded && orgChartData) {
         renderOrgChart(orgChartData);
+        return;
+    }
+
+    // Use preloaded data from disk cache if available (instant)
+    var orgSeasonSel = document.getElementById('orgchart-season');
+    var _ocVal = orgSeasonSel ? orgSeasonSel.value : '';
+    var _ocMatch = typeof staffPreloaded !== 'undefined' && staffPreloaded && (!_ocVal || String(staffPreloaded.season_id) === _ocVal);
+    if (_ocMatch) {
+        orgChartData = staffPreloaded;
+        orgChartLoaded = true;
+        if (staffPreloaded.season_id && orgSeasonSel) {
+            orgSeasonSel.value = String(staffPreloaded.season_id);
+        }
+        renderOrgChart(staffPreloaded);
         return;
     }
 
