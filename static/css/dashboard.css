@@ -3047,3 +3047,56 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     padding-top: 3px;
 }
 
+/* Week Filter Bar */
+.orgchart-week-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.orgchart-week-btn:hover {
+    border-color: var(--teal-dark);
+    color: var(--teal-dark);
+}
+.orgchart-week-btn.active {
+    background: var(--teal-dark);
+    color: white;
+    border-color: var(--teal-dark);
+}
+
+/* Partial Coverage Cell (amber) */
+.orgchart-partial {
+    background: #FFFBEB;
+}
+
+/* Per-Position Week Summary Dots */
+.orgchart-pos-week-dots {
+    display: flex;
+    gap: 2px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border);
+    justify-content: center;
+}
+.orgchart-pwdot {
+    padding: 1px 3px;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.orgchart-pwdot-on {
+    background: #DCFCE7;
+    color: #166534;
+}
+.orgchart-pwdot-off {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+

@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="CST Staff App">
     <link rel="apple-touch-icon" href="/static/images/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ range(10000,99999)|random }}">
 </head>
 <body>
     {% set default_view = 'detailed' if user.has_permission('view_detailed')
@@ -1515,6 +1515,20 @@
                 </div>
             </div>
 
+            <div id="orgchart-week-bar" style="display:flex; gap:4px; align-items:center; flex-wrap:wrap; margin-bottom:16px;">
+                <span style="font-size:12px; color:#6B7A8A; font-weight:600; margin-right:4px;">Week:</span>
+                <button class="orgchart-week-btn active" data-week="all" onclick="filterOrgChartWeek('all')">All</button>
+                <button class="orgchart-week-btn" data-week="1" onclick="filterOrgChartWeek(1)">W1</button>
+                <button class="orgchart-week-btn" data-week="2" onclick="filterOrgChartWeek(2)">W2</button>
+                <button class="orgchart-week-btn" data-week="3" onclick="filterOrgChartWeek(3)">W3</button>
+                <button class="orgchart-week-btn" data-week="4" onclick="filterOrgChartWeek(4)">W4</button>
+                <button class="orgchart-week-btn" data-week="5" onclick="filterOrgChartWeek(5)">W5</button>
+                <button class="orgchart-week-btn" data-week="6" onclick="filterOrgChartWeek(6)">W6</button>
+                <button class="orgchart-week-btn" data-week="7" onclick="filterOrgChartWeek(7)">W7</button>
+                <button class="orgchart-week-btn" data-week="8" onclick="filterOrgChartWeek(8)">W8</button>
+                <button class="orgchart-week-btn" data-week="9" onclick="filterOrgChartWeek(9)">W9</button>
+            </div>
+
             <div id="orgchart-content">
                 <div style="text-align:center; padding:60px 20px; color:#9ca3af;">
                     <div style="font-size:36px; margin-bottom:12px;">📊</div>
@@ -1652,7 +1666,7 @@
     <script>var CAMP_WEEK_DATES_JS = {{ camp_week_dates | tojson | safe }};</script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v={{ range(10000,99999)|random }}"></script>
     <script>
     // Auto-reposition tooltips: if icon is in right half of viewport, open tooltip to the left
     document.querySelectorAll('.kpi-info').forEach(function(info) {

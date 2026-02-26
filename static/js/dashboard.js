@@ -3211,6 +3211,21 @@ function showStaffDetail(personId) {
     html += _staffInfoCell('Contract Due', s.contract_due || '—');
     html += '</div></div>';
 
+    // Camp Weeks Covered
+    var wc = s.weeks_covered || [];
+    if (wc.length > 0 || s.employment_start) {
+        html += '<div style="margin-top:12px; margin-bottom:8px;">';
+        html += '<div style="font-weight:600; font-size:13px; color:#6b7280; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Camp Weeks Covered</div>';
+        html += '<div style="display:flex; gap:4px; flex-wrap:wrap;">';
+        for (var cw = 1; cw <= 9; cw++) {
+            var isCov = wc.indexOf(cw) !== -1;
+            var bg = isCov ? '#22C55E' : '#E5E7EB';
+            var fg = isCov ? 'white' : '#9CA3AF';
+            html += '<span style="background:' + bg + '; color:' + fg + '; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600;">W' + cw + '</span>';
+        }
+        html += '</div></div>';
+    }
+
     html += '</div>';
 
     document.getElementById('staff-modal-body').innerHTML = html;
@@ -3240,6 +3255,7 @@ var ORGCHART_POSITIONS = [
 
 var orgChartData = null;
 var orgChartLoaded = false;
+var orgChartWeekFilter = 'all';
 
 function matchOrgChartPosition(positionName) {
     if (!positionName) return null;
@@ -3313,68 +3329,86 @@ function initOrgChart() {
         });
 }
 
+function renderPositionWeekDots(weekMap) {
+    var html = '<div class="orgchart-pos-week-dots">';
+    for (var w = 1; w <= 9; w++) {
+        var has = weekMap[w] && weekMap[w].length > 0;
+        var cls = 'orgchart-pwdot ' + (has ? 'orgchart-pwdot-on' : 'orgchart-pwdot-off');
+        html += '<span class="' + cls + '" title="W' + w + ': ' + (has ? weekMap[w].length + ' staff' : 'No coverage') + '">W' + w + '</span>';
+    }
+    html += '</div>';
+    return html;
+}
+
+function filterOrgChartWeek(week) {
+    orgChartWeekFilter = week;
+    document.querySelectorAll('.orgchart-week-btn').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-week') === String(week));
+    });
+    if (orgChartData) renderOrgChart(orgChartData);
+}
+
 function renderOrgChart(data) {
     var content = document.getElementById('orgchart-content');
     if (!content || !data || !data.staff) return;
+
+    var wf = orgChartWeekFilter;
 
     // Filter to active staff only (status_id 1)
     var activeStaff = data.staff.filter(function(s) {
         return s.status_id === 1;
     });
 
-    // Build grid: orgCategory -> position -> [staff]
+    // Build grid: orgCategory -> position -> { staffList, weekMap }
     var grid = {};
     var orgCats = [];
 
     activeStaff.forEach(function(s) {
         var cat = s.org_category || 'Unassigned';
-
-        // Check position1
         var pos1Match = matchOrgChartPosition(s.position1);
-        // Check position2
         var pos2Match = matchOrgChartPosition(s.position2);
-
-        if (!pos1Match && !pos2Match) return; // Not one of our 5 target positions
+        if (!pos1Match && !pos2Match) return;
 
         if (!grid[cat]) {
             grid[cat] = {};
             orgCats.push(cat);
         }
 
-        if (pos1Match) {
-            if (!grid[cat][pos1Match]) grid[cat][pos1Match] = [];
-            grid[cat][pos1Match].push(s);
+        function addToGrid(pos) {
+            if (!grid[cat][pos]) {
+                grid[cat][pos] = { staffList: [], weekMap: {} };
+                for (var w = 1; w <= 9; w++) grid[cat][pos].weekMap[w] = [];
+            }
+            grid[cat][pos].staffList.push(s);
+            var wc = s.weeks_covered || [];
+            wc.forEach(function(w) {
+                if (grid[cat][pos].weekMap[w]) grid[cat][pos].weekMap[w].push(s);
+            });
         }
-        if (pos2Match && pos2Match !== pos1Match) {
-            if (!grid[cat][pos2Match]) grid[cat][pos2Match] = [];
-            grid[cat][pos2Match].push(s);
-        }
+
+        if (pos1Match) addToGrid(pos1Match);
+        if (pos2Match && pos2Match !== pos1Match) addToGrid(pos2Match);
     });
 
     orgCats.sort();
 
-    // If no data
     if (orgCats.length === 0) {
-        content.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#9ca3af;"><div style="font-size:36px; margin-bottom:12px;">📋</div><div style="font-size:15px;">No staff with matching positions found for this season</div><div style="font-size:13px; margin-top:8px; color:#d1d5db;">Looking for: ' + ORGCHART_POSITIONS.join(', ') + '</div></div>';
+        content.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#9ca3af;"><div style="font-size:36px; margin-bottom:12px;">📋</div><div style="font-size:15px;">No staff with matching positions found for this season</div></div>';
         var statusEl = document.getElementById('orgchart-status');
         if (statusEl) statusEl.textContent = '0 camps · 0 positions filled';
         return;
     }
 
-    // Build table HTML
+    // Build table
     var html = '<div class="orgchart-wrapper">';
     html += '<table class="orgchart-table">';
-
-    // Header row
     html += '<thead><tr>';
     html += '<th class="orgchart-camp-header">Camp / Department</th>';
     ORGCHART_POSITIONS.forEach(function(pos) {
         html += '<th>' + _ftEsc(pos) + '</th>';
     });
-    html += '</tr></thead>';
+    html += '</tr></thead><tbody>';
 
-    // Body rows
-    html += '<tbody>';
     var totalFilled = 0;
     var totalVacant = 0;
 
@@ -3383,21 +3417,55 @@ function renderOrgChart(data) {
         html += '<td class="orgchart-camp-cell">' + _ftEsc(cat) + '</td>';
 
         ORGCHART_POSITIONS.forEach(function(pos) {
-            var staff = (grid[cat] && grid[cat][pos]) ? grid[cat][pos] : [];
-            if (staff.length > 0) {
-                totalFilled++;
-                html += '<td class="orgchart-cell orgchart-filled">';
-                staff.forEach(function(s) {
-                    html += '<div class="orgchart-person">';
-                    html += '<span class="orgchart-person-name" onclick="showStaffDetail(' + s.person_id + ')">' + _ftEsc(s.first_name + ' ' + s.last_name) + '</span>';
-                    html += '</div>';
-                });
-                html += '</td>';
+            var cellData = (grid[cat] && grid[cat][pos]) ? grid[cat][pos] : null;
+
+            if (wf !== 'all') {
+                // Week-specific filter mode
+                var weekStaff = cellData ? (cellData.weekMap[wf] || []) : [];
+                if (weekStaff.length > 0) {
+                    totalFilled++;
+                    html += '<td class="orgchart-cell orgchart-filled">';
+                    weekStaff.forEach(function(s) {
+                        html += '<div class="orgchart-person">';
+                        html += '<span class="orgchart-person-name" onclick="showStaffDetail(' + s.person_id + ')">' + _ftEsc(s.first_name + ' ' + s.last_name) + '</span>';
+                        html += '</div>';
+                    });
+                    html += '</td>';
+                } else {
+                    totalVacant++;
+                    html += '<td class="orgchart-cell orgchart-vacant">';
+                    html += '<span class="orgchart-vacant-label">Vacant W' + wf + '</span>';
+                    html += '</td>';
+                }
             } else {
-                totalVacant++;
-                html += '<td class="orgchart-cell orgchart-vacant">';
-                html += '<span class="orgchart-vacant-label">Vacant</span>';
-                html += '</td>';
+                // "All" mode: show staff + week dots summary
+                if (cellData && cellData.staffList.length > 0) {
+                    // Check if all weeks are covered
+                    var allCovered = true;
+                    var anyCovered = false;
+                    for (var w = 1; w <= 9; w++) {
+                        if (cellData.weekMap[w] && cellData.weekMap[w].length > 0) anyCovered = true;
+                        else allCovered = false;
+                    }
+                    totalFilled++;
+                    var cellClass = allCovered ? 'orgchart-filled' : (anyCovered ? 'orgchart-partial' : 'orgchart-filled');
+                    html += '<td class="orgchart-cell ' + cellClass + '">';
+                    cellData.staffList.forEach(function(s) {
+                        html += '<div class="orgchart-person">';
+                        html += '<span class="orgchart-person-name" onclick="showStaffDetail(' + s.person_id + ')">' + _ftEsc(s.first_name + ' ' + s.last_name) + '</span>';
+                        html += '</div>';
+                    });
+                    html += renderPositionWeekDots(cellData.weekMap);
+                    html += '</td>';
+                } else {
+                    totalVacant++;
+                    html += '<td class="orgchart-cell orgchart-vacant">';
+                    html += '<span class="orgchart-vacant-label">Vacant</span>';
+                    var emptyMap = {};
+                    for (var ew = 1; ew <= 9; ew++) emptyMap[ew] = [];
+                    html += renderPositionWeekDots(emptyMap);
+                    html += '</td>';
+                }
             }
         });
 
@@ -3405,13 +3473,15 @@ function renderOrgChart(data) {
     });
 
     html += '</tbody></table></div>';
-
     content.innerHTML = html;
 
-    // Update status badge
+    // Status badge
     var statusEl = document.getElementById('orgchart-status');
     if (statusEl) {
-        statusEl.textContent = orgCats.length + ' camps × ' + ORGCHART_POSITIONS.length + ' positions · ' + totalFilled + ' filled, ' + totalVacant + ' vacant';
+        var statusText = orgCats.length + ' camps × ' + ORGCHART_POSITIONS.length + ' positions';
+        if (wf !== 'all') statusText += ' (Week ' + wf + ')';
+        statusText += ' · ' + totalFilled + ' filled, ' + totalVacant + ' vacant';
+        statusEl.textContent = statusText;
     }
 }
 

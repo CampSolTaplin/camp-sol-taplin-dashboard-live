@@ -4781,9 +4781,10 @@ def fetch_staff_data(season_id=None, force_refresh=False):
                 'bunk_staff': s.get('BunkStaff'),
                 'column': column,
                 'weeks_worked': None,
+                'weeks_covered': [],
             })
 
-            # Calculate weeks worked from employment dates
+            # Calculate weeks worked and weeks covered from employment dates
             emp_start = s.get('EmploymentStartDate', '')
             emp_end = s.get('EmploymentEndDate', '')
             if emp_start and emp_end:
@@ -4791,6 +4792,23 @@ def fetch_staff_data(season_id=None, force_refresh=False):
                     d1 = date.fromisoformat(emp_start[:10])
                     d2 = date.fromisoformat(emp_end[:10])
                     staff_list[-1]['weeks_worked'] = max(0, (d2 - d1).days // 7)
+                    # Determine which camp weeks this staff member covers
+                    # Shift CAMP_WEEK_DATES to employment year if different
+                    covered = []
+                    emp_year = d1.year
+                    for wk_num, (wk_s, wk_e) in CAMP_WEEK_DATES.items():
+                        wk_start = date.fromisoformat(wk_s)
+                        wk_end = date.fromisoformat(wk_e)
+                        year_diff = emp_year - wk_start.year
+                        if year_diff != 0:
+                            try:
+                                wk_start = wk_start.replace(year=wk_start.year + year_diff)
+                                wk_end = wk_end.replace(year=wk_end.year + year_diff)
+                            except ValueError:
+                                continue
+                        if d1 <= wk_end and d2 >= wk_start:
+                            covered.append(wk_num)
+                    staff_list[-1]['weeks_covered'] = sorted(covered)
                 except (ValueError, TypeError):
                     pass
 
