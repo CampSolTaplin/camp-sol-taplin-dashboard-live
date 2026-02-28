@@ -1011,7 +1011,7 @@ body {
 
 @media (min-width: 768px) {
     .att-main {
-        max-width: 800px;
+        max-width: 860px;
         margin: 0 auto;
         padding-left: 24px;
         padding-right: 24px;
@@ -1059,7 +1059,7 @@ body {
 
 @media (min-width: 1024px) {
     .att-main {
-        max-width: 960px;
+        max-width: 1024px;
     }
 
     .program-grid {

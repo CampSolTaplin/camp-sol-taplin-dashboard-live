@@ -1139,6 +1139,130 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     }
 }
 
+/* ==================== TABLET OPTIMIZATION (≤1024px) ==================== */
+@media (max-width: 1024px) {
+    /* Sidebar: compact 200px */
+    .sidebar {
+        width: 200px;
+        padding: 16px 10px;
+    }
+    .camp-logo {
+        width: 60px;
+        height: 60px;
+    }
+    .logo-section {
+        padding-bottom: 12px;
+        margin-bottom: 14px;
+    }
+    .logo-section h2 {
+        font-size: 14px;
+    }
+    .nav-item {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    .nav-subitem {
+        padding: 8px 12px 8px 32px;
+        font-size: 12px;
+    }
+    .report-date {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    /* Main content: adjust for narrower sidebar */
+    .main {
+        margin-left: 200px;
+        padding: 24px 24px;
+    }
+
+    /* Headers: slightly smaller */
+    .header h1 {
+        font-size: 22px;
+    }
+
+    /* KPI: intermediate sizing */
+    .kpi-value {
+        font-size: 26px;
+    }
+    .kpi-card {
+        padding: 16px;
+    }
+
+    /* Pace cards: reinforce 2-col, smaller values */
+    .pace-value {
+        font-size: 30px;
+    }
+    .pace-card {
+        padding: 16px;
+    }
+
+    /* Comparison cards: tighter padding */
+    .comparison-card {
+        padding: 16px;
+    }
+
+    /* Enrollment Matrix: tablet-friendly sizing */
+    .enrollment-matrix {
+        font-size: 12px;
+    }
+    .enrollment-matrix th,
+    .enrollment-matrix td {
+        padding: 8px 6px;
+    }
+    .enrollment-matrix .sticky-col {
+        min-width: 150px;
+    }
+    .week-cell {
+        min-width: 40px;
+    }
+
+    /* Org Chart Grid: prevent horizontal overflow */
+    .orgchart-cell {
+        min-width: 120px;
+        padding: 8px 8px;
+    }
+    .orgchart-camp-cell {
+        min-width: 150px;
+        padding: 10px 10px;
+    }
+    .orgchart-person-name {
+        font-size: 11px;
+    }
+
+    /* Org Chart Timeline: narrower info column */
+    .orgchart-tl-header,
+    .orgchart-tl-row {
+        grid-template-columns: 200px repeat(9, 1fr);
+    }
+
+    /* Old View Stats: tighter table */
+    .oldview-cell-2026,
+    .oldview-cell-2025,
+    .oldview-total-2026,
+    .oldview-total-2025,
+    .oldview-cell-inactive {
+        font-size: 12px;
+    }
+
+    /* Finance: keep 2-col category cards */
+    .finance-category-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Field Trips: smaller text */
+    .ft-matrix-table {
+        font-size: 12px;
+    }
+    .ft-header-cell {
+        padding: 10px 8px;
+        font-size: 11px;
+    }
+    .ft-cell {
+        padding: 8px 6px;
+    }
+}
+
 @media (max-width: 900px) {
     .pace-cards {
         grid-template-columns: 1fr;
@@ -1149,6 +1273,16 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     .date-filters {
         flex-direction: column;
         align-items: flex-start;
+    }
+}
+
+/* Tablet portrait (769px–900px): keep 2-col grids instead of collapsing */
+@media (max-width: 900px) and (min-width: 769px) {
+    .comparison-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .pace-cards {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
