@@ -3432,6 +3432,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     right: 3px;
 }
 
+/* Position-specific pill colors */
+.orgchart-tl-pill.pos-ul  { background: #4338CA; }
+.orgchart-tl-pill.pos-sc  { background: #2563EB; }
+.orgchart-tl-pill.pos-ojc { background: #0891B2; }
+.orgchart-tl-pill.pos-jc  { background: #059669; }
+.orgchart-tl-pill.pos-vol { background: #D97706; }
+
+/* Position-specific badge colors */
+.orgchart-tl-badge.pos-ul  { background: #EEF2FF; color: #4338CA; }
+.orgchart-tl-badge.pos-sc  { background: #EFF6FF; color: #2563EB; }
+.orgchart-tl-badge.pos-ojc { background: #ECFEFF; color: #0891B2; }
+.orgchart-tl-badge.pos-jc  { background: #ECFDF5; color: #059669; }
+.orgchart-tl-badge.pos-vol { background: #FFFBEB; color: #D97706; }
+
 /* Responsive */
 @media (max-width: 900px) {
     .orgchart-tl-header,

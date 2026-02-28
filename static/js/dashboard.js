@@ -3266,6 +3266,14 @@ var ORGCHART_POS_ABBREV = {
     'Volunteer': 'VOL'
 };
 
+var ORGCHART_POS_CONFIG = {
+    'Unit Leader':         { abbrev: 'UL',  cls: 'pos-ul',  order: 0 },
+    'Sr. Counselor':       { abbrev: 'SC',  cls: 'pos-sc',  order: 1 },
+    'Older Jr. Counselor': { abbrev: 'OJC', cls: 'pos-ojc', order: 2 },
+    'Jr. Counselor':       { abbrev: 'JC',  cls: 'pos-jc',  order: 3 },
+    'Volunteer':           { abbrev: 'VOL', cls: 'pos-vol', order: 4 }
+};
+
 function matchOrgChartPosition(positionName) {
     if (!positionName) return null;
     var lower = positionName.toLowerCase().trim();
@@ -3603,6 +3611,11 @@ function renderOrgChartTimeline(data) {
     groupOrder.forEach(function(cat) {
         var staffInGroup = groups[cat];
         staffInGroup.sort(function(a, b) {
+            var posA = matchOrgChartPosition(a.position1) || matchOrgChartPosition(a.position2) || '';
+            var posB = matchOrgChartPosition(b.position1) || matchOrgChartPosition(b.position2) || '';
+            var cfgA = ORGCHART_POS_CONFIG[posA] || { order: 99 };
+            var cfgB = ORGCHART_POS_CONFIG[posB] || { order: 99 };
+            if (cfgA.order !== cfgB.order) return cfgA.order - cfgB.order;
             return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name);
         });
         totalStaff += staffInGroup.length;
@@ -3617,7 +3630,9 @@ function renderOrgChartTimeline(data) {
 
         staffInGroup.forEach(function(s) {
             var posMatch = matchOrgChartPosition(s.position1) || matchOrgChartPosition(s.position2) || '';
-            var posAbbrev = ORGCHART_POS_ABBREV[posMatch] || '';
+            var posCfg = ORGCHART_POS_CONFIG[posMatch] || {};
+            var posAbbrev = posCfg.abbrev || '';
+            var posCls = posCfg.cls || '';
             var wc = s.weeks_covered || [];
             var segments = computePillSegments(wc);
 
@@ -3628,7 +3643,7 @@ function renderOrgChartTimeline(data) {
             html += '<span class="orgchart-tl-name" onclick="showStaffDetail(' + s.person_id + ')">' +
                     _ftEsc(s.first_name + ' ' + s.last_name) + '</span>';
             if (posAbbrev) {
-                html += '<span class="orgchart-tl-badge">' + posAbbrev + '</span>';
+                html += '<span class="orgchart-tl-badge ' + posCls + '">' + posAbbrev + '</span>';
             }
             html += '</div>';
 
@@ -3638,7 +3653,7 @@ function renderOrgChartTimeline(data) {
                 var colCls = (wf !== 'all' && wf === w) ? ' tl-week-filtered' : '';
 
                 if (isActive) {
-                    var pillCls = 'orgchart-tl-pill';
+                    var pillCls = 'orgchart-tl-pill ' + posCls;
                     var seg = findSegmentForWeek(segments, w);
                     if (seg) {
                         if (seg.start === seg.end) pillCls += ' pill-single';
