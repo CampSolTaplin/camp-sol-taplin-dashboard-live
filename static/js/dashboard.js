@@ -3256,6 +3256,15 @@ var ORGCHART_POSITIONS = [
 var orgChartData = null;
 var orgChartLoaded = false;
 var orgChartWeekFilter = 'all';
+var orgChartViewMode = 'grid'; // 'grid' or 'timeline'
+
+var ORGCHART_POS_ABBREV = {
+    'Unit Leader': 'UL',
+    'Sr. Counselor': 'SC',
+    'Older Jr. Counselor': 'OJC',
+    'Jr. Counselor': 'JC',
+    'Volunteer': 'VOL'
+};
 
 function matchOrgChartPosition(positionName) {
     if (!positionName) return null;
@@ -3276,7 +3285,7 @@ function loadOrgChartSeason() {
 
 function initOrgChart() {
     if (orgChartLoaded && orgChartData) {
-        renderOrgChart(orgChartData);
+        _renderOrgChartCurrent(orgChartData);
         return;
     }
 
@@ -3290,7 +3299,7 @@ function initOrgChart() {
         if (staffPreloaded.season_id && orgSeasonSel) {
             orgSeasonSel.value = String(staffPreloaded.season_id);
         }
-        renderOrgChart(staffPreloaded);
+        _renderOrgChartCurrent(staffPreloaded);
         return;
     }
 
@@ -3321,7 +3330,7 @@ function initOrgChart() {
                 }
             }
 
-            renderOrgChart(data);
+            _renderOrgChartCurrent(data);
         })
         .catch(function(err) {
             content.innerHTML = '<div style="text-align:center; padding:60px; color:#EF4444;">Failed to load org chart data</div>';
@@ -3345,7 +3354,24 @@ function filterOrgChartWeek(week) {
     document.querySelectorAll('.orgchart-week-btn').forEach(function(b) {
         b.classList.toggle('active', b.getAttribute('data-week') === String(week));
     });
-    if (orgChartData) renderOrgChart(orgChartData);
+    if (orgChartData) _renderOrgChartCurrent(orgChartData);
+}
+
+function switchOrgChartMode(mode) {
+    orgChartViewMode = mode;
+    document.querySelectorAll('.orgchart-mode-btn').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+    });
+    if (orgChartData) _renderOrgChartCurrent(orgChartData);
+}
+
+/** Dispatch to the active view renderer */
+function _renderOrgChartCurrent(data) {
+    if (orgChartViewMode === 'timeline') {
+        renderOrgChartTimeline(data);
+    } else {
+        renderOrgChart(data);
+    }
 }
 
 function renderOrgChart(data) {
@@ -3481,6 +3507,166 @@ function renderOrgChart(data) {
         var statusText = orgCats.length + ' camps × ' + ORGCHART_POSITIONS.length + ' positions';
         if (wf !== 'all') statusText += ' (Week ' + wf + ')';
         statusText += ' · ' + totalFilled + ' filled, ' + totalVacant + ' vacant';
+        statusEl.textContent = statusText;
+    }
+}
+
+// ==================== TIMELINE VIEW ====================
+
+/**
+ * Group contiguous weeks into segments for pill rendering.
+ * e.g. [1,2,3,5,6,8] => [{start:1,end:3},{start:5,end:6},{start:8,end:8}]
+ */
+function computePillSegments(weeks) {
+    if (!weeks || weeks.length === 0) return [];
+    var sorted = weeks.slice().sort(function(a, b) { return a - b; });
+    var segments = [];
+    var start = sorted[0], prev = sorted[0];
+    for (var i = 1; i < sorted.length; i++) {
+        if (sorted[i] === prev + 1) {
+            prev = sorted[i];
+        } else {
+            segments.push({ start: start, end: prev });
+            start = sorted[i];
+            prev = sorted[i];
+        }
+    }
+    segments.push({ start: start, end: prev });
+    return segments;
+}
+
+/** Return the segment that contains `week`, or null. */
+function findSegmentForWeek(segments, week) {
+    for (var i = 0; i < segments.length; i++) {
+        if (week >= segments[i].start && week <= segments[i].end) return segments[i];
+    }
+    return null;
+}
+
+/** Toggle collapse/expand of a timeline section. */
+function toggleTimelineSection(headerEl) {
+    headerEl.parentElement.classList.toggle('collapsed');
+}
+
+function renderOrgChartTimeline(data) {
+    var content = document.getElementById('orgchart-content');
+    if (!content || !data || !data.staff) return;
+
+    var wf = orgChartWeekFilter;
+
+    // Filter to active staff with a matched position
+    var activeStaff = data.staff.filter(function(s) {
+        if (s.status_id !== 1) return false;
+        return matchOrgChartPosition(s.position1) || matchOrgChartPosition(s.position2);
+    });
+
+    // Week filter: show only staff covering that week
+    if (wf !== 'all') {
+        activeStaff = activeStaff.filter(function(s) {
+            return s.weeks_covered && s.weeks_covered.indexOf(wf) !== -1;
+        });
+    }
+
+    // Group by org_category
+    var groups = {};
+    var groupOrder = [];
+    activeStaff.forEach(function(s) {
+        var cat = s.org_category || 'Unassigned';
+        if (!groups[cat]) { groups[cat] = []; groupOrder.push(cat); }
+        groups[cat].push(s);
+    });
+    groupOrder.sort();
+
+    if (groupOrder.length === 0) {
+        content.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#9ca3af;">' +
+            '<div style="font-size:36px; margin-bottom:12px;">📋</div>' +
+            '<div style="font-size:15px;">No staff found' + (wf !== 'all' ? ' for Week ' + wf : '') + '</div></div>';
+        var stEl = document.getElementById('orgchart-status');
+        if (stEl) stEl.textContent = '0 groups';
+        return;
+    }
+
+    // Build HTML
+    var html = '<div class="orgchart-tl">';
+
+    // Week header row
+    html += '<div class="orgchart-tl-header">';
+    html += '<div class="orgchart-tl-header-label">Staff Member</div>';
+    for (var w = 1; w <= 9; w++) {
+        var wActive = (wf !== 'all' && wf === w) ? ' tl-week-active' : '';
+        html += '<div class="orgchart-tl-header-label' + wActive + '">W' + w + '</div>';
+    }
+    html += '</div>';
+
+    // Sections
+    var totalStaff = 0;
+    groupOrder.forEach(function(cat) {
+        var staffInGroup = groups[cat];
+        staffInGroup.sort(function(a, b) {
+            return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name);
+        });
+        totalStaff += staffInGroup.length;
+
+        html += '<div class="orgchart-tl-section">';
+        html += '<div class="orgchart-tl-section-header" onclick="toggleTimelineSection(this)">';
+        html += '<span class="orgchart-tl-section-arrow">&#9654;</span>';
+        html += _ftEsc(cat);
+        html += '<span class="orgchart-tl-section-count">(' + staffInGroup.length + ')</span>';
+        html += '</div>';
+        html += '<div class="orgchart-tl-section-body">';
+
+        staffInGroup.forEach(function(s) {
+            var posMatch = matchOrgChartPosition(s.position1) || matchOrgChartPosition(s.position2) || '';
+            var posAbbrev = ORGCHART_POS_ABBREV[posMatch] || '';
+            var wc = s.weeks_covered || [];
+            var segments = computePillSegments(wc);
+
+            html += '<div class="orgchart-tl-row">';
+
+            // Left info: name + badge
+            html += '<div class="orgchart-tl-info">';
+            html += '<span class="orgchart-tl-name" onclick="showStaffDetail(' + s.person_id + ')">' +
+                    _ftEsc(s.first_name + ' ' + s.last_name) + '</span>';
+            if (posAbbrev) {
+                html += '<span class="orgchart-tl-badge">' + posAbbrev + '</span>';
+            }
+            html += '</div>';
+
+            // 9 week cells
+            for (var w = 1; w <= 9; w++) {
+                var isActive = wc.indexOf(w) !== -1;
+                var colCls = (wf !== 'all' && wf === w) ? ' tl-week-filtered' : '';
+
+                if (isActive) {
+                    var pillCls = 'orgchart-tl-pill';
+                    var seg = findSegmentForWeek(segments, w);
+                    if (seg) {
+                        if (seg.start === seg.end) pillCls += ' pill-single';
+                        else if (w === seg.start) pillCls += ' pill-start';
+                        else if (w === seg.end) pillCls += ' pill-end';
+                    }
+                    html += '<div class="orgchart-tl-week' + colCls + '">';
+                    html += '<div class="' + pillCls + '" title="Week ' + w + '"></div>';
+                    html += '</div>';
+                } else {
+                    html += '<div class="orgchart-tl-week orgchart-tl-week-empty' + colCls + '"></div>';
+                }
+            }
+
+            html += '</div>'; // row
+        });
+
+        html += '</div></div>'; // section-body, section
+    });
+
+    html += '</div>'; // orgchart-tl
+    content.innerHTML = html;
+
+    // Status badge
+    var statusEl = document.getElementById('orgchart-status');
+    if (statusEl) {
+        var statusText = groupOrder.length + ' groups · ' + totalStaff + ' staff';
+        if (wf !== 'all') statusText += ' (Week ' + wf + ')';
         statusEl.textContent = statusText;
     }
 }

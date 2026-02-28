@@ -3100,3 +3100,224 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     color: #DC2626;
 }
 
+/* ===== Org Chart Mode Toggle ===== */
+.orgchart-mode-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.orgchart-mode-btn:hover {
+    border-color: var(--teal-dark);
+    color: var(--teal-dark);
+}
+.orgchart-mode-btn.active {
+    background: var(--teal-dark);
+    color: white;
+    border-color: var(--teal-dark);
+}
+
+/* ===== Staff Org Chart Timeline View ===== */
+.orgchart-tl {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    overflow: hidden;
+}
+
+/* Week column header row */
+.orgchart-tl-header {
+    display: grid;
+    grid-template-columns: 240px repeat(9, 1fr);
+    border-bottom: 2px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 3;
+}
+.orgchart-tl-header-label {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    text-align: center;
+}
+.orgchart-tl-header-label:first-child {
+    text-align: left;
+    border-right: 2px solid var(--border);
+}
+.orgchart-tl-header-label.tl-week-active {
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    font-weight: 700;
+}
+
+/* Collapsible category section */
+.orgchart-tl-section {
+    border-bottom: 1px solid var(--border);
+}
+.orgchart-tl-section:last-child {
+    border-bottom: none;
+}
+.orgchart-tl-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg);
+    cursor: pointer;
+    user-select: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+}
+.orgchart-tl-section-header:hover {
+    background: #EDF2F7;
+}
+.orgchart-tl-section-arrow {
+    display: inline-block;
+    width: 16px;
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+.orgchart-tl-section.collapsed .orgchart-tl-section-arrow {
+    transform: rotate(-90deg);
+}
+.orgchart-tl-section-count {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+.orgchart-tl-section.collapsed .orgchart-tl-section-body {
+    display: none;
+}
+
+/* Staff row (one person) */
+.orgchart-tl-row {
+    display: grid;
+    grid-template-columns: 240px repeat(9, 1fr);
+    align-items: center;
+    border-bottom: 1px solid #F1F5F9;
+    min-height: 40px;
+}
+.orgchart-tl-row:last-child {
+    border-bottom: none;
+}
+.orgchart-tl-row:hover {
+    background: #FAFCFE;
+}
+
+/* Left info cell: name + position badge */
+.orgchart-tl-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-right: 2px solid var(--border);
+    overflow: hidden;
+}
+.orgchart-tl-name {
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--teal-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.orgchart-tl-name:hover {
+    text-decoration: underline;
+}
+.orgchart-tl-badge {
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    white-space: nowrap;
+}
+
+/* Week cells (the 9 columns) */
+.orgchart-tl-week {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    position: relative;
+}
+.orgchart-tl-week.tl-week-filtered {
+    background: rgba(0, 138, 171, 0.06);
+}
+
+/* The pill segments */
+.orgchart-tl-pill {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 0;
+    right: 0;
+    background: var(--teal-dark);
+    opacity: 0.82;
+    transition: opacity 0.15s;
+}
+.orgchart-tl-pill:hover {
+    opacity: 1;
+}
+
+/* Rounded endpoints for pill segments */
+.orgchart-tl-pill.pill-start {
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    left: 3px;
+}
+.orgchart-tl-pill.pill-end {
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    right: 3px;
+}
+.orgchart-tl-pill.pill-single {
+    border-radius: 12px;
+    left: 3px;
+    right: 3px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .orgchart-tl-header,
+    .orgchart-tl-row {
+        grid-template-columns: 180px repeat(9, 1fr);
+    }
+    .orgchart-tl-info {
+        padding: 6px 8px;
+    }
+    .orgchart-tl-name {
+        font-size: 12px;
+    }
+}
+@media (max-width: 640px) {
+    .orgchart-tl-header,
+    .orgchart-tl-row {
+        grid-template-columns: 140px repeat(9, 1fr);
+    }
+    .orgchart-tl-badge {
+        display: none;
+    }
+}
+
