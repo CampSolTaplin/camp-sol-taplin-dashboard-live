@@ -7,9 +7,7 @@ databases:
 services:
   - type: web
     name: camp-sol-taplin-dashboard-live
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --timeout 120
+    env: docker
     envVars:
       - key: CAMPMINDER_API_KEY
         sync: false

@@ -1,0 +1,12 @@
+.git
+.claude
+__pycache__
+*.pyc
+instance/
+*.db
+*.sqlite
+cookies*.txt
+test_cookies.txt
+nul
+tmp_*.html
+.env
