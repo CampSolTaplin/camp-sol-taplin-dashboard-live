@@ -2876,6 +2876,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     background: rgba(245, 158, 11, 0.08);
 }
 
+.ft-cell-highlight {
+    outline: 2px solid #3B82F6;
+    outline-offset: -2px;
+    background: rgba(59, 130, 246, 0.08) !important;
+}
+
 .ft-cell-empty {
     background: rgba(249, 250, 251, 1);
 }

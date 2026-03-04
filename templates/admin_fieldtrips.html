@@ -264,6 +264,9 @@
                 </h3>
                 <p style="color:#6B7280; font-size:13px; margin-bottom:16px;">Click any cell to assign or edit a field trip for a group and week.</p>
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                    <select id="ft-venue-filter" onchange="adminFtVenueFilter=this.value; renderAdminMatrix();" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; max-width:220px;">
+                        <option value="">All Locations</option>
+                    </select>
                     <select id="bus-calc-week" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px;">
                         <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option>
                         <option value="4">Week 4</option><option value="5">Week 5</option><option value="6">Week 6</option>
@@ -338,6 +341,7 @@
     <script>
     var allVenues = [];
     var groupDays = {};
+    var adminFtVenueFilter = '';
 
     // ---- Init ----
     document.addEventListener('DOMContentLoaded', function() {
@@ -430,7 +434,21 @@
             .then(function(data) {
                 allVenues = data.venues || [];
                 renderVenues();
+                populateVenueFilter();
             });
+    }
+
+    function populateVenueFilter() {
+        var sel = document.getElementById('ft-venue-filter');
+        if (!sel) return;
+        var prev = sel.value;
+        var activeVenues = allVenues.filter(function(v) { return v.active !== false; });
+        activeVenues.sort(function(a, b) { return a.name.localeCompare(b.name); });
+        var html = '<option value="">All Locations</option>';
+        activeVenues.forEach(function(v) {
+            html += '<option value="' + v.id + '"' + (String(v.id) === prev ? ' selected' : '') + '>' + esc(v.name) + '</option>';
+        });
+        sel.innerHTML = html;
     }
 
     function renderVenues() {
@@ -579,6 +597,26 @@
         var weeks = adminFtData.weeks || [];
         var groups = adminFtData.groups || [];
         var dayColors = {'Monday':'#3B82F6','Tuesday':'#8B5CF6','Wednesday':'#10B981','Thursday':'#F59E0B','Friday':'#EF4444'};
+        var venueFilter = adminFtVenueFilter ? parseInt(adminFtVenueFilter) : 0;
+
+        // When venue filter is active, only show groups that have at least one assignment with that venue
+        var filteredGroups = groups;
+        if (venueFilter) {
+            filteredGroups = groups.filter(function(g) {
+                var dayAssigns = ((adminFtData.assignments || {})[g.name] || {})[g.day] || {};
+                for (var wk in dayAssigns) {
+                    if (dayAssigns[wk] && dayAssigns[wk].venue_id === venueFilter) return true;
+                }
+                return false;
+            });
+        }
+
+        if (venueFilter && filteredGroups.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#9CA3AF;">' +
+                '<div style="font-size:28px; margin-bottom:8px;">&#128270;</div>' +
+                '<div style="font-size:14px;">No groups assigned to this location</div></div>';
+            return;
+        }
 
         var html = '<table class="ft-matrix-table">';
         html += '<thead><tr><th class="ft-header-cell ft-sticky-col">Group</th>';
@@ -594,8 +632,9 @@
         html += '</tr></thead><tbody>';
 
         var lastDay = '';
-        groups.forEach(function(g) {
+        filteredGroups.forEach(function(g) {
             if (g.day !== lastDay) {
+                // Check if this day has any visible groups
                 var dc = dayColors[g.day] || '#6B7280';
                 html += '<tr><td colspan="' + (weeks.length + 1) + '" class="ft-day-header" style="background:' + dc + ';">' + g.day + '</td></tr>';
                 lastDay = g.day;
@@ -614,9 +653,12 @@
                 }
                 var a = (((adminFtData.assignments || {})[g.name] || {})[g.day] || {})[String(w)];
                 var kidCount = (adminFtData.kid_counts[g.name] || {})[String(w)] || 0;
+                var isVenueMatch = venueFilter && a && a.venue_id === venueFilter;
+                var dimStyle = venueFilter && !isVenueMatch ? ' opacity:0.3;' : '';
                 if (a && a.venue_name) {
                     var cls = a.confirmed ? 'ft-cell-confirmed' : 'ft-cell-pending';
-                    html += '<td class="ft-cell ' + cls + '" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ',\'' + g.day + '\')" style="cursor:pointer;">';
+                    if (isVenueMatch) cls += ' ft-cell-highlight';
+                    html += '<td class="ft-cell ' + cls + '" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ',\'' + g.day + '\')" style="cursor:pointer;' + dimStyle + '">';
                     html += '<div class="ft-venue-name" title="' + esc(a.venue_name) + '">' + esc(a.venue_name) + '</div>';
                     var badges = [];
                     if (a.confirmed) badges.push('<span class="ft-badge ft-badge-confirmed">&#10003;</span>');
@@ -628,7 +670,7 @@
                     }
                     html += '</td>';
                 } else {
-                    html += '<td class="ft-cell ft-cell-empty" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ',\'' + g.day + '\')" style="cursor:pointer;">';
+                    html += '<td class="ft-cell ft-cell-empty" onclick="adminEditAssignment(\'' + esc(g.name).replace(/'/g, "\\'") + '\',' + w + ',\'' + g.day + '\')" style="cursor:pointer;' + dimStyle + '">';
                     if (kidCount > 0) {
                         html += '<div class="ft-kid-count" style="color:#9CA3AF;font-size:11px;">' + kidCount + ' kids</div>';
                     }
