@@ -433,6 +433,7 @@
                             {% for prog in report.programs %}
                             <tr data-category="{{ prog.category }}" data-program="{{ prog.program }}"
                                 data-is-ct="{{ 'true' if "Children's Trust" in prog.program else 'false' }}"
+                                data-is-eca="{{ 'true' if prog.get('is_eca') else 'false' }}"
                                 data-w1="{{ prog.week_1 or 0 }}" data-w2="{{ prog.week_2 or 0 }}" data-w3="{{ prog.week_3 or 0 }}"
                                 data-w4="{{ prog.week_4 or 0 }}" data-w5="{{ prog.week_5 or 0 }}" data-w6="{{ prog.week_6 or 0 }}"
                                 data-w7="{{ prog.week_7 or 0 }}" data-w8="{{ prog.week_8 or 0 }}" data-w9="{{ prog.week_9 or 0 }}"
@@ -452,7 +453,7 @@
                                     data-week="{{ w }}"
                                     data-applied="{{ wl }}"
                                     onclick="showParticipants('{{ prog.program }}', {{ w }})">
-                                    {{ prog['week_' ~ w] or 0 }}{% if wl > 0 %}<span class="applied-count" title="{{ wl }} applied">+{{ wl }}</span>{% endif %}
+                                    {{ prog['week_' ~ w] or 0 }}{% if wl > 0 %}<span class="applied-count{% if prog.get('is_eca') %} wl-count{% endif %}" title="{{ wl }} {{ 'waitlisted' if prog.get('is_eca') else 'applied' }}">+{{ wl }}</span>{% endif %}
                                 </td>
                                 {% else %}
                                 <td class="week-cell week-inactive">-</td>

@@ -222,7 +222,7 @@ let currentModalProgram = '';
 let currentModalWeek = 0;
 
 // Render participants table from data
-function renderParticipantsTable(participants, list, program, week) {
+function renderParticipantsTable(participants, list, program, week, isEca) {
     if (participants.length === 0) {
         list.innerHTML = '<div class="participant-count">No participants found</div>';
         return;
@@ -291,7 +291,12 @@ function renderParticipantsTable(participants, list, program, week) {
 
         groupIndex++;
         var isApplied = p.status_id === 4;
-        var rowCls = (groupVal > 0 ? 'group-row group-' + groupVal : '') + (isApplied ? ' applied-row' : '');
+        var isWaitList = p.status_id === 8;
+
+        // For ECA programs: Applied is normal, WaitList gets special styling
+        // For non-ECA: Applied gets special styling (no WaitList exists)
+        var showSpecialRow = isEca ? isWaitList : isApplied;
+        var rowCls = (groupVal > 0 ? 'group-row group-' + groupVal : '') + (showSpecialRow ? ' applied-row' : '');
         html += '<tr' + (rowCls ? ' class="' + rowCls.trim() + '"' : '') + '>';
         html += '<td>' + groupIndex + '</td>';
 
@@ -310,7 +315,14 @@ function renderParticipantsTable(participants, list, program, week) {
             html += '<td class="group-cell">' + groupDisplay + '</td>';
         }
 
-        html += '<td class="participant-name-cell">' + p.first_name + ' ' + p.last_name + (isApplied ? ' <span class="applied-badge">Applied</span>' : '') + '</td>';
+        // Badge logic: ECA → show "WaitList" badge for status 8; non-ECA → show "Applied" badge for status 4
+        var badgeHtml = '';
+        if (isEca && isWaitList) {
+            badgeHtml = ' <span class="applied-badge" style="background:#DC2626;">WaitList</span>';
+        } else if (!isEca && isApplied) {
+            badgeHtml = ' <span class="applied-badge">Applied</span>';
+        }
+        html += '<td class="participant-name-cell">' + p.first_name + ' ' + p.last_name + badgeHtml + '</td>';
         html += '<td>' + (p.grade || '-') + '</td>';
         html += '<td>' + (p.gender || '-') + '</td>';
         html += '<td>' + (p.share_group_with || '-') + '</td>';
@@ -616,6 +628,16 @@ function showParticipants(program, week) {
     currentModalProgram = program;
     currentModalWeek = week;
 
+    // Detect if this is an ECA program from the data attribute on the row
+    var isEca = false;
+    var rows = document.querySelectorAll('tr[data-program]');
+    for (var i = 0; i < rows.length; i++) {
+        if (rows[i].getAttribute('data-program') === program) {
+            isEca = rows[i].getAttribute('data-is-eca') === 'true';
+            break;
+        }
+    }
+
     title.textContent = '👥 ' + program + ' - Week ' + week;
     list.innerHTML = '<div class="participant-count">Loading participants... ⏳</div>';
     modal.classList.add('show');
@@ -625,14 +647,14 @@ function showParticipants(program, week) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             const participants = data.participants || [];
-            renderParticipantsTable(participants, list, program, week);
+            renderParticipantsTable(participants, list, program, week, isEca);
         })
         .catch(function(err) {
             // Fallback to pre-loaded data (without emails)
             if (window.participantsData) {
                 const programData = window.participantsData[program];
                 const participants = programData ? (programData[String(week)] || []) : [];
-                renderParticipantsTable(participants, list, program, week);
+                renderParticipantsTable(participants, list, program, week, isEca);
             } else {
                 list.innerHTML = '<div class="participant-count">Failed to load participants</div>';
             }

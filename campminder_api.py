@@ -638,8 +638,11 @@ class CampMinderAPIClient:
         sessions = self.get_sessions(season_id, client_id)
         programs = self.get_programs(season_id, client_id)
         attendees = self.get_attendees(season_id, client_id, status=6)  # Enrolled + Applied
-        
-        logger.info(f"Fetched: {len(sessions)} sessions, {len(programs)} programs, {len(attendees)} attendees")
+
+        # Also fetch WaitList attendees (status=8) for ECA programs
+        waitlist_attendees = self.get_attendees(season_id, client_id, status=8)  # WaitList
+
+        logger.info(f"Fetched: {len(sessions)} sessions, {len(programs)} programs, {len(attendees)} attendees, {len(waitlist_attendees)} waitlisted")
         
         # Build program map: ID -> program data
         program_map = {p['ID']: p for p in programs}
@@ -692,7 +695,7 @@ class CampMinderAPIClient:
                 effective_date = sps.get('EffectiveDate', '')
                 post_date = sps.get('PostDate', '')
 
-                # Only include Enrolled (2) or Applied (4)
+                # Only include Enrolled (2) or Applied (4) from main fetch
                 if status_id not in [2, 4]:
                     continue
 
@@ -730,7 +733,44 @@ class CampMinderAPIClient:
                         'post_date': post_date
                     })
 
-        logger.info(f"Processed {len(enrollments)} enrollment records")
+        # Process WaitList attendees (StatusID=8) — these are separate from Enrolled/Applied
+        for attendee in waitlist_attendees:
+            person_id = attendee.get('PersonID')
+            unique_person_ids.add(person_id)
+
+            for sps in attendee.get('SessionProgramStatus', []):
+                session_id = sps.get('SessionID')
+                program_id = sps.get('ProgramID')
+                status_id = sps.get('StatusID')
+                status_name = sps.get('StatusName', '')
+                effective_date = sps.get('EffectiveDate', '')
+                post_date = sps.get('PostDate', '')
+
+                if status_id != 8:
+                    continue
+
+                program = program_map.get(program_id, {})
+                session_info = session_map.get(session_id, {})
+                session_name = session_info.get('name', 'Unknown')
+                program_name = program.get('Name', 'Unknown')
+
+                week_list = self._get_weeks_from_session(session_info, week_date_ranges)
+
+                for week_num in week_list:
+                    enrollments.append({
+                        'person_id': person_id,
+                        'program_id': program_id,
+                        'program_name': program_name,
+                        'session_id': session_id,
+                        'session_name': session_name,
+                        'week': week_num,
+                        'status_id': status_id,
+                        'status_name': status_name,
+                        'enrollment_date': effective_date or (post_date[:10] if post_date else ''),
+                        'post_date': post_date
+                    })
+
+        logger.info(f"Processed {len(enrollments)} enrollment records (including WaitList)")
 
         return {
             'enrollments': enrollments,
@@ -1105,11 +1145,20 @@ class EnrollmentDataProcessor:
             goal = ps.get('goal', self._get_goal(program_name))
             weeks_offered = ps.get('weeks_offered', 9)
 
-            week_counts = {f'week_{i}': len(data['weeks'][i]) for i in range(1, 10)}
-            # Applied counts per week (status_id=4 means Applied)
-            wl_counts = {}
-            for i in range(1, 10):
-                wl_counts[f'wl_{i}'] = sum(1 for c in data['weeks'][i] if c.get('status_id') == 4)
+            is_eca = category == 'Early Childhood'
+
+            if is_eca:
+                # ECA programs: main count = Enrolled (2) + Applied (4), badge = WaitList (8)
+                week_counts = {f'week_{i}': sum(1 for c in data['weeks'][i] if c.get('status_id') in [2, 4]) for i in range(1, 10)}
+                wl_counts = {}
+                for i in range(1, 10):
+                    wl_counts[f'wl_{i}'] = sum(1 for c in data['weeks'][i] if c.get('status_id') == 8)
+            else:
+                # Non-ECA: main count = all, badge = Applied (4)
+                week_counts = {f'week_{i}': len(data['weeks'][i]) for i in range(1, 10)}
+                wl_counts = {}
+                for i in range(1, 10):
+                    wl_counts[f'wl_{i}'] = sum(1 for c in data['weeks'][i] if c.get('status_id') == 4)
             total = sum(week_counts.values())
             fte = round(total / weeks_offered, 2) if weeks_offered > 0 else 0
             percent = round((fte / goal * 100) if goal > 0 else 0, 1)
@@ -1117,6 +1166,7 @@ class EnrollmentDataProcessor:
             programs.append({
                 'program': program_name,
                 'category': category,
+                'is_eca': is_eca,
                 **week_counts,
                 **wl_counts,
                 'total': total,

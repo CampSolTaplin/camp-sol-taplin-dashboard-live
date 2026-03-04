@@ -915,6 +915,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     line-height: 1;
 }
 
+/* WaitList badge for ECA programs — red instead of amber */
+.applied-count.wl-count {
+    color: #DC2626;
+}
+
 .total-cell {
     font-weight: 700;
     background: var(--bg);
