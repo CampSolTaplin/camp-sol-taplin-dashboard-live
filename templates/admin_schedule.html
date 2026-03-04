@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Config - Camp Sol Taplin</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#00A9CE">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CST Staff App">
+    <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .admin-container { max-width: 1200px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 12px; }
+        .page-title { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 700; }
+        .page-subtitle { color: var(--text-muted); font-size: 14px; }
+        .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); text-decoration: none; font-size: 14px; margin-bottom: 20px; }
+        .btn-back:hover { color: var(--teal); }
+
+        /* Sub-tab bar */
+        .sched-tabs { display: flex; gap: 4px; margin-bottom: 24px; flex-wrap: wrap; background: #F3F4F6; border-radius: 10px; padding: 4px; }
+        .sched-tab {
+            padding: 10px 18px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+            font-weight: 500; cursor: pointer; transition: all 0.2s; color: #6B7280; border: none; background: transparent;
+        }
+        .sched-tab:hover { color: #111827; background: rgba(255,255,255,0.5); }
+        .sched-tab.active { background: white; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
+        .sched-panel { display: none; }
+        .sched-panel.active { display: block; }
+
+        /* Admin section cards */
+        .admin-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .admin-section h3 { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 600; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
+
+        /* Tables */
+        .sched-table { width: 100%; border-collapse: collapse; font-family: 'DM Sans', sans-serif; font-size: 14px; }
+        .sched-table th { text-align: left; padding: 10px 12px; border-bottom: 2px solid #E5E7EB; color: #6B7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sched-table td { padding: 10px 12px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+        .sched-table tr:hover { background: #F9FAFB; }
+        .sched-table .inactive-row { opacity: 0.5; }
+
+        /* Buttons */
+        .btn-sm { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; border: 1px solid #d1d5db; background: white; transition: all 0.15s; }
+        .btn-sm:hover { background: #F3F4F6; }
+        .btn-sm-primary { background: var(--teal); color: white; border-color: var(--teal); }
+        .btn-sm-primary:hover { background: #0B8276; }
+        .btn-sm-danger { color: #EF4444; border-color: #FCA5A5; }
+        .btn-sm-danger:hover { background: #FEF2F2; }
+        .btn-sm-secondary { background: #F3F4F6; color: #374151; border-color: #d1d5db; }
+
+        /* Inline forms */
+        .add-form { display: none; padding: 16px; background: #F9FAFB; border-radius: 8px; margin-bottom: 16px; }
+        .add-form.visible { display: block; }
+        .form-grid { display: grid; gap: 12px; margin-bottom: 12px; }
+        .form-grid-2 { grid-template-columns: 1fr 1fr; }
+        .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .form-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+        .form-field { display: flex; flex-direction: column; gap: 4px; }
+        .form-field label { font-size: 12px; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.3px; }
+        .form-field input, .form-field select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; }
+        .form-field input:focus, .form-field select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,0.1); }
+
+        /* Toolbar row */
+        .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .toolbar-search { padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; width: 260px; max-width: 100%; }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; background: #065F46; color: white; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .toast.error { background: #991B1B; }
+
+        /* Badge */
+        .count-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #F0FDFA; color: #0D9488; }
+
+        /* Checkbox grid for eligibility */
+        .elig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; max-height: 320px; overflow-y: auto; padding: 8px; background: #F9FAFB; border-radius: 8px; }
+        .elig-item { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .elig-item:hover { background: #E0F2FE; }
+        .elig-item input[type="checkbox"] { accent-color: var(--teal); }
+
+        /* Availability grid */
+        .avail-grid { display: inline-block; }
+        .avail-grid table { border-collapse: collapse; font-size: 12px; }
+        .avail-grid th { padding: 4px 8px; font-weight: 600; color: #6B7280; }
+        .avail-grid td { padding: 2px; text-align: center; }
+        .avail-grid input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--teal); cursor: pointer; }
+
+        /* Modal overlay */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; border-radius: 16px; padding: 28px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .modal-content h3 { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; margin: 0 0 20px 0; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB; }
+
+        /* Empty state */
+        .empty-state { text-align: center; padding: 40px 20px; color: #9CA3AF; }
+        .empty-state svg { margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; margin: 0; }
+
+        @media (max-width: 768px) {
+            .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+            .toolbar-search { width: 100%; }
+            .sched-tabs { gap: 2px; }
+            .sched-tab { padding: 8px 12px; font-size: 13px; }
+            .content { padding: 20px !important; }
+        }
+    </style>
+</head>
+<body>
+    {% include '_sidebar.html' %}
+    <div class="content" style="padding: 30px 40px;">
+        <div class="admin-container">
+            <a href="{{ url_for('dashboard') }}" class="btn-back">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to Dashboard
+            </a>
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Schedule Configuration</div>
+                    <div class="page-subtitle">Manage activities, periods, locations, groups, presets, and meals</div>
+                </div>
+            </div>
+
+            <!-- Sub-tab bar -->
+            <div class="sched-tabs">
+                <button class="sched-tab active" onclick="switchSchedTab('activities')">Activities</button>
+                <button class="sched-tab" onclick="switchSchedTab('periods')">Periods</button>
+                <button class="sched-tab" onclick="switchSchedTab('locations')">Locations</button>
+                <button class="sched-tab" onclick="switchSchedTab('groups')">Groups</button>
+                <button class="sched-tab" onclick="switchSchedTab('presets')">Presets</button>
+                <button class="sched-tab" onclick="switchSchedTab('meals')">Meals</button>
+            </div>
+
+            <!-- ==================== ACTIVITIES TAB ==================== -->
+            <div id="panel-activities" class="sched-panel active">
+                <div class="admin-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Activities
+                    </h3>
+                    <div class="toolbar">
+                        <button class="btn-sm btn-sm-primary" onclick="showActivityModal()">+ Add Activity</button>
+                        <input type="text" class="toolbar-search" id="act-search" placeholder="Search activities..." oninput="renderActivities()">
+                    </div>
+                    <div id="activities-table-container"></div>
+                </div>
+            </div>
+
+            <!-- ==================== PERIODS TAB ==================== -->
+            <div id="panel-periods" class="sched-panel">
+                <div class="admin-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Period Schemas
+                    </h3>
+                    <div class="toolbar">
+                        <button class="btn-sm btn-sm-primary" onclick="promptCreateSchema()">+ Add Schema</button>
+                    </div>
+                    <div id="periods-container"></div>
+                </div>
+            </div>
+
+            <!-- ==================== LOCATIONS TAB ==================== -->
+            <div id="panel-locations" class="sched-panel">
+                <div class="admin-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        Locations
+                    </h3>
+                    <div class="toolbar">
+                        <button class="btn-sm btn-sm-primary" onclick="showLocationModal()">+ Add Location</button>
+                        <input type="text" class="toolbar-search" id="loc-search" placeholder="Search locations..." oninput="renderLocations()">
+                    </div>
+                    <div id="locations-table-container"></div>
+                </div>
+            </div>
+
+            <!-- ==================== GROUPS TAB ==================== -->
+            <div id="panel-groups" class="sched-panel">
+                <div class="admin-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Schedule Groups
+                    </h3>
+                    <div class="toolbar">
+                        <button class="btn-sm btn-sm-primary" onclick="syncGroups()">Sync from Enrollment</button>
+                        <span style="font-size:13px;color:#6B7280;" id="groups-sync-info"></span>
+                    </div>
+                    <div id="groups-table-container"></div>
+                </div>
+            </div>
+
+            <!-- ==================== PRESETS TAB ==================== -->
+            <div id="panel-presets" class="sched-panel">
+                <div class="admin-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        Presets (Forced Rules)
+                    </h3>
+                    <div class="toolbar">
+                        <button class="btn-sm btn-sm-primary" onclick="showPresetModal()">+ Add Preset</button>
+                    </div>
+                    <div id="presets-table-container"></div>
+                </div>
+            </div>
+
+            <!-- ==================== MEALS TAB ==================== -->
+            <div id="panel-meals" class="sched-panel">
+                <div class="admin-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                        Meals
+                    </h3>
+                    <div class="toolbar">
+                        <button class="btn-sm btn-sm-primary" onclick="toggleAddMealForm()">+ Add Meal</button>
+                    </div>
+                    <div class="add-form" id="add-meal-form">
+                        <div class="form-grid form-grid-3">
+                            <div class="form-field">
+                                <label>Name</label>
+                                <input type="text" id="new-meal-name" placeholder="e.g. Lunch">
+                            </div>
+                            <div class="form-field">
+                                <label>Time Label</label>
+                                <input type="text" id="new-meal-time" placeholder="e.g. 12:00 PM">
+                            </div>
+                            <div class="form-field" style="justify-content:flex-end;">
+                                <button class="btn-sm btn-sm-primary" onclick="createMeal()">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="meals-table-container"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+    /* ========== GLOBAL DATA ========== */
+    var allMeals = [];
+    var allSchemas = [];
+    var allLocations = [];
+    var allActivities = [];
+    var allGroups = [];
+    var allPresets = [];
+    var DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    /* ========== TAB SWITCHING ========== */
+    function switchSchedTab(name) {
+        document.querySelectorAll('.sched-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.sched-panel').forEach(function(p) { p.classList.remove('active'); });
+        document.getElementById('panel-' + name).classList.add('active');
+        // find matching tab button
+        document.querySelectorAll('.sched-tab').forEach(function(t) {
+            if (t.textContent.trim().toLowerCase() === name.replace('activities', 'activities').toLowerCase() ||
+                t.textContent.trim().toLowerCase().replace(/s$/, '') === name.replace(/s$/, '')) {
+                t.classList.add('active');
+            }
+        });
+        // More reliable: match by onclick
+        document.querySelectorAll('.sched-tab').forEach(function(t) {
+            var onclick = t.getAttribute('onclick') || '';
+            if (onclick.indexOf("'" + name + "'") !== -1) t.classList.add('active');
+        });
+    }
+
+    /* ========== TOAST ========== */
+    function showToast(msg, isError) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast' + (isError ? ' error' : '');
+        t.style.display = 'block';
+        setTimeout(function() { t.style.display = 'none'; }, 3000);
+    }
+
+    /* ========== MEALS ========== */
+    function loadMeals() {
+        fetch('/api/schedule/meals?include_inactive=true')
+            .then(function(r) { return r.json(); })
+            .then(function(data) { allMeals = data.meals || []; renderMeals(); });
+    }
+
+    function renderMeals() {
+        var c = document.getElementById('meals-table-container');
+        if (!allMeals.length) {
+            c.innerHTML = '<div class="empty-state"><p>No meals defined yet. Click "+ Add Meal" to get started.</p></div>';
+            return;
+        }
+        var html = '<table class="sched-table"><thead><tr><th>Name</th><th>Time Label</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        allMeals.forEach(function(m) {
+            html += '<tr class="' + (m.active ? '' : 'inactive-row') + '">';
+            html += '<td><strong>' + esc(m.name) + '</strong></td>';
+            html += '<td>' + esc(m.time_label || '-') + '</td>';
+            html += '<td>' + (m.active ? '<span style="color:#059669;">Active</span>' : '<span style="color:#9CA3AF;">Inactive</span>') + '</td>';
+            html += '<td><button class="btn-sm" onclick="editMeal(' + m.id + ')">Edit</button> ';
+            if (m.active) html += '<button class="btn-sm btn-sm-danger" onclick="deleteMeal(' + m.id + ',\'' + esc(m.name) + '\')">Deactivate</button>';
+            else html += '<button class="btn-sm" onclick="reactivateMeal(' + m.id + ')">Reactivate</button>';
+            html += '</td></tr>';
+        });
+        html += '</tbody></table>';
+        c.innerHTML = html;
+    }
+
+    function toggleAddMealForm() {
+        document.getElementById('add-meal-form').classList.toggle('visible');
+    }
+
+    function createMeal() {
+        var name = document.getElementById('new-meal-name').value.trim();
+        var time = document.getElementById('new-meal-time').value.trim();
+        if (!name) { showToast('Name is required', true); return; }
+        fetch('/api/schedule/meals', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name, time_label: time})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) {
+                showToast('Meal created!');
+                document.getElementById('new-meal-name').value = '';
+                document.getElementById('new-meal-time').value = '';
+                document.getElementById('add-meal-form').classList.remove('visible');
+                loadMeals();
+            } else { showToast('Error: ' + (data.error || 'Unknown'), true); }
+        });
+    }
+
+    function editMeal(id) {
+        var m = allMeals.find(function(x) { return x.id === id; });
+        if (!m) return;
+        var newName = prompt('Meal name:', m.name);
+        if (newName === null) return;
+        var newTime = prompt('Time label:', m.time_label || '');
+        if (newTime === null) return;
+        fetch('/api/schedule/meals/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: newName.trim(), time_label: newTime.trim()})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Meal updated!'); loadMeals(); }
+            else showToast('Error: ' + (data.error || 'Unknown'), true);
+        });
+    }
+
+    function deleteMeal(id, name) {
+        if (!confirm('Deactivate meal "' + name + '"?')) return;
+        fetch('/api/schedule/meals/' + id, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { if (data.success) { showToast('Meal deactivated'); loadMeals(); } });
+    }
+
+    function reactivateMeal(id) {
+        fetch('/api/schedule/meals/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({active: true})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Meal reactivated'); loadMeals(); }
+        });
+    }
+
+    /* ========== PERIODS ========== */
+    function loadPeriods() {
+        fetch('/api/schedule/periods')
+            .then(function(r) { return r.json(); })
+            .then(function(data) { allSchemas = data.schemas || []; renderPeriods(); });
+    }
+
+    function renderPeriods() {
+        var c = document.getElementById('periods-container');
+        if (!allSchemas.length) {
+            c.innerHTML = '<div class="empty-state"><p>No period schemas yet. Click "+ Add Schema" to create one (e.g., "Main").</p></div>';
+            return;
+        }
+        var html = '';
+        allSchemas.forEach(function(s) {
+            html += '<div style="margin-bottom:24px;padding:16px;background:#F9FAFB;border-radius:10px;">';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
+            html += '<h4 style="margin:0;font-family:Outfit,sans-serif;font-size:16px;font-weight:600;">' + esc(s.name) + '</h4>';
+            html += '<div style="display:flex;gap:8px;">';
+            html += '<button class="btn-sm" onclick="editSchema(' + s.id + ')">Rename</button>';
+            html += '<button class="btn-sm btn-sm-primary" onclick="promptAddPeriod(' + s.id + ')">+ Period</button>';
+            html += '</div></div>';
+            if (s.periods.length) {
+                html += '<table class="sched-table"><thead><tr><th>#</th><th>Start</th><th>End</th><th>Duration</th><th>Actions</th></tr></thead><tbody>';
+                s.periods.forEach(function(p) {
+                    html += '<tr><td><strong>Period ' + p.period_number + '</strong></td>';
+                    html += '<td>' + esc(p.start_time) + '</td><td>' + esc(p.end_time) + '</td>';
+                    html += '<td>' + p.duration_min + ' min</td>';
+                    html += '<td><button class="btn-sm" onclick="editPeriod(' + p.id + ')">Edit</button> ';
+                    html += '<button class="btn-sm btn-sm-danger" onclick="deletePeriod(' + p.id + ')">Delete</button></td></tr>';
+                });
+                html += '</tbody></table>';
+            } else {
+                html += '<p style="color:#9CA3AF;font-size:13px;margin:0;">No periods in this schema yet.</p>';
+            }
+            html += '</div>';
+        });
+        c.innerHTML = html;
+    }
+
+    function promptCreateSchema() {
+        var name = prompt('Schema name (e.g., "Main", "Friday Short"):');
+        if (!name || !name.trim()) return;
+        fetch('/api/schedule/periods/schemas', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name.trim()})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Schema created!'); loadPeriods(); }
+            else showToast('Error: ' + (data.error || 'Unknown'), true);
+        });
+    }
+
+    function editSchema(id) {
+        var s = allSchemas.find(function(x) { return x.id === id; });
+        if (!s) return;
+        var newName = prompt('Schema name:', s.name);
+        if (newName === null || !newName.trim()) return;
+        fetch('/api/schedule/periods/schemas/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: newName.trim()})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Schema renamed'); loadPeriods(); }
+            else showToast('Error: ' + (data.error || 'Unknown'), true);
+        });
+    }
+
+    function promptAddPeriod(schemaId) {
+        var s = allSchemas.find(function(x) { return x.id === schemaId; });
+        var nextNum = s ? (s.periods.length + 1) : 1;
+        var num = prompt('Period number:', nextNum);
+        if (num === null) return;
+        var start = prompt('Start time (HH:MM):', '');
+        if (start === null) return;
+        var end = prompt('End time (HH:MM):', '');
+        if (end === null) return;
+        var dur = prompt('Duration (minutes):', '40');
+        if (dur === null) return;
+        fetch('/api/schedule/periods', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({schema_id: schemaId, period_number: parseInt(num), start_time: start.trim(), end_time: end.trim(), duration_min: parseInt(dur)})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Period added!'); loadPeriods(); }
+            else showToast('Error: ' + (data.error || 'Unknown'), true);
+        });
+    }
+
+    function editPeriod(id) {
+        // Find the period across all schemas
+        var period = null;
+        allSchemas.forEach(function(s) { s.periods.forEach(function(p) { if (p.id === id) period = p; }); });
+        if (!period) return;
+        var start = prompt('Start time:', period.start_time);
+        if (start === null) return;
+        var end = prompt('End time:', period.end_time);
+        if (end === null) return;
+        var dur = prompt('Duration (minutes):', period.duration_min);
+        if (dur === null) return;
+        fetch('/api/schedule/periods/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({start_time: start.trim(), end_time: end.trim(), duration_min: parseInt(dur)})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Period updated'); loadPeriods(); }
+            else showToast('Error: ' + (data.error || 'Unknown'), true);
+        });
+    }
+
+    function deletePeriod(id) {
+        if (!confirm('Delete this period?')) return;
+        fetch('/api/schedule/periods/' + id, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { if (data.success) { showToast('Period deleted'); loadPeriods(); } });
+    }
+
+    /* ========== LOCATIONS ========== */
+    function loadLocations() {
+        fetch('/api/schedule/locations?include_inactive=true')
+            .then(function(r) { return r.json(); })
+            .then(function(data) { allLocations = data.locations || []; renderLocations(); });
+    }
+
+    function renderLocations() {
+        var c = document.getElementById('locations-table-container');
+        var search = (document.getElementById('loc-search') || {}).value || '';
+        search = search.toLowerCase();
+        var filtered = allLocations.filter(function(l) {
+            if (!search) return true;
+            return (l.name || '').toLowerCase().indexOf(search) !== -1 || (l.zone || '').toLowerCase().indexOf(search) !== -1;
+        });
+        if (!filtered.length) {
+            c.innerHTML = '<div class="empty-state"><p>' + (search ? 'No locations match your search.' : 'No locations yet. Click "+ Add Location" to get started.') + '</p></div>';
+            return;
+        }
+        var html = '<table class="sched-table"><thead><tr><th>Name</th><th>Zone</th><th>Capacity</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        filtered.forEach(function(l) {
+            html += '<tr class="' + (l.active ? '' : 'inactive-row') + '">';
+            html += '<td><strong>' + esc(l.name) + '</strong></td>';
+            html += '<td>' + esc(l.zone || '-') + '</td>';
+            html += '<td>' + (l.capacity || '-') + '</td>';
+            html += '<td>' + (l.is_indoor ? 'Indoor' : 'Outdoor') + '</td>';
+            html += '<td>' + (l.active ? '<span style="color:#059669;">Active</span>' : '<span style="color:#9CA3AF;">Inactive</span>') + '</td>';
+            html += '<td><button class="btn-sm" onclick="showLocationModal(' + l.id + ')">Edit</button> ';
+            if (l.active) html += '<button class="btn-sm btn-sm-danger" onclick="deleteLocation(' + l.id + ',\'' + esc(l.name) + '\')">Deactivate</button>';
+            else html += '<button class="btn-sm" onclick="reactivateLocation(' + l.id + ')">Reactivate</button>';
+            html += '</td></tr>';
+        });
+        html += '</tbody></table>';
+        c.innerHTML = html;
+    }
+
+    function showLocationModal(editId) {
+        var loc = editId ? allLocations.find(function(l) { return l.id === editId; }) : null;
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+        var html = '<div class="modal-content"><h3>' + (loc ? 'Edit Location' : 'Add Location') + '</h3>';
+        html += '<div class="form-grid form-grid-2">';
+        html += '<div class="form-field"><label>Name</label><input type="text" id="modal-loc-name" value="' + esc(loc ? loc.name : '') + '"></div>';
+        html += '<div class="form-field"><label>Zone</label><input type="text" id="modal-loc-zone" placeholder="e.g. JCC, Hillel" value="' + esc(loc ? loc.zone || '' : '') + '"></div>';
+        html += '<div class="form-field"><label>Capacity</label><input type="number" id="modal-loc-capacity" value="' + (loc && loc.capacity ? loc.capacity : '') + '"></div>';
+        html += '<div class="form-field"><label>Type</label><select id="modal-loc-indoor">';
+        html += '<option value="true"' + ((!loc || loc.is_indoor) ? ' selected' : '') + '>Indoor</option>';
+        html += '<option value="false"' + (loc && !loc.is_indoor ? ' selected' : '') + '>Outdoor</option>';
+        html += '</select></div>';
+        html += '</div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm btn-sm-primary" id="modal-loc-save">Save</button>';
+        html += '</div></div>';
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+        document.getElementById('modal-loc-save').onclick = function() {
+            var payload = {
+                name: document.getElementById('modal-loc-name').value.trim(),
+                zone: document.getElementById('modal-loc-zone').value.trim(),
+                capacity: document.getElementById('modal-loc-capacity').value ? parseInt(document.getElementById('modal-loc-capacity').value) : null,
+                is_indoor: document.getElementById('modal-loc-indoor').value === 'true'
+            };
+            if (!payload.name) { showToast('Name is required', true); return; }
+            var url = loc ? '/api/schedule/locations/' + loc.id : '/api/schedule/locations';
+            var method = loc ? 'PUT' : 'POST';
+            fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
+                .then(function(r) { return r.json(); }).then(function(data) {
+                    if (data.success) { showToast(loc ? 'Location updated!' : 'Location created!'); overlay.remove(); loadLocations(); }
+                    else showToast('Error: ' + (data.error || 'Unknown'), true);
+                });
+        };
+    }
+
+    function deleteLocation(id, name) {
+        if (!confirm('Deactivate location "' + name + '"?')) return;
+        fetch('/api/schedule/locations/' + id, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { if (data.success) { showToast('Location deactivated'); loadLocations(); } });
+    }
+
+    function reactivateLocation(id) {
+        fetch('/api/schedule/locations/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({active: true})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Location reactivated'); loadLocations(); }
+        });
+    }
+
+    /* ========== ACTIVITIES ========== */
+    function loadActivities() {
+        fetch('/api/schedule/activities?include_inactive=true')
+            .then(function(r) { return r.json(); })
+            .then(function(data) { allActivities = data.activities || []; renderActivities(); });
+    }
+
+    function renderActivities() {
+        var c = document.getElementById('activities-table-container');
+        var search = (document.getElementById('act-search') || {}).value || '';
+        search = search.toLowerCase();
+        var filtered = allActivities.filter(function(a) {
+            if (!search) return true;
+            return (a.name || '').toLowerCase().indexOf(search) !== -1 || (a.location_name || '').toLowerCase().indexOf(search) !== -1;
+        });
+        if (!filtered.length) {
+            c.innerHTML = '<div class="empty-state"><p>' + (search ? 'No activities match your search.' : 'No activities yet. Click "+ Add Activity" to get started.') + '</p></div>';
+            return;
+        }
+        var html = '<table class="sched-table"><thead><tr><th>Name</th><th>Location</th><th>Periods</th><th>Groups</th><th>Campers</th><th>Max/Day</th><th>Max/Wk</th><th>Flags</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        filtered.forEach(function(a) {
+            html += '<tr class="' + (a.active ? '' : 'inactive-row') + '">';
+            html += '<td><strong>' + esc(a.name) + '</strong></td>';
+            html += '<td>' + esc(a.location_name || '-') + '</td>';
+            html += '<td>' + a.num_periods + '</td>';
+            html += '<td>' + a.min_groups + '-' + a.max_groups + '</td>';
+            html += '<td>' + a.min_campers + '-' + a.max_campers + '</td>';
+            html += '<td>' + (a.max_per_day || '∞') + '</td>';
+            html += '<td>' + (a.max_per_week || '∞') + '</td>';
+            var flags = [];
+            if (a.is_field_trip) flags.push('FT');
+            if (a.meal_name) flags.push(a.meal_name);
+            html += '<td>' + (flags.length ? flags.join(', ') : '-') + '</td>';
+            html += '<td>' + (a.active ? '<span style="color:#059669;">Active</span>' : '<span style="color:#9CA3AF;">Inactive</span>') + '</td>';
+            html += '<td style="white-space:nowrap;"><button class="btn-sm" onclick="showActivityModal(' + a.id + ')">Edit</button> ';
+            if (a.active) html += '<button class="btn-sm btn-sm-danger" onclick="deleteActivity(' + a.id + ',\'' + esc(a.name) + '\')">Deactivate</button>';
+            else html += '<button class="btn-sm" onclick="reactivateActivity(' + a.id + ')">Reactivate</button>';
+            html += '</td></tr>';
+        });
+        html += '</tbody></table>';
+        c.innerHTML = html;
+    }
+
+    function showActivityModal(editId) {
+        var act = editId ? allActivities.find(function(a) { return a.id === editId; }) : null;
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+        var activeLocs = allLocations.filter(function(l) { return l.active || (act && l.id === act.location_id); });
+        var activeMeals = allMeals.filter(function(m) { return m.active || (act && m.id === act.meal_id); });
+        var html = '<div class="modal-content"><h3>' + (act ? 'Edit Activity' : 'Add Activity') + '</h3>';
+        // Row 1: Name + Location
+        html += '<div class="form-grid form-grid-2">';
+        html += '<div class="form-field"><label>Name</label><input type="text" id="modal-act-name" value="' + esc(act ? act.name : '') + '"></div>';
+        html += '<div class="form-field"><label>Location</label><select id="modal-act-loc"><option value="">-- None --</option>';
+        activeLocs.forEach(function(l) {
+            html += '<option value="' + l.id + '"' + (act && act.location_id === l.id ? ' selected' : '') + '>' + esc(l.name) + '</option>';
+        });
+        html += '</select></div></div>';
+        // Row 2: num_periods, groups, campers
+        html += '<div class="form-grid form-grid-4" style="margin-top:12px;">';
+        html += '<div class="form-field"><label># Periods</label><input type="number" id="modal-act-nper" min="1" value="' + (act ? act.num_periods : 1) + '"></div>';
+        html += '<div class="form-field"><label>Min Groups</label><input type="number" id="modal-act-mingr" min="0" value="' + (act ? act.min_groups : 1) + '"></div>';
+        html += '<div class="form-field"><label>Max Groups</label><input type="number" id="modal-act-maxgr" min="1" value="' + (act ? act.max_groups : 4) + '"></div>';
+        html += '<div class="form-field"><label>Min Campers</label><input type="number" id="modal-act-minc" min="0" value="' + (act ? act.min_campers : 0) + '"></div>';
+        html += '</div>';
+        // Row 3: max campers, per day, per week, meal
+        html += '<div class="form-grid form-grid-4" style="margin-top:12px;">';
+        html += '<div class="form-field"><label>Max Campers</label><input type="number" id="modal-act-maxc" min="0" value="' + (act ? act.max_campers : 50) + '"></div>';
+        html += '<div class="form-field"><label>Max/Day (0=∞)</label><input type="number" id="modal-act-mpd" min="0" value="' + (act ? act.max_per_day : 0) + '"></div>';
+        html += '<div class="form-field"><label>Max/Week (0=∞)</label><input type="number" id="modal-act-mpw" min="0" value="' + (act ? act.max_per_week : 0) + '"></div>';
+        html += '<div class="form-field"><label>Meal</label><select id="modal-act-meal"><option value="">-- None --</option>';
+        activeMeals.forEach(function(m) {
+            html += '<option value="' + m.id + '"' + (act && act.meal_id === m.id ? ' selected' : '') + '>' + esc(m.name) + '</option>';
+        });
+        html += '</select></div></div>';
+        // Row 4: Checkboxes
+        html += '<div style="margin-top:12px;display:flex;gap:20px;">';
+        html += '<label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;"><input type="checkbox" id="modal-act-ft"' + (act && act.is_field_trip ? ' checked' : '') + '> Field Trip</label>';
+        html += '</div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm btn-sm-primary" id="modal-act-save">Save</button>';
+        html += '</div></div>';
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+        document.getElementById('modal-act-save').onclick = function() {
+            var payload = {
+                name: document.getElementById('modal-act-name').value.trim(),
+                location_id: document.getElementById('modal-act-loc').value || null,
+                num_periods: parseInt(document.getElementById('modal-act-nper').value) || 1,
+                min_groups: parseInt(document.getElementById('modal-act-mingr').value) || 0,
+                max_groups: parseInt(document.getElementById('modal-act-maxgr').value) || 1,
+                min_campers: parseInt(document.getElementById('modal-act-minc').value) || 0,
+                max_campers: parseInt(document.getElementById('modal-act-maxc').value) || 50,
+                max_per_day: parseInt(document.getElementById('modal-act-mpd').value) || 0,
+                max_per_week: parseInt(document.getElementById('modal-act-mpw').value) || 0,
+                is_field_trip: document.getElementById('modal-act-ft').checked,
+                meal_id: document.getElementById('modal-act-meal').value || null
+            };
+            if (!payload.name) { showToast('Name is required', true); return; }
+            var url = act ? '/api/schedule/activities/' + act.id : '/api/schedule/activities';
+            var method = act ? 'PUT' : 'POST';
+            fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
+                .then(function(r) { return r.json(); }).then(function(data) {
+                    if (data.success) { showToast(act ? 'Activity updated!' : 'Activity created!'); overlay.remove(); loadActivities(); }
+                    else showToast('Error: ' + (data.error || 'Unknown'), true);
+                });
+        };
+    }
+
+    function deleteActivity(id, name) {
+        if (!confirm('Deactivate activity "' + name + '"?')) return;
+        fetch('/api/schedule/activities/' + id, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { if (data.success) { showToast('Activity deactivated'); loadActivities(); } });
+    }
+
+    function reactivateActivity(id) {
+        fetch('/api/schedule/activities/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({active: true})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Activity reactivated'); loadActivities(); }
+        });
+    }
+
+    /* ========== GROUPS ========== */
+    function loadGroups() {
+        fetch('/api/schedule/groups')
+            .then(function(r) { return r.json(); })
+            .then(function(data) { allGroups = data.groups || []; renderGroups(); });
+    }
+
+    function renderGroups() {
+        var c = document.getElementById('groups-table-container');
+        if (!allGroups.length) {
+            c.innerHTML = '<div class="empty-state"><p>No groups synced yet. Click "Sync from Enrollment" to pull groups from the enrollment matrix.</p></div>';
+            return;
+        }
+        var html = '<table class="sched-table"><thead><tr><th>Program</th><th>Group #</th><th>Label</th><th>Enrollment</th><th>Eligible Activities</th><th>Actions</th></tr></thead><tbody>';
+        allGroups.forEach(function(g) {
+            html += '<tr>';
+            html += '<td><strong>' + esc(g.program) + '</strong></td>';
+            html += '<td>' + g.group_number + '</td>';
+            html += '<td>' + esc(g.label || '-') + '</td>';
+            html += '<td>' + g.enrollment_count + '</td>';
+            html += '<td><span class="count-badge">' + g.eligible_activities + '</span></td>';
+            html += '<td style="white-space:nowrap;">';
+            html += '<button class="btn-sm" onclick="editGroupLabel(' + g.id + ')">Label</button> ';
+            html += '<button class="btn-sm btn-sm-secondary" onclick="editGroupEligibility(' + g.id + ')">Eligibility</button>';
+            html += '</td></tr>';
+        });
+        html += '</tbody></table>';
+        c.innerHTML = html;
+    }
+
+    function syncGroups() {
+        document.getElementById('groups-sync-info').textContent = 'Syncing...';
+        fetch('/api/schedule/groups/sync', { method: 'POST', headers: {'Content-Type': 'application/json'} })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    showToast('Synced! Created ' + data.created + ', skipped ' + data.skipped);
+                    document.getElementById('groups-sync-info').textContent = data.created + ' new, ' + data.skipped + ' existing';
+                    loadGroups();
+                } else showToast('Error: ' + (data.error || 'Unknown'), true);
+            });
+    }
+
+    function editGroupLabel(id) {
+        var g = allGroups.find(function(x) { return x.id === id; });
+        if (!g) return;
+        var label = prompt('Custom label for ' + g.program + ' G' + g.group_number + ':', g.label || '');
+        if (label === null) return;
+        fetch('/api/schedule/groups/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({label: label.trim()})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Label updated'); loadGroups(); }
+            else showToast('Error: ' + (data.error || 'Unknown'), true);
+        });
+    }
+
+    function editGroupEligibility(groupId) {
+        var g = allGroups.find(function(x) { return x.id === groupId; });
+        if (!g) return;
+        // Fetch current eligibility
+        fetch('/api/schedule/groups/' + groupId + '/eligibility')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var currentIds = data.activity_ids || [];
+                showEligibilityModal(g, currentIds);
+            });
+    }
+
+    function showEligibilityModal(group, currentActivityIds) {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+        var activeActs = allActivities.filter(function(a) { return a.active; });
+        var title = group.label || (group.program + ' G' + group.group_number);
+        var html = '<div class="modal-content"><h3>Eligible Activities — ' + esc(title) + '</h3>';
+        html += '<p style="font-size:13px;color:#6B7280;margin:0 0 12px;">Select activities this group can be scheduled for:</p>';
+        html += '<div style="margin-bottom:12px;display:flex;gap:8px;">';
+        html += '<button class="btn-sm" onclick="toggleAllElig(true)">Select All</button>';
+        html += '<button class="btn-sm" onclick="toggleAllElig(false)">Deselect All</button>';
+        html += '</div>';
+        html += '<div class="elig-grid">';
+        activeActs.forEach(function(a) {
+            var checked = currentActivityIds.indexOf(a.id) !== -1 ? ' checked' : '';
+            html += '<label class="elig-item"><input type="checkbox" value="' + a.id + '"' + checked + '> ' + esc(a.name) + '</label>';
+        });
+        html += '</div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm btn-sm-primary" id="modal-elig-save">Save</button>';
+        html += '</div></div>';
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+        document.getElementById('modal-elig-save').onclick = function() {
+            var checks = overlay.querySelectorAll('.elig-grid input[type="checkbox"]:checked');
+            var ids = [];
+            checks.forEach(function(cb) { ids.push(parseInt(cb.value)); });
+            fetch('/api/schedule/groups/' + group.id + '/eligibility', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({activity_ids: ids})
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) { showToast('Eligibility saved (' + data.count + ' activities)'); overlay.remove(); loadGroups(); }
+                else showToast('Error: ' + (data.error || 'Unknown'), true);
+            });
+        };
+    }
+
+    function toggleAllElig(state) {
+        document.querySelectorAll('.elig-grid input[type="checkbox"]').forEach(function(cb) { cb.checked = state; });
+    }
+
+    /* ========== PRESETS ========== */
+    function loadPresets() {
+        fetch('/api/schedule/presets')
+            .then(function(r) { return r.json(); })
+            .then(function(data) { allPresets = data.presets || []; renderPresets(); });
+    }
+
+    function renderPresets() {
+        var c = document.getElementById('presets-table-container');
+        if (!allPresets.length) {
+            c.innerHTML = '<div class="empty-state"><p>No presets defined yet. Presets force a group to do a specific activity on a specific day.</p></div>';
+            return;
+        }
+        // Group by day for better readability
+        var byDay = {};
+        DAYS.forEach(function(d) { byDay[d] = []; });
+        allPresets.forEach(function(p) { if (byDay[p.day]) byDay[p.day].push(p); });
+        var html = '<table class="sched-table"><thead><tr><th>Day</th><th>Group</th><th>Activity</th><th>Period</th><th>Actions</th></tr></thead><tbody>';
+        DAYS.forEach(function(day) {
+            byDay[day].forEach(function(p, i) {
+                html += '<tr>';
+                if (i === 0) html += '<td rowspan="' + byDay[day].length + '" style="font-weight:600;vertical-align:top;">' + day + '</td>';
+                html += '<td>' + esc(p.group_label) + '</td>';
+                html += '<td>' + esc(p.activity_name) + '</td>';
+                html += '<td>' + (p.period_label || 'Any') + '</td>';
+                html += '<td><button class="btn-sm btn-sm-danger" onclick="deletePreset(' + p.id + ')">Delete</button></td>';
+                html += '</tr>';
+            });
+        });
+        html += '</tbody></table>';
+        c.innerHTML = html;
+    }
+
+    function showPresetModal() {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+        var html = '<div class="modal-content"><h3>Add Preset Rule</h3>';
+        html += '<div class="form-grid form-grid-2">';
+        // Group dropdown
+        html += '<div class="form-field"><label>Group</label><select id="modal-pr-group">';
+        allGroups.forEach(function(g) {
+            var lbl = g.label || (g.program + ' G' + g.group_number);
+            html += '<option value="' + g.id + '">' + esc(lbl) + '</option>';
+        });
+        html += '</select></div>';
+        // Activity dropdown
+        html += '<div class="form-field"><label>Activity</label><select id="modal-pr-act">';
+        allActivities.filter(function(a) { return a.active; }).forEach(function(a) {
+            html += '<option value="' + a.id + '">' + esc(a.name) + '</option>';
+        });
+        html += '</select></div>';
+        // Day
+        html += '<div class="form-field"><label>Day</label><select id="modal-pr-day">';
+        DAYS.forEach(function(d) { html += '<option value="' + d + '">' + d + '</option>'; });
+        html += '</select></div>';
+        // Period (optional)
+        html += '<div class="form-field"><label>Period (optional)</label><select id="modal-pr-period"><option value="">Any Period</option>';
+        allSchemas.forEach(function(s) {
+            s.periods.forEach(function(p) {
+                html += '<option value="' + p.id + '">P' + p.period_number + ' (' + p.start_time + ')</option>';
+            });
+        });
+        html += '</select></div>';
+        html += '</div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm btn-sm-primary" id="modal-pr-save">Save</button>';
+        html += '</div></div>';
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+        document.getElementById('modal-pr-save').onclick = function() {
+            var payload = {
+                group_id: parseInt(document.getElementById('modal-pr-group').value),
+                activity_id: parseInt(document.getElementById('modal-pr-act').value),
+                day: document.getElementById('modal-pr-day').value,
+                period_id: document.getElementById('modal-pr-period').value || null
+            };
+            fetch('/api/schedule/presets', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) { showToast('Preset added!'); overlay.remove(); loadPresets(); }
+                else showToast('Error: ' + (data.error || 'Unknown'), true);
+            });
+        };
+    }
+
+    function deletePreset(id) {
+        if (!confirm('Delete this preset rule?')) return;
+        fetch('/api/schedule/presets/' + id, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { if (data.success) { showToast('Preset deleted'); loadPresets(); } });
+    }
+
+    /* ========== INIT ========== */
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMeals();
+        loadPeriods();
+        loadLocations();
+        loadActivities();
+        loadGroups();
+        loadPresets();
+    });
+    </script>
+</body>
+</html>

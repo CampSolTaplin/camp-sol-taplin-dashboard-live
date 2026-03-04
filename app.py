@@ -94,6 +94,7 @@ ALL_PERMISSIONS = [
     'take_attendance', 'view_attendance',
     'view_fieldtrips', 'manage_fieldtrips',
     'view_staff',
+    'view_schedule', 'manage_schedule',
 ]
 
 PERMISSION_LABELS = {
@@ -113,6 +114,8 @@ PERMISSION_LABELS = {
     'view_fieldtrips': 'View Field Trips',
     'manage_fieldtrips': 'Manage Field Trips',
     'view_staff': 'View Staff Pipeline',
+    'view_schedule': 'View Schedule Config',
+    'manage_schedule': 'Manage Schedule',
 }
 
 ROLE_DEFAULT_PERMISSIONS = {
@@ -242,6 +245,83 @@ class PushSubscription(db.Model):
     p256dh_key = db.Column(db.Text, nullable=False)
     auth_key = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ==================== SCHEDULE MODELS ====================
+
+class SchedulePeriodSchema(db.Model):
+    __tablename__ = 'schedule_period_schemas'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    active = db.Column(db.Boolean, default=True)
+
+class SchedulePeriod(db.Model):
+    __tablename__ = 'schedule_periods'
+    id = db.Column(db.Integer, primary_key=True)
+    schema_id = db.Column(db.Integer, db.ForeignKey('schedule_period_schemas.id'), nullable=False)
+    period_number = db.Column(db.Integer, nullable=False)
+    start_time = db.Column(db.String(10), nullable=False)
+    end_time = db.Column(db.String(10), nullable=False)
+    duration_min = db.Column(db.Integer, nullable=False, default=40)
+    __table_args__ = (db.UniqueConstraint('schema_id', 'period_number'),)
+
+class ScheduleLocation(db.Model):
+    __tablename__ = 'schedule_locations'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)
+    zone = db.Column(db.String(100), nullable=True)
+    capacity = db.Column(db.Integer, nullable=True)
+    is_indoor = db.Column(db.Boolean, default=True)
+    availability = db.Column(db.Text, nullable=True)
+    active = db.Column(db.Boolean, default=True)
+
+class ScheduleMeal(db.Model):
+    __tablename__ = 'schedule_meals'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    time_label = db.Column(db.String(50), nullable=True)
+    active = db.Column(db.Boolean, default=True)
+
+class ScheduleActivity(db.Model):
+    __tablename__ = 'schedule_activities'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)
+    location_id = db.Column(db.Integer, db.ForeignKey('schedule_locations.id'), nullable=True)
+    num_periods = db.Column(db.Integer, default=1)
+    min_groups = db.Column(db.Integer, default=1)
+    max_groups = db.Column(db.Integer, default=4)
+    min_campers = db.Column(db.Integer, default=0)
+    max_campers = db.Column(db.Integer, default=50)
+    max_per_day = db.Column(db.Integer, default=0)
+    max_per_week = db.Column(db.Integer, default=0)
+    is_field_trip = db.Column(db.Boolean, default=False)
+    meal_id = db.Column(db.Integer, db.ForeignKey('schedule_meals.id'), nullable=True)
+    availability = db.Column(db.Text, nullable=True)
+    active = db.Column(db.Boolean, default=True)
+
+class ScheduleGroup(db.Model):
+    __tablename__ = 'schedule_groups'
+    id = db.Column(db.Integer, primary_key=True)
+    program = db.Column(db.String(120), nullable=False)
+    group_number = db.Column(db.Integer, nullable=False)
+    label = db.Column(db.String(100), nullable=True)
+    active = db.Column(db.Boolean, default=True)
+    __table_args__ = (db.UniqueConstraint('program', 'group_number'),)
+
+class ScheduleGroupEligibility(db.Model):
+    __tablename__ = 'schedule_group_eligibility'
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('schedule_groups.id'), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey('schedule_activities.id'), nullable=False)
+    __table_args__ = (db.UniqueConstraint('group_id', 'activity_id'),)
+
+class SchedulePreset(db.Model):
+    __tablename__ = 'schedule_presets'
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('schedule_groups.id'), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey('schedule_activities.id'), nullable=False)
+    day = db.Column(db.String(10), nullable=False)
+    period_id = db.Column(db.Integer, db.ForeignKey('schedule_periods.id'), nullable=True)
+    __table_args__ = (db.UniqueConstraint('group_id', 'activity_id', 'day'),)
 
 # ==================== INIT DB & DEFAULT USERS ====================
 
@@ -4631,6 +4711,569 @@ def api_fieldtrips_group_days_update():
         db.session.add(GlobalSetting(key='fieldtrip_group_days', value=json.dumps(group_days)))
     db.session.commit()
     return jsonify({'success': True, 'group_days': group_days})
+
+
+# ==================== SCHEDULE ROUTES ====================
+
+@app.route('/schedule/admin')
+@login_required
+def admin_schedule():
+    """Admin page for managing schedule configuration."""
+    if not current_user.has_permission('manage_schedule'):
+        flash('Access denied.', 'error')
+        return redirect(url_for('dashboard'))
+    return render_template('admin_schedule.html',
+                           user=current_user,
+                           active_page='admin_schedule')
+
+# ---------- Meals ----------
+
+@app.route('/api/schedule/meals', methods=['GET'])
+@login_required
+def api_schedule_meals():
+    if not current_user.has_permission('view_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    include_inactive = request.args.get('include_inactive', 'false') == 'true'
+    q = ScheduleMeal.query
+    if not include_inactive:
+        q = q.filter_by(active=True)
+    meals = q.order_by(ScheduleMeal.name).all()
+    return jsonify({'meals': [{'id': m.id, 'name': m.name, 'time_label': m.time_label, 'active': m.active} for m in meals]})
+
+@app.route('/api/schedule/meals', methods=['POST'])
+@login_required
+def api_schedule_meals_create():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    if ScheduleMeal.query.filter_by(name=name).first():
+        return jsonify({'error': f'Meal "{name}" already exists'}), 400
+    m = ScheduleMeal(name=name, time_label=(data.get('time_label') or '').strip())
+    db.session.add(m)
+    db.session.commit()
+    return jsonify({'success': True, 'meal': {'id': m.id, 'name': m.name, 'time_label': m.time_label, 'active': m.active}})
+
+@app.route('/api/schedule/meals/<int:meal_id>', methods=['PUT'])
+@login_required
+def api_schedule_meals_update(meal_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    m = ScheduleMeal.query.get(meal_id)
+    if not m:
+        return jsonify({'error': 'Meal not found'}), 404
+    data = request.get_json()
+    if 'name' in data:
+        new_name = (data['name'] or '').strip()
+        if new_name and new_name != m.name:
+            existing = ScheduleMeal.query.filter_by(name=new_name).first()
+            if existing and existing.id != m.id:
+                return jsonify({'error': f'Meal "{new_name}" already exists'}), 400
+            m.name = new_name
+    if 'time_label' in data:
+        m.time_label = (data['time_label'] or '').strip()
+    if 'active' in data:
+        m.active = bool(data['active'])
+    db.session.commit()
+    return jsonify({'success': True, 'meal': {'id': m.id, 'name': m.name, 'time_label': m.time_label, 'active': m.active}})
+
+@app.route('/api/schedule/meals/<int:meal_id>', methods=['DELETE'])
+@login_required
+def api_schedule_meals_delete(meal_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    m = ScheduleMeal.query.get(meal_id)
+    if not m:
+        return jsonify({'error': 'Meal not found'}), 404
+    m.active = False
+    db.session.commit()
+    return jsonify({'success': True})
+
+# ---------- Period Schemas & Periods ----------
+
+@app.route('/api/schedule/periods', methods=['GET'])
+@login_required
+def api_schedule_periods():
+    if not current_user.has_permission('view_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    schemas = SchedulePeriodSchema.query.filter_by(active=True).order_by(SchedulePeriodSchema.name).all()
+    result = []
+    for s in schemas:
+        periods = SchedulePeriod.query.filter_by(schema_id=s.id).order_by(SchedulePeriod.period_number).all()
+        result.append({
+            'id': s.id, 'name': s.name, 'active': s.active,
+            'periods': [{'id': p.id, 'period_number': p.period_number, 'start_time': p.start_time,
+                         'end_time': p.end_time, 'duration_min': p.duration_min} for p in periods]
+        })
+    return jsonify({'schemas': result})
+
+@app.route('/api/schedule/periods/schemas', methods=['POST'])
+@login_required
+def api_schedule_schema_create():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    if SchedulePeriodSchema.query.filter_by(name=name).first():
+        return jsonify({'error': f'Schema "{name}" already exists'}), 400
+    s = SchedulePeriodSchema(name=name)
+    db.session.add(s)
+    db.session.commit()
+    return jsonify({'success': True, 'schema': {'id': s.id, 'name': s.name, 'active': s.active, 'periods': []}})
+
+@app.route('/api/schedule/periods/schemas/<int:schema_id>', methods=['PUT'])
+@login_required
+def api_schedule_schema_update(schema_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    s = SchedulePeriodSchema.query.get(schema_id)
+    if not s:
+        return jsonify({'error': 'Schema not found'}), 404
+    data = request.get_json()
+    if 'name' in data:
+        new_name = (data['name'] or '').strip()
+        if new_name and new_name != s.name:
+            existing = SchedulePeriodSchema.query.filter_by(name=new_name).first()
+            if existing and existing.id != s.id:
+                return jsonify({'error': f'Schema "{new_name}" already exists'}), 400
+            s.name = new_name
+    if 'active' in data:
+        s.active = bool(data['active'])
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/schedule/periods', methods=['POST'])
+@login_required
+def api_schedule_period_create():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    schema_id = data.get('schema_id')
+    if not schema_id or not SchedulePeriodSchema.query.get(schema_id):
+        return jsonify({'error': 'Valid schema_id is required'}), 400
+    period_number = data.get('period_number')
+    start_time = (data.get('start_time') or '').strip()
+    end_time = (data.get('end_time') or '').strip()
+    if not period_number or not start_time or not end_time:
+        return jsonify({'error': 'period_number, start_time, and end_time are required'}), 400
+    existing = SchedulePeriod.query.filter_by(schema_id=schema_id, period_number=int(period_number)).first()
+    if existing:
+        return jsonify({'error': f'Period {period_number} already exists in this schema'}), 400
+    p = SchedulePeriod(schema_id=schema_id, period_number=int(period_number),
+                       start_time=start_time, end_time=end_time,
+                       duration_min=int(data.get('duration_min', 40)))
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({'success': True, 'period': {'id': p.id, 'period_number': p.period_number,
+                    'start_time': p.start_time, 'end_time': p.end_time, 'duration_min': p.duration_min}})
+
+@app.route('/api/schedule/periods/<int:period_id>', methods=['PUT'])
+@login_required
+def api_schedule_period_update(period_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    p = SchedulePeriod.query.get(period_id)
+    if not p:
+        return jsonify({'error': 'Period not found'}), 404
+    data = request.get_json()
+    if 'start_time' in data:
+        p.start_time = (data['start_time'] or '').strip()
+    if 'end_time' in data:
+        p.end_time = (data['end_time'] or '').strip()
+    if 'duration_min' in data:
+        p.duration_min = int(data['duration_min'])
+    if 'period_number' in data:
+        new_num = int(data['period_number'])
+        existing = SchedulePeriod.query.filter_by(schema_id=p.schema_id, period_number=new_num).first()
+        if existing and existing.id != p.id:
+            return jsonify({'error': f'Period {new_num} already exists in this schema'}), 400
+        p.period_number = new_num
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/schedule/periods/<int:period_id>', methods=['DELETE'])
+@login_required
+def api_schedule_period_delete(period_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    p = SchedulePeriod.query.get(period_id)
+    if not p:
+        return jsonify({'error': 'Period not found'}), 404
+    db.session.delete(p)
+    db.session.commit()
+    return jsonify({'success': True})
+
+# ---------- Locations ----------
+
+@app.route('/api/schedule/locations', methods=['GET'])
+@login_required
+def api_schedule_locations():
+    if not current_user.has_permission('view_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    include_inactive = request.args.get('include_inactive', 'false') == 'true'
+    q = ScheduleLocation.query
+    if not include_inactive:
+        q = q.filter_by(active=True)
+    locs = q.order_by(ScheduleLocation.name).all()
+    return jsonify({'locations': [{'id': l.id, 'name': l.name, 'zone': l.zone,
+                    'capacity': l.capacity, 'is_indoor': l.is_indoor,
+                    'availability': json.loads(l.availability) if l.availability else None,
+                    'active': l.active} for l in locs]})
+
+@app.route('/api/schedule/locations', methods=['POST'])
+@login_required
+def api_schedule_locations_create():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    if ScheduleLocation.query.filter_by(name=name).first():
+        return jsonify({'error': f'Location "{name}" already exists'}), 400
+    loc = ScheduleLocation(
+        name=name,
+        zone=(data.get('zone') or '').strip() or None,
+        capacity=int(data['capacity']) if data.get('capacity') else None,
+        is_indoor=data.get('is_indoor', True),
+        availability=json.dumps(data['availability']) if data.get('availability') else None
+    )
+    db.session.add(loc)
+    db.session.commit()
+    return jsonify({'success': True, 'location': {'id': loc.id, 'name': loc.name, 'zone': loc.zone,
+                    'capacity': loc.capacity, 'is_indoor': loc.is_indoor,
+                    'availability': json.loads(loc.availability) if loc.availability else None,
+                    'active': loc.active}})
+
+@app.route('/api/schedule/locations/<int:loc_id>', methods=['PUT'])
+@login_required
+def api_schedule_locations_update(loc_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    loc = ScheduleLocation.query.get(loc_id)
+    if not loc:
+        return jsonify({'error': 'Location not found'}), 404
+    data = request.get_json()
+    if 'name' in data:
+        new_name = (data['name'] or '').strip()
+        if new_name and new_name != loc.name:
+            existing = ScheduleLocation.query.filter_by(name=new_name).first()
+            if existing and existing.id != loc.id:
+                return jsonify({'error': f'Location "{new_name}" already exists'}), 400
+            loc.name = new_name
+    if 'zone' in data:
+        loc.zone = (data['zone'] or '').strip() or None
+    if 'capacity' in data:
+        loc.capacity = int(data['capacity']) if data['capacity'] else None
+    if 'is_indoor' in data:
+        loc.is_indoor = bool(data['is_indoor'])
+    if 'availability' in data:
+        loc.availability = json.dumps(data['availability']) if data['availability'] else None
+    if 'active' in data:
+        loc.active = bool(data['active'])
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/schedule/locations/<int:loc_id>', methods=['DELETE'])
+@login_required
+def api_schedule_locations_delete(loc_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    loc = ScheduleLocation.query.get(loc_id)
+    if not loc:
+        return jsonify({'error': 'Location not found'}), 404
+    loc.active = False
+    db.session.commit()
+    return jsonify({'success': True})
+
+# ---------- Activities ----------
+
+@app.route('/api/schedule/activities', methods=['GET'])
+@login_required
+def api_schedule_activities():
+    if not current_user.has_permission('view_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    include_inactive = request.args.get('include_inactive', 'false') == 'true'
+    q = ScheduleActivity.query
+    if not include_inactive:
+        q = q.filter_by(active=True)
+    acts = q.order_by(ScheduleActivity.name).all()
+    # Preload location & meal names
+    loc_map = {l.id: l.name for l in ScheduleLocation.query.all()}
+    meal_map = {m.id: m.name for m in ScheduleMeal.query.all()}
+    return jsonify({'activities': [{
+        'id': a.id, 'name': a.name, 'location_id': a.location_id,
+        'location_name': loc_map.get(a.location_id, ''),
+        'num_periods': a.num_periods, 'min_groups': a.min_groups, 'max_groups': a.max_groups,
+        'min_campers': a.min_campers, 'max_campers': a.max_campers,
+        'max_per_day': a.max_per_day, 'max_per_week': a.max_per_week,
+        'is_field_trip': a.is_field_trip, 'meal_id': a.meal_id,
+        'meal_name': meal_map.get(a.meal_id, ''),
+        'availability': json.loads(a.availability) if a.availability else None,
+        'active': a.active
+    } for a in acts]})
+
+@app.route('/api/schedule/activities', methods=['POST'])
+@login_required
+def api_schedule_activities_create():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    if ScheduleActivity.query.filter_by(name=name).first():
+        return jsonify({'error': f'Activity "{name}" already exists'}), 400
+    a = ScheduleActivity(
+        name=name,
+        location_id=int(data['location_id']) if data.get('location_id') else None,
+        num_periods=int(data.get('num_periods', 1)),
+        min_groups=int(data.get('min_groups', 1)),
+        max_groups=int(data.get('max_groups', 4)),
+        min_campers=int(data.get('min_campers', 0)),
+        max_campers=int(data.get('max_campers', 50)),
+        max_per_day=int(data.get('max_per_day', 0)),
+        max_per_week=int(data.get('max_per_week', 0)),
+        is_field_trip=bool(data.get('is_field_trip', False)),
+        meal_id=int(data['meal_id']) if data.get('meal_id') else None,
+        availability=json.dumps(data['availability']) if data.get('availability') else None
+    )
+    db.session.add(a)
+    db.session.commit()
+    loc_name = ''
+    if a.location_id:
+        loc = ScheduleLocation.query.get(a.location_id)
+        loc_name = loc.name if loc else ''
+    meal_name = ''
+    if a.meal_id:
+        meal = ScheduleMeal.query.get(a.meal_id)
+        meal_name = meal.name if meal else ''
+    return jsonify({'success': True, 'activity': {
+        'id': a.id, 'name': a.name, 'location_id': a.location_id, 'location_name': loc_name,
+        'num_periods': a.num_periods, 'min_groups': a.min_groups, 'max_groups': a.max_groups,
+        'min_campers': a.min_campers, 'max_campers': a.max_campers,
+        'max_per_day': a.max_per_day, 'max_per_week': a.max_per_week,
+        'is_field_trip': a.is_field_trip, 'meal_id': a.meal_id, 'meal_name': meal_name,
+        'availability': json.loads(a.availability) if a.availability else None,
+        'active': a.active
+    }})
+
+@app.route('/api/schedule/activities/<int:act_id>', methods=['PUT'])
+@login_required
+def api_schedule_activities_update(act_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    a = ScheduleActivity.query.get(act_id)
+    if not a:
+        return jsonify({'error': 'Activity not found'}), 404
+    data = request.get_json()
+    if 'name' in data:
+        new_name = (data['name'] or '').strip()
+        if new_name and new_name != a.name:
+            existing = ScheduleActivity.query.filter_by(name=new_name).first()
+            if existing and existing.id != a.id:
+                return jsonify({'error': f'Activity "{new_name}" already exists'}), 400
+            a.name = new_name
+    if 'location_id' in data:
+        a.location_id = int(data['location_id']) if data['location_id'] else None
+    if 'num_periods' in data:
+        a.num_periods = int(data['num_periods'])
+    if 'min_groups' in data:
+        a.min_groups = int(data['min_groups'])
+    if 'max_groups' in data:
+        a.max_groups = int(data['max_groups'])
+    if 'min_campers' in data:
+        a.min_campers = int(data['min_campers'])
+    if 'max_campers' in data:
+        a.max_campers = int(data['max_campers'])
+    if 'max_per_day' in data:
+        a.max_per_day = int(data['max_per_day'])
+    if 'max_per_week' in data:
+        a.max_per_week = int(data['max_per_week'])
+    if 'is_field_trip' in data:
+        a.is_field_trip = bool(data['is_field_trip'])
+    if 'meal_id' in data:
+        a.meal_id = int(data['meal_id']) if data['meal_id'] else None
+    if 'availability' in data:
+        a.availability = json.dumps(data['availability']) if data['availability'] else None
+    if 'active' in data:
+        a.active = bool(data['active'])
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/schedule/activities/<int:act_id>', methods=['DELETE'])
+@login_required
+def api_schedule_activities_delete(act_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    a = ScheduleActivity.query.get(act_id)
+    if not a:
+        return jsonify({'error': 'Activity not found'}), 404
+    a.active = False
+    db.session.commit()
+    return jsonify({'success': True})
+
+# ---------- Groups ----------
+
+@app.route('/api/schedule/groups', methods=['GET'])
+@login_required
+def api_schedule_groups():
+    if not current_user.has_permission('view_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    groups = ScheduleGroup.query.filter_by(active=True).order_by(ScheduleGroup.program, ScheduleGroup.group_number).all()
+    # Compute enrollment counts from GroupAssignment
+    enrollment_counts = {}
+    for g in groups:
+        count = GroupAssignment.query.filter_by(program=g.program, group_number=g.group_number).count()
+        enrollment_counts[g.id] = count
+    # Get eligibility counts
+    elig_counts = {}
+    for g in groups:
+        elig_counts[g.id] = ScheduleGroupEligibility.query.filter_by(group_id=g.id).count()
+    return jsonify({'groups': [{
+        'id': g.id, 'program': g.program, 'group_number': g.group_number,
+        'label': g.label, 'active': g.active,
+        'enrollment_count': enrollment_counts.get(g.id, 0),
+        'eligible_activities': elig_counts.get(g.id, 0)
+    } for g in groups]})
+
+@app.route('/api/schedule/groups/sync', methods=['POST'])
+@login_required
+def api_schedule_groups_sync():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    programs = ProgramSetting.query.filter_by(active=True).order_by(ProgramSetting.program).all()
+    created = 0
+    skipped = 0
+    for prog in programs:
+        # Find distinct group numbers for this program
+        distinct_groups = db.session.query(GroupAssignment.group_number).filter_by(
+            program=prog.program
+        ).distinct().all()
+        group_numbers = sorted(set([g[0] for g in distinct_groups if g[0] and g[0] > 0]))
+        if not group_numbers:
+            # Create at least group 1 for programs with no assignments yet
+            group_numbers = [1]
+        for gn in group_numbers:
+            existing = ScheduleGroup.query.filter_by(program=prog.program, group_number=gn).first()
+            if existing:
+                skipped += 1
+            else:
+                db.session.add(ScheduleGroup(program=prog.program, group_number=gn))
+                created += 1
+    db.session.commit()
+    return jsonify({'success': True, 'created': created, 'skipped': skipped})
+
+@app.route('/api/schedule/groups/<int:group_id>', methods=['PUT'])
+@login_required
+def api_schedule_groups_update(group_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    g = ScheduleGroup.query.get(group_id)
+    if not g:
+        return jsonify({'error': 'Group not found'}), 404
+    data = request.get_json()
+    if 'label' in data:
+        g.label = (data['label'] or '').strip() or None
+    if 'active' in data:
+        g.active = bool(data['active'])
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/schedule/groups/<int:group_id>/eligibility', methods=['GET'])
+@login_required
+def api_schedule_group_eligibility_get(group_id):
+    if not current_user.has_permission('view_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    g = ScheduleGroup.query.get(group_id)
+    if not g:
+        return jsonify({'error': 'Group not found'}), 404
+    eligs = ScheduleGroupEligibility.query.filter_by(group_id=group_id).all()
+    return jsonify({'activity_ids': [e.activity_id for e in eligs]})
+
+@app.route('/api/schedule/groups/<int:group_id>/eligibility', methods=['POST'])
+@login_required
+def api_schedule_group_eligibility_set(group_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    g = ScheduleGroup.query.get(group_id)
+    if not g:
+        return jsonify({'error': 'Group not found'}), 404
+    data = request.get_json()
+    activity_ids = data.get('activity_ids', [])
+    # Clear existing and re-create
+    ScheduleGroupEligibility.query.filter_by(group_id=group_id).delete()
+    for aid in activity_ids:
+        db.session.add(ScheduleGroupEligibility(group_id=group_id, activity_id=int(aid)))
+    db.session.commit()
+    return jsonify({'success': True, 'count': len(activity_ids)})
+
+# ---------- Presets ----------
+
+@app.route('/api/schedule/presets', methods=['GET'])
+@login_required
+def api_schedule_presets():
+    if not current_user.has_permission('view_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    presets = SchedulePreset.query.order_by(SchedulePreset.day, SchedulePreset.group_id).all()
+    # Preload names
+    group_map = {g.id: g for g in ScheduleGroup.query.all()}
+    act_map = {a.id: a.name for a in ScheduleActivity.query.all()}
+    period_map = {p.id: p for p in SchedulePeriod.query.all()}
+    result = []
+    for pr in presets:
+        grp = group_map.get(pr.group_id)
+        per = period_map.get(pr.period_id) if pr.period_id else None
+        result.append({
+            'id': pr.id, 'group_id': pr.group_id,
+            'group_label': (grp.label or (grp.program + ' G' + str(grp.group_number))) if grp else '',
+            'activity_id': pr.activity_id,
+            'activity_name': act_map.get(pr.activity_id, ''),
+            'day': pr.day,
+            'period_id': pr.period_id,
+            'period_label': ('P' + str(per.period_number) + ' ' + per.start_time) if per else ''
+        })
+    return jsonify({'presets': result})
+
+@app.route('/api/schedule/presets', methods=['POST'])
+@login_required
+def api_schedule_presets_create():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    group_id = data.get('group_id')
+    activity_id = data.get('activity_id')
+    day = (data.get('day') or '').strip()
+    if not group_id or not activity_id or not day:
+        return jsonify({'error': 'group_id, activity_id, and day are required'}), 400
+    if day not in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']:
+        return jsonify({'error': 'day must be Monday-Friday'}), 400
+    existing = SchedulePreset.query.filter_by(group_id=int(group_id), activity_id=int(activity_id), day=day).first()
+    if existing:
+        return jsonify({'error': 'This preset already exists'}), 400
+    pr = SchedulePreset(
+        group_id=int(group_id), activity_id=int(activity_id), day=day,
+        period_id=int(data['period_id']) if data.get('period_id') else None
+    )
+    db.session.add(pr)
+    db.session.commit()
+    return jsonify({'success': True, 'preset': {'id': pr.id}})
+
+@app.route('/api/schedule/presets/<int:preset_id>', methods=['DELETE'])
+@login_required
+def api_schedule_presets_delete(preset_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    pr = SchedulePreset.query.get(preset_id)
+    if not pr:
+        return jsonify({'error': 'Preset not found'}), 404
+    db.session.delete(pr)
+    db.session.commit()
+    return jsonify({'success': True})
 
 
 # ==================== STAFF PIPELINE ====================
