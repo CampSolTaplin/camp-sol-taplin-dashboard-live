@@ -290,8 +290,9 @@ function renderParticipantsTable(participants, list, program, week) {
         }
 
         groupIndex++;
-        const rowClass = groupVal > 0 ? ' class="group-row group-' + groupVal + '"' : '';
-        html += '<tr' + rowClass + '>';
+        var isWaitlist = p.status_id === 4;
+        var rowCls = (groupVal > 0 ? 'group-row group-' + groupVal : '') + (isWaitlist ? ' waitlist-row' : '');
+        html += '<tr' + (rowCls ? ' class="' + rowCls.trim() + '"' : '') + '>';
         html += '<td>' + groupIndex + '</td>';
 
         // Group column
@@ -309,7 +310,7 @@ function renderParticipantsTable(participants, list, program, week) {
             html += '<td class="group-cell">' + groupDisplay + '</td>';
         }
 
-        html += '<td class="participant-name-cell">' + p.first_name + ' ' + p.last_name + '</td>';
+        html += '<td class="participant-name-cell">' + p.first_name + ' ' + p.last_name + (isWaitlist ? ' <span class="wl-name-badge">WL</span>' : '') + '</td>';
         html += '<td>' + (p.grade || '-') + '</td>';
         html += '<td>' + (p.gender || '-') + '</td>';
         html += '<td>' + (p.share_group_with || '-') + '</td>';

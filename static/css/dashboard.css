@@ -1090,6 +1090,26 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     white-space: nowrap;
 }
 
+.waitlist-row {
+    background: #FEF2F2 !important;
+}
+.waitlist-row:hover {
+    background: #FEE2E2 !important;
+}
+
+.wl-name-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    background: #DC2626;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.5px;
+}
+
 .participant-count {
     text-align: center;
     padding: 12px 16px;
