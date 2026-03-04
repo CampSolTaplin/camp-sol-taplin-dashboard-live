@@ -3035,13 +3035,13 @@ def upload_share_group():
                 if sgw_clean:
                     count += 1
 
-        # Save to database (persistent across deploys)
-        for pid_str, sgw_val in share_group_data.items():
-            db.session.merge(ShareGroupData(
-                person_id=pid_str,
-                share_group_with=sgw_val,
-                uploaded_at=datetime.utcnow()
-            ))
+        # Save to database (persistent across deploys) — bulk replace
+        ShareGroupData.query.delete()
+        now = datetime.utcnow()
+        db.session.bulk_save_objects([
+            ShareGroupData(person_id=pid_str, share_group_with=sgw_val, uploaded_at=now)
+            for pid_str, sgw_val in share_group_data.items()
+        ])
         db.session.commit()
 
         # Also save to JSON file as backup
