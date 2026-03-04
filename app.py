@@ -323,6 +323,14 @@ class SchedulePreset(db.Model):
     period_id = db.Column(db.Integer, db.ForeignKey('schedule_periods.id'), nullable=True)
     __table_args__ = (db.UniqueConstraint('group_id', 'activity_id', 'day'),)
 
+# ==================== SHARE GROUP MODEL ====================
+
+class ShareGroupData(db.Model):
+    __tablename__ = 'share_group_data'
+    person_id = db.Column(db.String(20), primary_key=True)
+    share_group_with = db.Column(db.Text, nullable=True)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 # ==================== INIT DB & DEFAULT USERS ====================
 
 with app.app_context():
@@ -1898,19 +1906,32 @@ def _fetch_and_cache_persons(pids_to_fetch, persons_cache):
                     guardian_map[gid] = g
             print(f"Got {len(guardian_map)} guardian results from API")
 
-        # Step 3: Load "Share Group With" from uploaded CSV data
+        # Step 3: Load "Share Group With" from database (persisted from CSV upload)
         share_group_map = {}  # pid -> value
-        sgw_file = os.path.join(DATA_FOLDER, 'share_group.json')
         try:
-            if os.path.exists(sgw_file):
-                with open(sgw_file, 'r') as f:
-                    share_group_map = json.load(f)
-                print(f"Loaded {sum(1 for v in share_group_map.values() if v)} "
-                      f"Share Group With entries from file")
-            else:
-                print("No share_group.json file found (upload CSV from CampMinder)")
+            sgw_rows = ShareGroupData.query.all()
+            for row in sgw_rows:
+                if row.share_group_with:
+                    share_group_map[row.person_id] = row.share_group_with
+            print(f"Loaded {len(share_group_map)} Share Group With entries from database")
+            if not share_group_map:
+                # Fallback: try legacy JSON file and migrate to DB
+                sgw_file = os.path.join(DATA_FOLDER, 'share_group.json')
+                if os.path.exists(sgw_file):
+                    with open(sgw_file, 'r') as f:
+                        legacy_data = json.load(f)
+                    if legacy_data:
+                        for pid_str, sgw_val in legacy_data.items():
+                            if sgw_val:
+                                share_group_map[pid_str] = sgw_val
+                                db.session.merge(ShareGroupData(
+                                    person_id=pid_str,
+                                    share_group_with=sgw_val
+                                ))
+                        db.session.commit()
+                        print(f"Migrated {len(share_group_map)} entries from share_group.json to database")
         except Exception as e:
-            print(f"Error loading share_group.json: {e}")
+            print(f"Error loading share_group data: {e}")
 
         # Step 3.5: Build sibling map from guardian wards
         # Each guardian's Relatives with IsWard=True are their children
@@ -2513,15 +2534,14 @@ def _generate_enrollment_excel(programs):
                     pid_programs_by_week[wk][pid] = []
                 pid_programs_by_week[wk][pid].append(prog_name)
 
-    # Load Share Group With data (from uploaded CSV)
+    # Load Share Group With data from database
     share_group_data = {}
-    sgw_file = os.path.join(DATA_FOLDER, 'share_group.json')
-    if os.path.exists(sgw_file):
-        try:
-            with open(sgw_file, 'r') as f:
-                share_group_data = json.load(f)
-        except Exception:
-            pass
+    try:
+        for row in ShareGroupData.query.all():
+            if row.share_group_with:
+                share_group_data[row.person_id] = row.share_group_with
+    except Exception:
+        pass
 
     # Create workbook
     wb = Workbook()
@@ -3015,10 +3035,22 @@ def upload_share_group():
                 if sgw_clean:
                     count += 1
 
-        # Save to JSON file
+        # Save to database (persistent across deploys)
+        for pid_str, sgw_val in share_group_data.items():
+            db.session.merge(ShareGroupData(
+                person_id=pid_str,
+                share_group_with=sgw_val,
+                uploaded_at=datetime.utcnow()
+            ))
+        db.session.commit()
+
+        # Also save to JSON file as backup
         sgw_file = os.path.join(DATA_FOLDER, 'share_group.json')
-        with open(sgw_file, 'w') as f:
-            json.dump(share_group_data, f)
+        try:
+            with open(sgw_file, 'w') as f:
+                json.dump(share_group_data, f)
+        except Exception:
+            pass  # DB is the source of truth now
 
         # Also update persons_cache if it exists
         persons_cache = _load_persons_cache()
@@ -3030,15 +3062,18 @@ def upload_share_group():
 
         if updated > 0:
             persons_cache_file = os.path.join(DATA_FOLDER, 'persons_cache.json')
-            with open(persons_cache_file, 'w') as f:
-                json.dump(persons_cache, f)
+            try:
+                with open(persons_cache_file, 'w') as f:
+                    json.dump(persons_cache, f)
+            except Exception:
+                pass
 
-        print(f"Share Group With: loaded {count} entries with data, "
+        print(f"Share Group With: saved {count} entries to database, "
               f"updated {updated} cached persons")
 
         return jsonify({
             'success': True,
-            'message': f'Imported {count} Share Group With entries. '
+            'message': f'Imported {count} Share Group With entries to database. '
                        f'Updated {updated} cached campers.'
         })
 
