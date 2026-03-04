@@ -436,18 +436,23 @@
                                 data-w1="{{ prog.week_1 or 0 }}" data-w2="{{ prog.week_2 or 0 }}" data-w3="{{ prog.week_3 or 0 }}"
                                 data-w4="{{ prog.week_4 or 0 }}" data-w5="{{ prog.week_5 or 0 }}" data-w6="{{ prog.week_6 or 0 }}"
                                 data-w7="{{ prog.week_7 or 0 }}" data-w8="{{ prog.week_8 or 0 }}" data-w9="{{ prog.week_9 or 0 }}"
-                                data-total="{{ prog.total }}" data-fte="{{ prog.fte }}" data-goal="{{ prog.goal }}">
+                                data-total="{{ prog.total }}" data-fte="{{ prog.fte }}" data-goal="{{ prog.goal }}"
+                                data-wl1="{{ prog.get('wl_1', 0) }}" data-wl2="{{ prog.get('wl_2', 0) }}" data-wl3="{{ prog.get('wl_3', 0) }}"
+                                data-wl4="{{ prog.get('wl_4', 0) }}" data-wl5="{{ prog.get('wl_5', 0) }}" data-wl6="{{ prog.get('wl_6', 0) }}"
+                                data-wl7="{{ prog.get('wl_7', 0) }}" data-wl8="{{ prog.get('wl_8', 0) }}" data-wl9="{{ prog.get('wl_9', 0) }}">
                                 <td class="sticky-col program-name" style="background-color: {{ prog.category_color_light }};">
                                     {{ prog.program }}
                                 </td>
                                 {% set active_weeks = prog.get('weeks_active', '1,2,3,4,5,6,7,8,9').split(',') %}
                                 {% for w in range(1, 10) %}
                                 {% if w|string in active_weeks %}
-                                <td class="week-cell clickable"
+                                {% set wl = prog.get('wl_' ~ w, 0) %}
+                                <td class="week-cell clickable{{ ' has-waitlist' if wl > 0 }}"
                                     data-program="{{ prog.program }}"
                                     data-week="{{ w }}"
+                                    data-wl="{{ wl }}"
                                     onclick="showParticipants('{{ prog.program }}', {{ w }})">
-                                    {{ prog['week_' ~ w] or 0 }}
+                                    {{ prog['week_' ~ w] or 0 }}{% if wl > 0 %}<span class="wl-badge" title="{{ wl }} waitlisted">+{{ wl }}</span>{% endif %}
                                 </td>
                                 {% else %}
                                 <td class="week-cell week-inactive">-</td>

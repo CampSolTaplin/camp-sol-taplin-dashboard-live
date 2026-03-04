@@ -1073,7 +1073,9 @@ class EnrollmentDataProcessor:
             if 1 <= week <= 9:
                 programs_data[program]['weeks'][week].append({
                     'person_id': person_id,
-                    'enrollment_date': enrollment_date
+                    'enrollment_date': enrollment_date,
+                    'status_id': e.get('status_id', 2),
+                    'status_name': e.get('status_name', 'Enrolled')
                 })
                 programs_data[program]['total'] += 1
             
@@ -1104,6 +1106,10 @@ class EnrollmentDataProcessor:
             weeks_offered = ps.get('weeks_offered', 9)
 
             week_counts = {f'week_{i}': len(data['weeks'][i]) for i in range(1, 10)}
+            # Waitlist counts per week (status_id=4 means Applied/Waitlisted)
+            wl_counts = {}
+            for i in range(1, 10):
+                wl_counts[f'wl_{i}'] = sum(1 for c in data['weeks'][i] if c.get('status_id') == 4)
             total = sum(week_counts.values())
             fte = round(total / weeks_offered, 2) if weeks_offered > 0 else 0
             percent = round((fte / goal * 100) if goal > 0 else 0, 1)
@@ -1112,6 +1118,7 @@ class EnrollmentDataProcessor:
                 'program': program_name,
                 'category': category,
                 **week_counts,
+                **wl_counts,
                 'total': total,
                 'fte': fte,
                 'goal': goal,
@@ -1307,7 +1314,9 @@ class EnrollmentDataProcessor:
                         'f1p1_email': person_info.get('f1p1_email', ''),
                         'f1p1_email2': person_info.get('f1p1_email2', ''),
                         'f1p2_email': person_info.get('f1p2_email', ''),
-                        'f1p2_email2': person_info.get('f1p2_email2', '')
+                        'f1p2_email2': person_info.get('f1p2_email2', ''),
+                        'status_id': c.get('status_id', 2),
+                        'status_name': c.get('status_name', 'Enrolled')
                     })
                 # Sort by last name, then first name
                 week_participants.sort(key=lambda p: (p['last_name'].lower(), p['first_name'].lower()))

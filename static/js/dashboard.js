@@ -263,6 +263,7 @@ function renderParticipantsTable(participants, list, program, week) {
     html += '<th>#</th>';
     html += '<th>Group</th>';
     html += '<th>Name</th>';
+    html += '<th>Grade</th>';
     html += '<th>Gender</th>';
     html += '<th>Share Group With</th>';
     html += '<th>F1P1 Login/Email</th>';
@@ -284,7 +285,7 @@ function renderParticipantsTable(participants, list, program, week) {
             const separatorLabel = groupVal === 0 ? 'Unassigned' : 'Group ' + groupVal;
             const separatorIcon = groupVal === 0 ? '⬜' : '📌';
             html += '<tr class="group-separator group-separator-' + groupVal + '">';
-            html += '<td colspan="9">' + separatorIcon + ' ' + separatorLabel + '</td>';
+            html += '<td colspan="10">' + separatorIcon + ' ' + separatorLabel + '</td>';
             html += '</tr>';
         }
 
@@ -309,6 +310,7 @@ function renderParticipantsTable(participants, list, program, week) {
         }
 
         html += '<td class="participant-name-cell">' + p.first_name + ' ' + p.last_name + '</td>';
+        html += '<td>' + (p.grade || '-') + '</td>';
         html += '<td>' + (p.gender || '-') + '</td>';
         html += '<td>' + (p.share_group_with || '-') + '</td>';
         html += '<td>' + (p.f1p1_email || '-') + '</td>';

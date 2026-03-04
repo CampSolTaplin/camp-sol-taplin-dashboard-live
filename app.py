@@ -2257,7 +2257,10 @@ def api_participants(program, week):
             'siblings': ', '.join(info.get('siblings', [])) if isinstance(info.get('siblings'), list) else str(info.get('siblings', '')),
             'aftercare': info.get('aftercare', ''),
             'carpool': info.get('carpool', ''),
-            'group': group_map.get(pid, 0)
+            'grade': info.get('grade', ''),
+            'group': group_map.get(pid, 0),
+            'status_id': p.get('status_id', 2),
+            'status_name': p.get('status_name', 'Enrolled')
         })
 
     # Sort: unassigned first, then by group number, then by last name
