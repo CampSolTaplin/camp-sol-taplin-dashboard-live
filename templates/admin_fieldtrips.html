@@ -743,11 +743,14 @@
         mhtml += '<textarea id="admin-ft-comments" rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box;">' + esc(a.comments || '') + '</textarea>';
 
         mhtml += '<div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px;">';
+        mhtml += '<div style="display:flex;gap:6px;">';
         if (a.id) {
             mhtml += '<button class="btn-sm" id="admin-ft-delete-btn" style="color:#DC2626;border-color:#FECACA;">Delete</button>';
-        } else {
-            mhtml += '<div></div>';
         }
+        if (a.venue_id) {
+            mhtml += '<button class="btn-sm" id="admin-ft-copy-btn" style="color:#7C3AED;border-color:#C4B5FD;">📋 Copy to&hellip;</button>';
+        }
+        mhtml += '</div>';
         mhtml += '<div style="display:flex;gap:8px;">';
         mhtml += '<button class="btn-sm" onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))">Cancel</button>';
         mhtml += '<button class="btn-sm btn-sm-primary" id="admin-ft-save-btn">Save</button>';
@@ -808,6 +811,157 @@
                 });
             };
         }
+
+        // Copy handler
+        var copyBtn = document.getElementById('admin-ft-copy-btn');
+        if (copyBtn) {
+            copyBtn.onclick = function() {
+                document.body.removeChild(overlay);
+                openCopyModal(groupName, week, day, a);
+            };
+        }
+    }
+
+    function openCopyModal(sourceGroup, sourceWeek, sourceDay, sourceAssignment) {
+        // Get venue name
+        var venues = allVenues.length > 0 ? allVenues : (adminFtData.venues || []);
+        var venueName = '';
+        venues.forEach(function(v) { if (v.id === sourceAssignment.venue_id) venueName = v.name; });
+
+        // Get other groups on the same day
+        var dayGroups = [];
+        (adminFtData.groups || []).forEach(function(g) {
+            if (g.day === sourceDay && g.name !== sourceGroup) dayGroups.push(g.name);
+        });
+
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+
+        var modal = document.createElement('div');
+        modal.style.cssText = 'background:white;border-radius:16px;padding:0;max-width:520px;width:90%;max-height:90vh;overflow-y:auto;';
+
+        var h = '<div style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:white;padding:16px 20px;">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        h += '<div><strong style="font-size:16px;">📋 Copy Field Trip</strong><br>';
+        h += '<span style="opacity:0.9;font-size:13px;">' + esc(venueName) + ' &mdash; from ' + esc(sourceGroup) + ' W' + sourceWeek + ' ' + sourceDay + '</span></div>';
+        h += '<span onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))" style="cursor:pointer;font-size:22px;">&times;</span>';
+        h += '</div></div>';
+
+        h += '<div style="padding:20px;">';
+
+        // Target Groups section
+        h += '<label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:8px;">TARGET GROUPS (' + sourceDay + ')</label>';
+        h += '<div style="margin-bottom:4px;"><label style="font-size:13px;cursor:pointer;color:#7C3AED;font-weight:600;">';
+        h += '<input type="checkbox" id="copy-select-all-groups" style="accent-color:#7C3AED;margin-right:4px;"> Select All</label></div>';
+        h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">';
+        dayGroups.forEach(function(gn, i) {
+            h += '<label style="display:flex;align-items:center;gap:4px;font-size:13px;background:#F5F3FF;padding:4px 10px;border-radius:6px;cursor:pointer;">';
+            h += '<input type="checkbox" class="copy-group-cb" value="' + esc(gn) + '" style="accent-color:#7C3AED;"> ' + esc(gn) + '</label>';
+        });
+        if (dayGroups.length === 0) {
+            h += '<span style="color:#9CA3AF;font-size:13px;">No other groups on ' + sourceDay + '</span>';
+        }
+        h += '</div>';
+
+        // Target Weeks section
+        h += '<label style="display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:8px;">TARGET WEEKS</label>';
+        h += '<div style="margin-bottom:4px;"><label style="font-size:13px;cursor:pointer;color:#7C3AED;font-weight:600;">';
+        h += '<input type="checkbox" id="copy-select-all-weeks" style="accent-color:#7C3AED;margin-right:4px;"> Select All</label></div>';
+        h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">';
+        for (var w = 1; w <= 9; w++) {
+            var checked = w === sourceWeek ? ' checked' : '';
+            h += '<label style="display:flex;align-items:center;gap:4px;font-size:13px;background:#F5F3FF;padding:4px 10px;border-radius:6px;cursor:pointer;">';
+            h += '<input type="checkbox" class="copy-week-cb" value="' + w + '"' + checked + ' style="accent-color:#7C3AED;"> W' + w + '</label>';
+        }
+        h += '</div>';
+
+        // Summary + actions
+        h += '<div id="copy-summary" style="font-size:13px;color:#6B7280;margin-bottom:16px;padding:8px 12px;background:#F9FAFB;border-radius:8px;"></div>';
+        h += '<div style="display:flex;gap:8px;justify-content:flex-end;">';
+        h += '<button class="btn-sm" onclick="document.body.removeChild(this.closest(\'div[style*=fixed]\'))">Cancel</button>';
+        h += '<button class="btn-sm" id="copy-execute-btn" style="background:#7C3AED;color:white;border-color:#7C3AED;" disabled>Copy</button>';
+        h += '</div></div>';
+
+        modal.innerHTML = h;
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Wire up Select All checkboxes and summary updates
+        function updateSummary() {
+            var groups = document.querySelectorAll('.copy-group-cb:checked');
+            var weeks = document.querySelectorAll('.copy-week-cb:checked');
+            var g = groups.length, w = weeks.length, total = g * w;
+            var el = document.getElementById('copy-summary');
+            var btn = document.getElementById('copy-execute-btn');
+            if (total > 0) {
+                var confirmed = sourceAssignment.confirmed ? ' ✅ confirmed' : '';
+                el.innerHTML = 'Will copy <strong>' + esc(venueName) + '</strong>' + confirmed + ' to <strong>' + g + ' group(s)</strong> × <strong>' + w + ' week(s)</strong> = <strong>' + total + ' assignment(s)</strong>';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            } else {
+                el.innerHTML = 'Select at least one group and one week.';
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+            }
+        }
+
+        document.getElementById('copy-select-all-groups').onchange = function() {
+            var cbs = document.querySelectorAll('.copy-group-cb');
+            for (var i = 0; i < cbs.length; i++) cbs[i].checked = this.checked;
+            updateSummary();
+        };
+        document.getElementById('copy-select-all-weeks').onchange = function() {
+            var cbs = document.querySelectorAll('.copy-week-cb');
+            for (var i = 0; i < cbs.length; i++) cbs[i].checked = this.checked;
+            updateSummary();
+        };
+        modal.addEventListener('change', function(e) {
+            if (e.target.classList.contains('copy-group-cb') || e.target.classList.contains('copy-week-cb')) {
+                updateSummary();
+            }
+        });
+        updateSummary();
+
+        // Execute copy
+        document.getElementById('copy-execute-btn').onclick = function() {
+            var groups = [], weeks = [];
+            document.querySelectorAll('.copy-group-cb:checked').forEach(function(cb) { groups.push(cb.value); });
+            document.querySelectorAll('.copy-week-cb:checked').forEach(function(cb) { weeks.push(parseInt(cb.value)); });
+
+            var btn = document.getElementById('copy-execute-btn');
+            btn.disabled = true;
+            btn.textContent = 'Copying...';
+
+            fetch('/api/fieldtrips/assignments/copy', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    source_group: sourceGroup,
+                    source_week: sourceWeek,
+                    source_day: sourceDay,
+                    target_groups: groups,
+                    target_weeks: weeks
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    document.body.removeChild(overlay);
+                    showToast('Copied to ' + data.copied + ' assignment(s)!');
+                    loadAdminMatrix();
+                } else {
+                    showToast('Error: ' + (data.error || 'Unknown'), true);
+                    btn.disabled = false;
+                    btn.textContent = 'Copy';
+                }
+            })
+            .catch(function() {
+                showToast('Network error', true);
+                btn.disabled = false;
+                btn.textContent = 'Copy';
+            });
+        };
     }
 
     function esc(str) {

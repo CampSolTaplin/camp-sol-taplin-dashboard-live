@@ -4603,6 +4603,59 @@ def api_fieldtrips_assignments_delete(assignment_id):
     return jsonify({'success': True})
 
 
+@app.route('/api/fieldtrips/assignments/copy', methods=['POST'])
+@login_required
+def api_fieldtrips_assignments_copy():
+    """Copy a field trip assignment from one group to other groups/weeks."""
+    if not current_user.has_permission('manage_fieldtrips'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    source_group = (data.get('source_group') or '').strip()
+    source_week = data.get('source_week')
+    source_day = (data.get('source_day') or '').strip()
+    target_groups = data.get('target_groups', [])
+    target_weeks = data.get('target_weeks', [])
+
+    if not source_group or not source_week or not source_day:
+        return jsonify({'error': 'source_group, source_week, and source_day are required'}), 400
+    if not target_groups or not target_weeks:
+        return jsonify({'error': 'target_groups and target_weeks are required'}), 400
+
+    source_week = int(source_week)
+    source = FieldTripAssignment.query.filter_by(
+        group_name=source_group, week=source_week, day=source_day
+    ).first()
+    if not source or not source.venue_id:
+        return jsonify({'error': 'Source assignment not found or has no venue'}), 404
+
+    day_offsets = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4}
+    copied = 0
+    for tg in target_groups:
+        tg = tg.strip()
+        for tw in target_weeks:
+            tw = int(tw)
+            if tw < 1 or tw > 9:
+                continue
+            a = FieldTripAssignment.query.filter_by(
+                group_name=tg, week=tw, day=source_day
+            ).first()
+            if not a:
+                a = FieldTripAssignment(group_name=tg, week=tw, day=source_day)
+                db.session.add(a)
+            a.venue_id = source.venue_id
+            a.confirmed = source.confirmed
+            a.comments = source.comments
+            # Calculate trip_date for the target week
+            off = day_offsets.get(source_day)
+            if off is not None and tw in CAMP_WEEK_DATES:
+                start = date.fromisoformat(CAMP_WEEK_DATES[tw][0])
+                a.trip_date = start + timedelta(days=off)
+            copied += 1
+
+    db.session.commit()
+    return jsonify({'success': True, 'copied': copied})
+
+
 @app.route('/api/fieldtrips/calculate-buses', methods=['POST'])
 @login_required
 def api_fieldtrips_calculate_buses():
