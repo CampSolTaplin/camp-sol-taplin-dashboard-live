@@ -1106,7 +1106,7 @@ class EnrollmentDataProcessor:
             weeks_offered = ps.get('weeks_offered', 9)
 
             week_counts = {f'week_{i}': len(data['weeks'][i]) for i in range(1, 10)}
-            # Waitlist counts per week (status_id=4 means Applied/Waitlisted)
+            # Applied counts per week (status_id=4 means Applied)
             wl_counts = {}
             for i in range(1, 10):
                 wl_counts[f'wl_{i}'] = sum(1 for c in data['weeks'][i] if c.get('status_id') == 4)

@@ -901,15 +901,15 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     transform: scale(1.1);
 }
 
-.week-cell.has-waitlist {
+.week-cell.has-applied {
     position: relative;
 }
 
-.wl-badge {
+.applied-count {
     display: inline-block;
     font-size: 10px;
     font-weight: 700;
-    color: #DC2626;
+    color: #D97706;
     margin-left: 1px;
     vertical-align: super;
     line-height: 1;
@@ -1090,19 +1090,19 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     white-space: nowrap;
 }
 
-.waitlist-row {
-    background: #FEF2F2 !important;
+.applied-row {
+    background: #FFFBEB !important;
 }
-.waitlist-row:hover {
-    background: #FEE2E2 !important;
+.applied-row:hover {
+    background: #FEF3C7 !important;
 }
 
-.wl-name-badge {
+.applied-badge {
     display: inline-block;
     font-size: 10px;
     font-weight: 700;
     color: white;
-    background: #DC2626;
+    background: #F59E0B;
     padding: 1px 5px;
     border-radius: 4px;
     margin-left: 6px;

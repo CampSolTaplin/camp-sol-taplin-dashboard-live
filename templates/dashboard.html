@@ -447,12 +447,12 @@
                                 {% for w in range(1, 10) %}
                                 {% if w|string in active_weeks %}
                                 {% set wl = prog.get('wl_' ~ w, 0) %}
-                                <td class="week-cell clickable{{ ' has-waitlist' if wl > 0 }}"
+                                <td class="week-cell clickable{{ ' has-applied' if wl > 0 }}"
                                     data-program="{{ prog.program }}"
                                     data-week="{{ w }}"
-                                    data-wl="{{ wl }}"
+                                    data-applied="{{ wl }}"
                                     onclick="showParticipants('{{ prog.program }}', {{ w }})">
-                                    {{ prog['week_' ~ w] or 0 }}{% if wl > 0 %}<span class="wl-badge" title="{{ wl }} waitlisted">+{{ wl }}</span>{% endif %}
+                                    {{ prog['week_' ~ w] or 0 }}{% if wl > 0 %}<span class="applied-count" title="{{ wl }} applied">+{{ wl }}</span>{% endif %}
                                 </td>
                                 {% else %}
                                 <td class="week-cell week-inactive">-</td>
