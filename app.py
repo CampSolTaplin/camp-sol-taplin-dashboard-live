@@ -274,6 +274,11 @@ class ScheduleLocation(db.Model):
     availability = db.Column(db.Text, nullable=True)
     active = db.Column(db.Boolean, default=True)
 
+class ScheduleZone(db.Model):
+    __tablename__ = 'schedule_zones'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+
 class ScheduleMeal(db.Model):
     __tablename__ = 'schedule_meals'
     id = db.Column(db.Integer, primary_key=True)
@@ -638,6 +643,15 @@ with app.app_context():
         }
         db.session.add(GlobalSetting(key='fieldtrip_group_days', value=json.dumps(group_days)))
         print("Seeded field trip group-day mapping")
+
+    # ---- Auto-seed schedule zones from existing location zone values ----
+    existing_zones = db.session.query(ScheduleLocation.zone).filter(
+        ScheduleLocation.zone.isnot(None),
+        ScheduleLocation.zone != ''
+    ).distinct().all()
+    for (zone_name,) in existing_zones:
+        if not ScheduleZone.query.filter_by(name=zone_name).first():
+            db.session.add(ScheduleZone(name=zone_name))
 
     db.session.commit()
 
@@ -5078,6 +5092,67 @@ def api_schedule_locations_delete(loc_id):
     if not loc:
         return jsonify({'error': 'Location not found'}), 404
     loc.active = False
+    db.session.commit()
+    return jsonify({'success': True})
+
+# ---------- Zones ----------
+
+@app.route('/api/schedule/zones', methods=['GET'])
+@login_required
+def api_schedule_zones():
+    if not current_user.has_permission('view_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    zones = ScheduleZone.query.order_by(ScheduleZone.name).all()
+    return jsonify({'zones': [{'id': z.id, 'name': z.name} for z in zones]})
+
+@app.route('/api/schedule/zones', methods=['POST'])
+@login_required
+def api_schedule_zones_create():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json()
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    if ScheduleZone.query.filter_by(name=name).first():
+        return jsonify({'error': f'Zone "{name}" already exists'}), 400
+    zone = ScheduleZone(name=name)
+    db.session.add(zone)
+    db.session.commit()
+    return jsonify({'success': True, 'zone': {'id': zone.id, 'name': zone.name}})
+
+@app.route('/api/schedule/zones/<int:zone_id>', methods=['PUT'])
+@login_required
+def api_schedule_zones_update(zone_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    zone = ScheduleZone.query.get(zone_id)
+    if not zone:
+        return jsonify({'error': 'Zone not found'}), 404
+    data = request.get_json()
+    new_name = (data.get('name') or '').strip()
+    if not new_name:
+        return jsonify({'error': 'Name is required'}), 400
+    if new_name != zone.name:
+        existing = ScheduleZone.query.filter_by(name=new_name).first()
+        if existing:
+            return jsonify({'error': f'Zone "{new_name}" already exists'}), 400
+        old_name = zone.name
+        ScheduleLocation.query.filter_by(zone=old_name).update({'zone': new_name})
+        zone.name = new_name
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/schedule/zones/<int:zone_id>', methods=['DELETE'])
+@login_required
+def api_schedule_zones_delete(zone_id):
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    zone = ScheduleZone.query.get(zone_id)
+    if not zone:
+        return jsonify({'error': 'Zone not found'}), 404
+    ScheduleLocation.query.filter_by(zone=zone.name).update({'zone': None})
+    db.session.delete(zone)
     db.session.commit()
     return jsonify({'success': True})
 

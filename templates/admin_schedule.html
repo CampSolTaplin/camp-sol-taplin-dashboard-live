@@ -222,6 +222,46 @@
             .cal-block-time { font-size: 9px; }
             .cal-block-duration, .cal-block-period-num { font-size: 9px; }
         }
+
+        /* ========== LOCATION TOGGLE SWITCH ========== */
+        .loc-toggle { position: relative; width: 40px; height: 22px; cursor: pointer; display: inline-block; vertical-align: middle; }
+        .loc-toggle input { display: none; }
+        .loc-toggle .loc-slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #D1D5DB; border-radius: 22px; transition: 0.25s; }
+        .loc-toggle .loc-slider:before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.25s; }
+        .loc-toggle input:checked + .loc-slider { background: var(--teal); }
+        .loc-toggle input:checked + .loc-slider:before { transform: translateX(18px); }
+
+        /* ========== SORTABLE TABLE HEADERS ========== */
+        .sched-table th.sortable { cursor: pointer; user-select: none; position: relative; padding-right: 20px; }
+        .sched-table th.sortable:hover { color: #374151; }
+        .sched-table th.sortable::after { content: '\2195'; position: absolute; right: 4px; font-size: 10px; opacity: 0.4; }
+        .sched-table th.sortable.sort-asc::after { content: '\2191'; opacity: 0.8; }
+        .sched-table th.sortable.sort-desc::after { content: '\2193'; opacity: 0.8; }
+
+        /* ========== LOCATION TABLE ROWS ========== */
+        .loc-row { cursor: pointer; transition: background 0.1s; }
+        .loc-row:hover { background: #F0FDFA !important; }
+        .loc-type-icon { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: #6B7280; }
+        .loc-type-icon svg { width: 18px; height: 18px; }
+
+        /* ========== AVAILABILITY BAR ========== */
+        .loc-avail { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #374151; }
+        .loc-avail .bar-track { width: 60px; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden; }
+        .loc-avail .bar-fill { height: 100%; background: var(--teal); border-radius: 3px; transition: width 0.3s; }
+
+        /* ========== ZONES MODAL ========== */
+        .zones-modal { max-width: 460px; }
+        .zones-list { list-style: none; padding: 0; margin: 0 0 16px 0; }
+        .zones-list li { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #F3F4F6; font-family: 'DM Sans', sans-serif; font-size: 14px; }
+        .zones-list li:last-child { border-bottom: none; }
+        .zone-name { flex: 1; font-weight: 500; }
+        .zone-actions { display: flex; gap: 6px; }
+        .zone-actions button { background: none; border: none; cursor: pointer; padding: 4px; color: #9CA3AF; border-radius: 4px; transition: color 0.15s, background 0.15s; }
+        .zone-actions button:hover { color: #374151; background: #F3F4F6; }
+        .zone-actions button.zone-del:hover { color: #EF4444; background: #FEF2F2; }
+
+        /* ========== TOOLBAR RIGHT ========== */
+        .toolbar-right { display: flex; gap: 8px; margin-left: auto; }
     </style>
 </head>
 <body>
@@ -293,8 +333,14 @@
                         Locations
                     </h3>
                     <div class="toolbar">
-                        <button class="btn-sm btn-sm-primary" onclick="showLocationModal()">+ Add Location</button>
                         <input type="text" class="toolbar-search" id="loc-search" placeholder="Search locations..." oninput="renderLocations()">
+                        <div class="toolbar-right">
+                            <button class="btn-sm" onclick="showZonesModal()">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                                Zones
+                            </button>
+                            <button class="btn-sm btn-sm-primary" onclick="showLocationModal()">+ Create Location</button>
+                        </div>
                     </div>
                     <div id="locations-table-container"></div>
                 </div>
@@ -369,6 +415,9 @@
     var allMeals = [];
     var allSchemas = [];
     var allLocations = [];
+    var allZones = [];
+    var locSortCol = 'name';
+    var locSortDir = 'asc';
     var allActivities = [];
     var allGroups = [];
     var allPresets = [];
@@ -847,9 +896,45 @@
 
     /* ========== LOCATIONS ========== */
     function loadLocations() {
-        fetch('/api/schedule/locations?include_inactive=true')
+        fetch('/api/schedule/zones')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                allZones = data.zones || [];
+                return fetch('/api/schedule/locations?include_inactive=true');
+            })
             .then(function(r) { return r.json(); })
             .then(function(data) { allLocations = data.locations || []; renderLocations(); });
+    }
+
+    function computeAvailPct(avail) {
+        if (!avail || typeof avail !== 'object') return 100;
+        var total = 0, on = 0;
+        DAYS.forEach(function(d) {
+            var slots = avail[d];
+            if (slots && Array.isArray(slots)) { total += slots.length; slots.forEach(function(s) { if (s) on++; }); }
+        });
+        return total === 0 ? 100 : Math.round((on / total) * 100);
+    }
+
+    function locSort(col) {
+        if (locSortCol === col) locSortDir = locSortDir === 'asc' ? 'desc' : 'asc';
+        else { locSortCol = col; locSortDir = 'asc'; }
+        renderLocations();
+    }
+
+    function locRowClick(ev, id) {
+        if (ev.target.closest('.loc-toggle')) return;
+        showLocationModal(id);
+    }
+
+    function toggleLocationActive(id, active) {
+        fetch('/api/schedule/locations/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({active: active})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast(active ? 'Location activated' : 'Location deactivated'); loadLocations(); }
+            else { showToast('Error: ' + (data.error || 'Unknown'), true); loadLocations(); }
+        });
     }
 
     function renderLocations() {
@@ -860,22 +945,56 @@
             if (!search) return true;
             return (l.name || '').toLowerCase().indexOf(search) !== -1 || (l.zone || '').toLowerCase().indexOf(search) !== -1;
         });
+        // Sort
+        filtered.sort(function(a, b) {
+            var va, vb;
+            if (locSortCol === 'name') { va = (a.name || '').toLowerCase(); vb = (b.name || '').toLowerCase(); }
+            else if (locSortCol === 'zone') { va = (a.zone || '').toLowerCase(); vb = (b.zone || '').toLowerCase(); }
+            else if (locSortCol === 'capacity') { va = a.capacity || 0; vb = b.capacity || 0; }
+            else { va = (a.name || '').toLowerCase(); vb = (b.name || '').toLowerCase(); }
+            if (va < vb) return locSortDir === 'asc' ? -1 : 1;
+            if (va > vb) return locSortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
         if (!filtered.length) {
-            c.innerHTML = '<div class="empty-state"><p>' + (search ? 'No locations match your search.' : 'No locations yet. Click "+ Add Location" to get started.') + '</p></div>';
+            c.innerHTML = '<div class="empty-state"><p>' + (search ? 'No locations match your search.' : 'No locations yet. Click "+ Create Location" to get started.') + '</p></div>';
             return;
         }
-        var html = '<table class="sched-table"><thead><tr><th>Name</th><th>Zone</th><th>Capacity</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        var si = function(col) {
+            var cls = 'sortable';
+            if (locSortCol === col) cls += locSortDir === 'asc' ? ' sort-asc' : ' sort-desc';
+            return cls;
+        };
+        var html = '<table class="sched-table"><thead><tr>';
+        html += '<th style="width:56px;">Active</th>';
+        html += '<th class="' + si('name') + '" onclick="locSort(\'name\')">Name</th>';
+        html += '<th style="width:110px;">Indoor/Outdoor</th>';
+        html += '<th class="' + si('zone') + '" onclick="locSort(\'zone\')">Zone</th>';
+        html += '<th class="' + si('capacity') + '" onclick="locSort(\'capacity\')" style="width:90px;">Capacity</th>';
+        html += '<th style="width:130px;">Availability</th>';
+        html += '</tr></thead><tbody>';
         filtered.forEach(function(l) {
-            html += '<tr class="' + (l.active ? '' : 'inactive-row') + '">';
+            var pct = computeAvailPct(l.availability);
+            html += '<tr class="loc-row' + (l.active ? '' : ' inactive-row') + '" onclick="locRowClick(event,' + l.id + ')">';
+            // Toggle
+            html += '<td onclick="event.stopPropagation()"><label class="loc-toggle"><input type="checkbox"' + (l.active ? ' checked' : '') + ' onchange="toggleLocationActive(' + l.id + ',this.checked)"><span class="loc-slider"></span></label></td>';
+            // Name
             html += '<td><strong>' + esc(l.name) + '</strong></td>';
+            // Indoor/Outdoor
+            html += '<td><span class="loc-type-icon">';
+            if (l.is_indoor) {
+                html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+            } else {
+                html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+            }
+            html += '</span></td>';
+            // Zone
             html += '<td>' + esc(l.zone || '-') + '</td>';
+            // Capacity
             html += '<td>' + (l.capacity || '-') + '</td>';
-            html += '<td>' + (l.is_indoor ? 'Indoor' : 'Outdoor') + '</td>';
-            html += '<td>' + (l.active ? '<span style="color:#059669;">Active</span>' : '<span style="color:#9CA3AF;">Inactive</span>') + '</td>';
-            html += '<td><button class="btn-sm" onclick="showLocationModal(' + l.id + ')">Edit</button> ';
-            if (l.active) html += '<button class="btn-sm btn-sm-danger" onclick="deleteLocation(' + l.id + ',\'' + esc(l.name) + '\')">Deactivate</button>';
-            else html += '<button class="btn-sm" onclick="reactivateLocation(' + l.id + ')">Reactivate</button>';
-            html += '</td></tr>';
+            // Availability
+            html += '<td><div class="loc-avail"><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div><span>' + pct + '%</span></div></td>';
+            html += '</tr>';
         });
         html += '</tbody></table>';
         c.innerHTML = html;
@@ -885,11 +1004,18 @@
         var loc = editId ? allLocations.find(function(l) { return l.id === editId; }) : null;
         var overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
-        overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
-        var html = '<div class="modal-content"><h3>' + (loc ? 'Edit Location' : 'Add Location') + '</h3>';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+        var html = '<div class="modal-content"><h3>' + (loc ? 'Edit Location' : 'Create Location') + '</h3>';
         html += '<div class="form-grid form-grid-2">';
         html += '<div class="form-field"><label>Name</label><input type="text" id="modal-loc-name" value="' + esc(loc ? loc.name : '') + '"></div>';
-        html += '<div class="form-field"><label>Zone</label><input type="text" id="modal-loc-zone" placeholder="e.g. JCC, Hillel" value="' + esc(loc ? loc.zone || '' : '') + '"></div>';
+        // Zone dropdown
+        html += '<div class="form-field"><label>Zone</label><select id="modal-loc-zone">';
+        html += '<option value="">-- No Zone --</option>';
+        allZones.forEach(function(z) {
+            var sel = (loc && loc.zone === z.name) ? ' selected' : '';
+            html += '<option value="' + esc(z.name) + '"' + sel + '>' + esc(z.name) + '</option>';
+        });
+        html += '</select></div>';
         html += '<div class="form-field"><label>Capacity</label><input type="number" id="modal-loc-capacity" value="' + (loc && loc.capacity ? loc.capacity : '') + '"></div>';
         html += '<div class="form-field"><label>Type</label><select id="modal-loc-indoor">';
         html += '<option value="true"' + ((!loc || loc.is_indoor) ? ' selected' : '') + '>Indoor</option>';
@@ -897,6 +1023,7 @@
         html += '</select></div>';
         html += '</div>';
         html += '<div class="modal-footer">';
+        if (loc) html += '<button class="btn-sm btn-sm-danger" style="margin-right:auto;" onclick="toggleLocationActive(' + loc.id + ',false);this.closest(\'.modal-overlay\').remove()">Deactivate</button>';
         html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
         html += '<button class="btn-sm btn-sm-primary" id="modal-loc-save">Save</button>';
         html += '</div></div>';
@@ -905,7 +1032,7 @@
         document.getElementById('modal-loc-save').onclick = function() {
             var payload = {
                 name: document.getElementById('modal-loc-name').value.trim(),
-                zone: document.getElementById('modal-loc-zone').value.trim(),
+                zone: document.getElementById('modal-loc-zone').value || null,
                 capacity: document.getElementById('modal-loc-capacity').value ? parseInt(document.getElementById('modal-loc-capacity').value) : null,
                 is_indoor: document.getElementById('modal-loc-indoor').value === 'true'
             };
@@ -920,19 +1047,102 @@
         };
     }
 
-    function deleteLocation(id, name) {
-        if (!confirm('Deactivate location "' + name + '"?')) return;
-        fetch('/api/schedule/locations/' + id, { method: 'DELETE' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) { if (data.success) { showToast('Location deactivated'); loadLocations(); } });
+    /* ========== ZONES MODAL ========== */
+    function showZonesModal() {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'zones-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+        renderZonesModal(overlay);
+        document.body.appendChild(overlay);
     }
 
-    function reactivateLocation(id) {
-        fetch('/api/schedule/locations/' + id, {
-            method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({active: true})
+    function renderZonesModal(overlay) {
+        if (!overlay) overlay = document.getElementById('zones-overlay');
+        if (!overlay) return;
+        var html = '<div class="modal-content zones-modal">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+        html += '<h3 style="margin:0;">Zones Configuration</h3>';
+        html += '<button style="background:none;border:none;cursor:pointer;font-size:22px;color:#9CA3AF;padding:4px 8px;border-radius:50%;" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button>';
+        html += '</div>';
+        if (allZones.length === 0) {
+            html += '<div class="empty-state" style="padding:20px;"><p>No zones yet.</p></div>';
+        } else {
+            html += '<ul class="zones-list">';
+            allZones.forEach(function(z) {
+                html += '<li>';
+                html += '<span class="zone-name">' + esc(z.name) + '</span>';
+                html += '<div class="zone-actions">';
+                html += '<button title="Edit" onclick="editZoneInline(' + z.id + ')">';
+                html += '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+                html += '</button>';
+                html += '<button class="zone-del" title="Delete" onclick="deleteZone(' + z.id + ')">';
+                html += '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+                html += '</button>';
+                html += '</div></li>';
+            });
+            html += '</ul>';
+        }
+        html += '<div class="modal-footer" style="justify-content:space-between;">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm btn-sm-primary" onclick="createZone()">+ Create Zone</button>';
+        html += '</div></div>';
+        overlay.innerHTML = html;
+    }
+
+    function createZone() {
+        var name = prompt('Zone name:');
+        if (!name) return;
+        name = name.trim();
+        if (!name) return;
+        fetch('/api/schedule/zones', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name})
         }).then(function(r) { return r.json(); }).then(function(data) {
-            if (data.success) { showToast('Location reactivated'); loadLocations(); }
+            if (data.success) {
+                showToast('Zone created!');
+                allZones.push(data.zone);
+                allZones.sort(function(a, b) { return a.name.localeCompare(b.name); });
+                renderZonesModal();
+            } else showToast('Error: ' + (data.error || 'Unknown'), true);
         });
+    }
+
+    function editZoneInline(id) {
+        var zone = allZones.find(function(z) { return z.id === id; });
+        if (!zone) return;
+        var newName = prompt('Rename zone:', zone.name);
+        if (newName === null) return;
+        newName = newName.trim();
+        if (!newName || newName === zone.name) return;
+        fetch('/api/schedule/zones/' + id, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: newName})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) {
+                showToast('Zone renamed!');
+                zone.name = newName;
+                allZones.sort(function(a, b) { return a.name.localeCompare(b.name); });
+                renderZonesModal();
+                loadLocations();
+            } else showToast('Error: ' + (data.error || 'Unknown'), true);
+        });
+    }
+
+    function deleteZone(id) {
+        var zone = allZones.find(function(z) { return z.id === id; });
+        if (!zone) return;
+        if (!confirm('Delete zone "' + zone.name + '"? Locations in this zone will have their zone cleared.')) return;
+        fetch('/api/schedule/zones/' + id, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    showToast('Zone deleted');
+                    allZones = allZones.filter(function(z) { return z.id !== id; });
+                    renderZonesModal();
+                    loadLocations();
+                } else showToast('Error: ' + (data.error || 'Unknown'), true);
+            });
     }
 
     /* ========== ACTIVITIES ========== */
