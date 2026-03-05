@@ -5700,6 +5700,13 @@ def service_worker():
         'Cache-Control': 'no-cache'
     }
 
+@app.route('/manifest.json')
+def manifest():
+    return app.send_static_file('manifest.json'), 200, {
+        'Content-Type': 'application/manifest+json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+    }
+
 
 # ==================== PUSH NOTIFICATIONS ====================
 

@@ -1,4 +1,4 @@
-var CACHE_NAME = 'cst-staff-v2';
+var CACHE_NAME = 'cst-staff-v3';
 var STATIC_ASSETS = [
   '/static/css/dashboard.css',
   '/static/css/attendance.css',
@@ -20,7 +20,7 @@ self.addEventListener('install', function(event) {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean old caches and notify all clients to refresh
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(cacheNames) {
@@ -29,12 +29,19 @@ self.addEventListener('activate', function(event) {
           .filter(function(name) { return name !== CACHE_NAME; })
           .map(function(name) { return caches.delete(name); })
       );
+    }).then(function() {
+      // Notify all open tabs/windows that a new version is active
+      return self.clients.matchAll({ type: 'window' }).then(function(clients) {
+        clients.forEach(function(client) {
+          client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME });
+        });
+      });
     })
   );
   self.clients.claim();
 });
 
-// Fetch: cache-first for static, network-first for API/HTML
+// Fetch: stale-while-revalidate for static, network-first for API/HTML
 self.addEventListener('fetch', function(event) {
   var url = new URL(event.request.url);
 
@@ -44,16 +51,19 @@ self.addEventListener('fetch', function(event) {
   // Skip cross-origin requests (e.g. Google Fonts CDN)
   if (url.origin !== self.location.origin) return;
 
-  // Static assets: cache-first
+  // Static assets: stale-while-revalidate
+  // Serve from cache immediately, but fetch from network in background to update cache
   if (url.pathname.startsWith('/static/')) {
     event.respondWith(
-      caches.match(event.request).then(function(cached) {
-        return cached || fetch(event.request).then(function(response) {
-          var clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, clone);
+      caches.open(CACHE_NAME).then(function(cache) {
+        return cache.match(event.request).then(function(cached) {
+          var networkFetch = fetch(event.request).then(function(response) {
+            if (response.ok) {
+              cache.put(event.request, response.clone());
+            }
+            return response;
           });
-          return response;
+          return cached || networkFetch;
         });
       })
     );

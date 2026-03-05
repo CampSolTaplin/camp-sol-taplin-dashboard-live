@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Camp Sol Taplin</title>
-    <link rel="manifest" href="/static/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#00A9CE">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -179,7 +179,20 @@
     </div>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+  navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+    .then(function(reg) {
+      reg.addEventListener('updatefound', function() {
+        var newSW = reg.installing;
+        if (newSW) {
+          newSW.addEventListener('statechange', function() {
+            if (newSW.state === 'activated') { window.location.reload(); }
+          });
+        }
+      });
+    });
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'SW_UPDATED') { window.location.reload(); }
+  });
 }
 </script>
 </body>
