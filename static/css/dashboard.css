@@ -3011,6 +3011,55 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     margin-top: 1px;
 }
 
+/* Collapsible week columns */
+.ft-week-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid #D1D5DB;
+    background: white;
+    cursor: pointer;
+    font-size: 10px;
+    color: #6B7280;
+    margin-left: 4px;
+    vertical-align: middle;
+    transition: all 0.15s;
+    line-height: 1;
+    padding: 0;
+}
+.ft-week-toggle:hover {
+    background: #F3F4F6;
+    border-color: #9CA3AF;
+}
+.ft-header-cell.ft-week-collapsed {
+    min-width: 36px !important;
+    max-width: 36px;
+    padding: 12px 4px;
+    overflow: hidden;
+}
+.ft-cell.ft-col-collapsed {
+    min-width: 36px !important;
+    max-width: 36px;
+    padding: 4px 2px;
+    overflow: hidden;
+    cursor: default;
+}
+.ft-cell.ft-col-collapsed > * { display: none; }
+.ft-cell.ft-col-collapsed::after {
+    content: '\00B7';
+    color: #D1D5DB;
+    font-size: 14px;
+}
+.ft-day-date {
+    font-size: 10px;
+    font-weight: 400;
+    color: #9CA3AF;
+    margin-left: 6px;
+}
+
 /* ==================== STAFF KANBAN ==================== */
 
 .kanban-board {

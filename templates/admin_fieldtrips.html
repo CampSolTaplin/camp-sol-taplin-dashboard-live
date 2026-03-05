@@ -277,7 +277,7 @@
                         Calculate Buses
                     </button>
                 </div>
-                <div id="admin-ft-matrix" style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                <div id="admin-ft-matrix" style="overflow:auto; max-height:75vh; -webkit-overflow-scrolling:touch; border:1px solid #E5E7EB; border-radius:8px;">
                     <div style="text-align:center; padding:40px; color:#9CA3AF;">Loading matrix...</div>
                 </div>
             </div>
@@ -590,6 +590,25 @@
             });
     }
 
+    var ftCollapsedWeeks = {};
+
+    function ftToggleWeek(w) {
+        ftCollapsedWeeks[w] = !ftCollapsedWeeks[w];
+        renderAdminMatrix();
+    }
+
+    function ftGetDayDate(weekNum, dayName) {
+        var dates = (adminFtData || {}).week_dates || {};
+        var wd = dates[String(weekNum)];
+        if (!wd) return '';
+        var dayOffs = {'Monday':0,'Tuesday':1,'Wednesday':2,'Thursday':3,'Friday':4};
+        var off = dayOffs[dayName];
+        if (off === undefined) return '';
+        var s = new Date(wd[0] + 'T12:00:00');
+        s.setDate(s.getDate() + off);
+        return (s.getMonth()+1) + '/' + String(s.getDate()).padStart(2,'0');
+    }
+
     function renderAdminMatrix() {
         var container = document.getElementById('admin-ft-matrix');
         if (!adminFtData) return;
@@ -621,22 +640,41 @@
         var html = '<table class="ft-matrix-table">';
         html += '<thead><tr><th class="ft-header-cell ft-sticky-col">Group</th>';
         weeks.forEach(function(w) {
+            var collapsed = ftCollapsedWeeks[w];
             var dates = adminFtData.week_dates[String(w)];
             var dateLabel = '';
             if (dates) {
                 var s = new Date(dates[0] + 'T12:00:00');
                 dateLabel = '<div class="ft-week-date">' + (s.getMonth()+1) + '/' + s.getDate() + '</div>';
             }
-            html += '<th class="ft-header-cell">W' + w + dateLabel + '</th>';
+            if (collapsed) {
+                html += '<th class="ft-header-cell ft-week-collapsed" title="Click to expand W' + w + '">';
+                html += '<button class="ft-week-toggle" onclick="ftToggleWeek(' + w + ')" title="Expand">+</button>';
+                html += '</th>';
+            } else {
+                html += '<th class="ft-header-cell">W' + w + dateLabel;
+                html += '<button class="ft-week-toggle" onclick="ftToggleWeek(' + w + ')" title="Collapse">&minus;</button>';
+                html += '</th>';
+            }
         });
         html += '</tr></thead><tbody>';
 
         var lastDay = '';
         filteredGroups.forEach(function(g) {
             if (g.day !== lastDay) {
-                // Check if this day has any visible groups
                 var dc = dayColors[g.day] || '#6B7280';
-                html += '<tr><td colspan="' + (weeks.length + 1) + '" class="ft-day-header" style="background:' + dc + ';">' + g.day + '</td></tr>';
+                // Build day header with per-week dates
+                html += '<tr><td class="ft-day-header ft-sticky-col" style="background:' + dc + ';">' + g.day + '</td>';
+                weeks.forEach(function(w) {
+                    var collapsed = ftCollapsedWeeks[w];
+                    if (collapsed) {
+                        html += '<td class="ft-day-header" style="background:' + dc + ';min-width:36px;max-width:36px;padding:6px 2px;"></td>';
+                    } else {
+                        var dd = ftGetDayDate(w, g.day);
+                        html += '<td class="ft-day-header" style="background:' + dc + ';text-align:center;font-size:11px;padding:6px 8px;">' + dd + '</td>';
+                    }
+                });
+                html += '</tr>';
                 lastDay = g.day;
             }
             html += '<tr>';
@@ -646,7 +684,12 @@
             // Week cells
             var activeWeeks = (adminFtData.weeks_active || {})[g.name] || [1,2,3,4,5,6,7,8,9];
             weeks.forEach(function(w) {
+                var collapsed = ftCollapsedWeeks[w];
                 var isActive = activeWeeks.indexOf(w) >= 0;
+                if (collapsed) {
+                    html += '<td class="ft-cell ft-col-collapsed"></td>';
+                    return;
+                }
                 if (!isActive) {
                     html += '<td class="ft-cell ft-cell-disabled"><div class="ft-empty-label">&mdash;</div></td>';
                     return;
