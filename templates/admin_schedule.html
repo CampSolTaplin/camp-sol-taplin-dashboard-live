@@ -1083,18 +1083,20 @@
             });
             html += '</ul>';
         }
-        html += '<div class="modal-footer" style="justify-content:space-between;">';
-        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<div style="display:flex;gap:8px;margin-bottom:16px;">';
+        html += '<input type="text" id="new-zone-input" class="toolbar-search" placeholder="New zone name..." style="flex:1;width:auto;" onkeydown="if(event.key===\'Enter\')createZone()">';
         html += '<button class="btn-sm btn-sm-primary" onclick="createZone()">+ Create Zone</button>';
+        html += '</div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
         html += '</div></div>';
         overlay.innerHTML = html;
     }
 
     function createZone() {
-        var name = prompt('Zone name:');
-        if (!name) return;
-        name = name.trim();
-        if (!name) return;
+        var inp = document.getElementById('new-zone-input');
+        var name = (inp ? inp.value : '').trim();
+        if (!name) { showToast('Zone name is required', true); if (inp) inp.focus(); return; }
         fetch('/api/schedule/zones', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({name: name})
@@ -1111,10 +1113,29 @@
     function editZoneInline(id) {
         var zone = allZones.find(function(z) { return z.id === id; });
         if (!zone) return;
-        var newName = prompt('Rename zone:', zone.name);
-        if (newName === null) return;
-        newName = newName.trim();
-        if (!newName || newName === zone.name) return;
+        // Replace zone name span with an inline input
+        var li = document.querySelector('#zones-overlay li');
+        var allLis = document.querySelectorAll('#zones-overlay li');
+        for (var i = 0; i < allLis.length; i++) {
+            var nameSpan = allLis[i].querySelector('.zone-name');
+            if (nameSpan && nameSpan.textContent === zone.name) { li = allLis[i]; break; }
+        }
+        var nameSpan = li.querySelector('.zone-name');
+        var oldHtml = nameSpan.innerHTML;
+        nameSpan.innerHTML = '<input type="text" id="edit-zone-input" value="' + esc(zone.name) + '" style="padding:4px 8px;border:1px solid var(--teal);border-radius:6px;font-size:14px;width:100%;">';
+        var inp = document.getElementById('edit-zone-input');
+        inp.focus(); inp.select();
+        var save = function() {
+            var newName = inp.value.trim();
+            if (!newName || newName === zone.name) { nameSpan.innerHTML = oldHtml; return; }
+            saveZoneRename(id, zone, newName);
+        };
+        inp.onkeydown = function(e) { if (e.key === 'Enter') save(); if (e.key === 'Escape') { nameSpan.innerHTML = oldHtml; } };
+        inp.onblur = function() { setTimeout(save, 150); };
+        return;
+    }
+
+    function saveZoneRename(id, zone, newName) {
         fetch('/api/schedule/zones/' + id, {
             method: 'PUT', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({name: newName})
