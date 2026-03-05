@@ -5095,6 +5095,53 @@ def api_schedule_locations_delete(loc_id):
     db.session.commit()
     return jsonify({'success': True})
 
+@app.route('/api/schedule/locations/bulk', methods=['POST'])
+@login_required
+def api_schedule_locations_bulk():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json() or {}
+    items = data.get('locations', [])
+    if not items:
+        return jsonify({'error': 'No locations provided'}), 400
+
+    # Build zone lookup for auto-creating missing zones
+    existing_zones = {z.name.strip().lower(): z.name for z in ScheduleZone.query.all()}
+
+    created = 0
+    skipped = 0
+    zones_created = 0
+    for item in items:
+        name = (item.get('name') or '').strip()
+        zone = (item.get('zone') or '').strip() or None
+        capacity = item.get('capacity')
+        if not name:
+            continue
+        # Check if already exists
+        existing = ScheduleLocation.query.filter(
+            db.func.lower(ScheduleLocation.name) == name.lower()
+        ).first()
+        if existing:
+            skipped += 1
+            continue
+        # Auto-create zone if not exists
+        if zone and zone.lower() not in existing_zones:
+            db.session.add(ScheduleZone(name=zone))
+            existing_zones[zone.lower()] = zone
+            zones_created += 1
+        loc = ScheduleLocation(
+            name=name,
+            zone=zone,
+            capacity=int(capacity) if capacity else None,
+            is_indoor=True,
+            active=True
+        )
+        db.session.add(loc)
+        created += 1
+
+    db.session.commit()
+    return jsonify({'success': True, 'created': created, 'skipped': skipped, 'zones_created': zones_created})
+
 # ---------- Zones ----------
 
 @app.route('/api/schedule/zones', methods=['GET'])
@@ -5282,6 +5329,59 @@ def api_schedule_activities_delete(act_id):
     a.active = False
     db.session.commit()
     return jsonify({'success': True})
+
+@app.route('/api/schedule/activities/bulk', methods=['POST'])
+@login_required
+def api_schedule_activities_bulk():
+    if not current_user.has_permission('manage_schedule'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.get_json() or {}
+    items = data.get('activities', [])
+    if not items:
+        return jsonify({'error': 'No activities provided'}), 400
+
+    # Build location lookup (case-insensitive)
+    all_locs = ScheduleLocation.query.filter_by(active=True).all()
+    loc_map = {}
+    for loc in all_locs:
+        loc_map[loc.name.strip().lower()] = loc.id
+
+    created = 0
+    skipped = 0
+    errors = []
+    for item in items:
+        name = (item.get('name') or '').strip()
+        loc_name = (item.get('location_name') or '').strip()
+        if not name:
+            errors.append('Empty name skipped')
+            continue
+        # Check if already exists
+        existing = ScheduleActivity.query.filter(
+            db.func.lower(ScheduleActivity.name) == name.lower()
+        ).first()
+        if existing:
+            skipped += 1
+            continue
+        # Match location
+        location_id = loc_map.get(loc_name.lower()) if loc_name else None
+        act = ScheduleActivity(
+            name=name,
+            location_id=location_id,
+            num_periods=1,
+            min_groups=1,
+            max_groups=4,
+            min_campers=0,
+            max_campers=50,
+            max_per_day=0,
+            max_per_week=0,
+            is_field_trip=False,
+            active=True
+        )
+        db.session.add(act)
+        created += 1
+
+    db.session.commit()
+    return jsonify({'success': True, 'created': created, 'skipped': skipped, 'errors': errors})
 
 # ---------- Groups ----------
 

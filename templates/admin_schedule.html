@@ -297,8 +297,14 @@
                         Activities
                     </h3>
                     <div class="toolbar">
-                        <button class="btn-sm btn-sm-primary" onclick="showActivityModal()">+ Add Activity</button>
                         <input type="text" class="toolbar-search" id="act-search" placeholder="Search activities..." oninput="renderActivities()">
+                        <div class="toolbar-right">
+                            <button class="btn-sm" onclick="showBulkPasteModal()">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                                Paste
+                            </button>
+                            <button class="btn-sm btn-sm-primary" onclick="showActivityModal()">+ Add Activity</button>
+                        </div>
                     </div>
                     <div id="activities-table-container"></div>
                 </div>
@@ -338,6 +344,10 @@
                             <button class="btn-sm" onclick="showZonesModal()">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                                 Zones
+                            </button>
+                            <button class="btn-sm" onclick="showBulkPasteLocModal()">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                                Paste
                             </button>
                             <button class="btn-sm btn-sm-primary" onclick="showLocationModal()">+ Create Location</button>
                         </div>
@@ -1166,6 +1176,134 @@
             });
     }
 
+    /* ========== BULK PASTE LOCATIONS ========== */
+    function parseBulkLocations(text) {
+        var lines = text.split(/\n/).filter(function(l) { return l.trim().length > 0; });
+        var results = [];
+        var existingNames = {};
+        allLocations.forEach(function(l) { existingNames[l.name.trim().toLowerCase()] = true; });
+
+        lines.forEach(function(line) {
+            // Tab-separated: Name \t (empty?) \t Zone \t Capacity \t Availability%
+            var cols = line.split(/\t/);
+            var name = (cols[0] || '').trim();
+            if (!name) return;
+            // Find zone and capacity from remaining columns
+            var zone = '', capacity = '';
+            // Filter out empty strings and percentage values
+            var values = [];
+            for (var i = 1; i < cols.length; i++) {
+                var v = cols[i].trim();
+                if (v) values.push(v);
+            }
+            // Heuristics: zone is a text value, capacity is a number, skip percentages
+            values.forEach(function(v) {
+                if (v.match(/^\d+%$/)) return; // skip availability %
+                if (v.match(/^\d+$/) && !capacity) { capacity = v; }
+                else if (!zone) { zone = v; }
+            });
+
+            var alreadyExists = existingNames[name.toLowerCase()] || false;
+            results.push({
+                name: name,
+                zone: zone,
+                capacity: capacity ? parseInt(capacity) : null,
+                exists: alreadyExists
+            });
+        });
+        return results;
+    }
+
+    var bulkLocParsed = [];
+
+    function showBulkPasteLocModal() {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+        var html = '<div class="modal-content" style="max-width:700px;">';
+        html += '<h3>Paste Locations</h3>';
+        html += '<p style="font-size:13px;color:#6B7280;margin-bottom:12px;">Paste locations from Campify. Each line: Name, Zone, Capacity (tab-separated).</p>';
+        html += '<textarea id="bulk-loc-input" rows="12" style="width:100%;font-family:monospace;font-size:13px;padding:10px;border:1px solid #D1D5DB;border-radius:8px;resize:vertical;" placeholder="Music Studio\t\tJCC\t25\t100%\nLipton Lobby\t\tJCC\t25\t100%"></textarea>';
+        html += '<div id="bulk-loc-preview" style="margin-top:12px;"></div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm" id="bulk-loc-preview-btn" onclick="previewBulkPasteLoc()">Preview</button>';
+        html += '<button class="btn-sm btn-sm-primary" id="bulk-loc-create-btn" style="display:none;" onclick="submitBulkPasteLoc()">Create All</button>';
+        html += '</div></div>';
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+        document.getElementById('bulk-loc-input').focus();
+    }
+
+    function previewBulkPasteLoc() {
+        var text = document.getElementById('bulk-loc-input').value;
+        if (!text.trim()) { showToast('Paste some text first', true); return; }
+        bulkLocParsed = parseBulkLocations(text);
+        if (!bulkLocParsed.length) { showToast('Could not parse any locations', true); return; }
+
+        var ready = 0, existing = 0;
+        bulkLocParsed.forEach(function(p) {
+            if (p.exists) existing++;
+            else ready++;
+        });
+
+        var html = '<div style="font-size:13px;margin-bottom:8px;">';
+        html += '<strong>' + bulkLocParsed.length + '</strong> locations parsed: ';
+        html += '<span style="color:#059669;">' + ready + ' ready</span>';
+        if (existing) html += ', <span style="color:#9CA3AF;">' + existing + ' already exist</span>';
+        html += '</div>';
+
+        html += '<div style="max-height:250px;overflow-y:auto;border:1px solid #E5E7EB;border-radius:8px;">';
+        html += '<table class="sched-table" style="margin:0;font-size:13px;"><thead><tr><th>Name</th><th>Zone</th><th>Capacity</th><th>Status</th></tr></thead><tbody>';
+        bulkLocParsed.forEach(function(p) {
+            var rowStyle = p.exists ? 'opacity:0.5;' : '';
+            html += '<tr style="' + rowStyle + '">';
+            html += '<td>' + esc(p.name) + '</td>';
+            html += '<td>' + esc(p.zone || '-') + '</td>';
+            html += '<td>' + (p.capacity || '-') + '</td>';
+            if (p.exists) html += '<td style="color:#9CA3AF;">Already exists</td>';
+            else html += '<td style="color:#059669;">Ready</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+
+        document.getElementById('bulk-loc-preview').innerHTML = html;
+        var createBtn = document.getElementById('bulk-loc-create-btn');
+        if (ready > 0) {
+            createBtn.style.display = '';
+            createBtn.textContent = 'Create ' + ready + ' Locations';
+        }
+    }
+
+    function submitBulkPasteLoc() {
+        var toCreate = bulkLocParsed.filter(function(p) { return !p.exists; });
+        if (!toCreate.length) { showToast('No new locations to create', true); return; }
+        var payload = toCreate.map(function(p) {
+            return { name: p.name, zone: p.zone || null, capacity: p.capacity };
+        });
+        var btn = document.getElementById('bulk-loc-create-btn');
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+        fetch('/api/schedule/locations/bulk', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ locations: payload })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) {
+                var msg = data.created + ' locations created';
+                if (data.skipped) msg += ', ' + data.skipped + ' skipped';
+                if (data.zones_created) msg += ', ' + data.zones_created + ' new zones added';
+                showToast(msg);
+                document.querySelector('.modal-overlay').remove();
+                loadLocations();
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown'), true);
+                btn.disabled = false;
+                btn.textContent = 'Create All';
+            }
+        });
+    }
+
     /* ========== ACTIVITIES ========== */
     function loadActivities() {
         fetch('/api/schedule/activities?include_inactive=true')
@@ -1289,6 +1427,132 @@
             method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({active: true})
         }).then(function(r) { return r.json(); }).then(function(data) {
             if (data.success) { showToast('Activity reactivated'); loadActivities(); }
+        });
+    }
+
+    /* ========== BULK PASTE ACTIVITIES ========== */
+    function parseBulkActivities(text) {
+        var lines = text.split(/\n/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+        var results = [];
+        // Build location lookup from already-loaded allLocations
+        var locMap = {};
+        allLocations.forEach(function(l) { locMap[l.name.trim().toLowerCase()] = l; });
+        // Build existing activity names lookup
+        var existingNames = {};
+        allActivities.forEach(function(a) { existingNames[a.name.trim().toLowerCase()] = true; });
+
+        var i = 0;
+        while (i < lines.length) {
+            var name = lines[i];
+            var locName = (i + 1 < lines.length) ? lines[i + 1] : '';
+            // Line 3 is availability %, skip it
+            i += 3;
+            // Check if line 2 looks like a percentage (fallback: might be 2-line format)
+            if (locName.match(/^\d+%/)) {
+                // Only 2 lines: name + percentage, no location
+                locName = '';
+                i = i - 1; // adjust
+            }
+            var locKey = locName.toLowerCase();
+            var matchedLoc = locMap[locKey] || null;
+            var alreadyExists = existingNames[name.trim().toLowerCase()] || false;
+            results.push({
+                name: name,
+                location_name: locName,
+                location_id: matchedLoc ? matchedLoc.id : null,
+                matched: !!matchedLoc,
+                exists: alreadyExists
+            });
+        }
+        return results;
+    }
+
+    function showBulkPasteModal() {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+        var html = '<div class="modal-content" style="max-width:700px;">';
+        html += '<h3>Paste Activities</h3>';
+        html += '<p style="font-size:13px;color:#6B7280;margin-bottom:12px;">Paste activities from Campify. Expected format: each activity has 3 lines (Name, Location, Availability%).</p>';
+        html += '<textarea id="bulk-paste-input" rows="12" style="width:100%;font-family:monospace;font-size:13px;padding:10px;border:1px solid #D1D5DB;border-radius:8px;resize:vertical;" placeholder="!Sababa!\nLipton Lobby\n71%\nArt with Bea!\nCeramics\n80%"></textarea>';
+        html += '<div id="bulk-preview" style="margin-top:12px;"></div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm" id="bulk-preview-btn" onclick="previewBulkPaste()">Preview</button>';
+        html += '<button class="btn-sm btn-sm-primary" id="bulk-create-btn" style="display:none;" onclick="submitBulkPaste()">Create All</button>';
+        html += '</div></div>';
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+        document.getElementById('bulk-paste-input').focus();
+    }
+
+    var bulkParsed = [];
+
+    function previewBulkPaste() {
+        var text = document.getElementById('bulk-paste-input').value;
+        if (!text.trim()) { showToast('Paste some text first', true); return; }
+        bulkParsed = parseBulkActivities(text);
+        if (!bulkParsed.length) { showToast('Could not parse any activities', true); return; }
+
+        var ready = 0, mismatched = 0, existing = 0;
+        bulkParsed.forEach(function(p) {
+            if (p.exists) existing++;
+            else if (!p.matched && p.location_name) mismatched++;
+            else ready++;
+        });
+
+        var html = '<div style="font-size:13px;margin-bottom:8px;">';
+        html += '<strong>' + bulkParsed.length + '</strong> activities parsed: ';
+        html += '<span style="color:#059669;">' + ready + ' ready</span>';
+        if (mismatched) html += ', <span style="color:#D97706;">' + mismatched + ' location mismatch</span>';
+        if (existing) html += ', <span style="color:#9CA3AF;">' + existing + ' already exist</span>';
+        html += '</div>';
+
+        html += '<div style="max-height:250px;overflow-y:auto;border:1px solid #E5E7EB;border-radius:8px;">';
+        html += '<table class="sched-table" style="margin:0;font-size:13px;"><thead><tr><th>Name</th><th>Location</th><th>Status</th></tr></thead><tbody>';
+        bulkParsed.forEach(function(p) {
+            var rowStyle = p.exists ? 'opacity:0.5;' : (!p.matched && p.location_name ? 'background:#FFFBEB;' : '');
+            html += '<tr style="' + rowStyle + '">';
+            html += '<td>' + esc(p.name) + '</td>';
+            html += '<td>' + esc(p.location_name || '-') + '</td>';
+            if (p.exists) html += '<td style="color:#9CA3AF;">Already exists</td>';
+            else if (!p.matched && p.location_name) html += '<td style="color:#D97706;">Location not found</td>';
+            else html += '<td style="color:#059669;">Ready</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+
+        document.getElementById('bulk-preview').innerHTML = html;
+        var createBtn = document.getElementById('bulk-create-btn');
+        if (ready > 0 || (mismatched > 0 && !existing)) {
+            createBtn.style.display = '';
+            createBtn.textContent = 'Create ' + (ready + mismatched) + ' Activities';
+        }
+    }
+
+    function submitBulkPaste() {
+        var toCreate = bulkParsed.filter(function(p) { return !p.exists; });
+        if (!toCreate.length) { showToast('No new activities to create', true); return; }
+        var payload = toCreate.map(function(p) {
+            return { name: p.name, location_name: p.location_name };
+        });
+        var btn = document.getElementById('bulk-create-btn');
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+        fetch('/api/schedule/activities/bulk', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ activities: payload })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) {
+                showToast(data.created + ' activities created' + (data.skipped ? ', ' + data.skipped + ' skipped' : ''));
+                document.querySelector('.modal-overlay').remove();
+                loadActivities();
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown'), true);
+                btn.disabled = false;
+                btn.textContent = 'Create All';
+            }
         });
     }
 
