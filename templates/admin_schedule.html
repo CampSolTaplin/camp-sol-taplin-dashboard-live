@@ -429,6 +429,8 @@
     var locSortCol = 'name';
     var locSortDir = 'asc';
     var allActivities = [];
+    var actSortCol = 'name';
+    var actSortDir = 'asc';
     var allGroups = [];
     var allPresets = [];
     var DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -1326,6 +1328,12 @@
             .then(function(data) { allActivities = data.activities || []; renderActivities(); });
     }
 
+    function actSort(col) {
+        if (actSortCol === col) actSortDir = actSortDir === 'asc' ? 'desc' : 'asc';
+        else { actSortCol = col; actSortDir = 'asc'; }
+        renderActivities();
+    }
+
     function renderActivities() {
         var c = document.getElementById('activities-table-container');
         var search = (document.getElementById('act-search') || {}).value || '';
@@ -1334,11 +1342,38 @@
             if (!search) return true;
             return (a.name || '').toLowerCase().indexOf(search) !== -1 || (a.location_name || '').toLowerCase().indexOf(search) !== -1;
         });
+        // Sort
+        filtered.sort(function(a, b) {
+            var va, vb;
+            if (actSortCol === 'name') { va = (a.name || '').toLowerCase(); vb = (b.name || '').toLowerCase(); }
+            else if (actSortCol === 'location') { va = (a.location_name || '').toLowerCase(); vb = (b.location_name || '').toLowerCase(); }
+            else if (actSortCol === 'periods') { va = a.num_periods || 0; vb = b.num_periods || 0; }
+            else if (actSortCol === 'groups') { va = a.max_groups || 0; vb = b.max_groups || 0; }
+            else if (actSortCol === 'campers') { va = a.max_campers || 0; vb = b.max_campers || 0; }
+            else if (actSortCol === 'status') { va = a.active ? 0 : 1; vb = b.active ? 0 : 1; }
+            else { va = (a.name || '').toLowerCase(); vb = (b.name || '').toLowerCase(); }
+            if (va < vb) return actSortDir === 'asc' ? -1 : 1;
+            if (va > vb) return actSortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
         if (!filtered.length) {
             c.innerHTML = '<div class="empty-state"><p>' + (search ? 'No activities match your search.' : 'No activities yet. Click "+ Add Activity" to get started.') + '</p></div>';
             return;
         }
-        var html = '<table class="sched-table"><thead><tr><th>Name</th><th>Location</th><th>Periods</th><th>Groups</th><th>Campers</th><th>Max/Day</th><th>Max/Wk</th><th>Flags</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        var si = function(col) {
+            var cls = 'sortable';
+            if (actSortCol === col) cls += actSortDir === 'asc' ? ' sort-asc' : ' sort-desc';
+            return cls;
+        };
+        var html = '<table class="sched-table"><thead><tr>';
+        html += '<th class="' + si('name') + '" onclick="actSort(\'name\')">Name</th>';
+        html += '<th class="' + si('location') + '" onclick="actSort(\'location\')">Location</th>';
+        html += '<th class="' + si('periods') + '" onclick="actSort(\'periods\')">Periods</th>';
+        html += '<th class="' + si('groups') + '" onclick="actSort(\'groups\')">Groups</th>';
+        html += '<th class="' + si('campers') + '" onclick="actSort(\'campers\')">Campers</th>';
+        html += '<th>Max/Day</th><th>Max/Wk</th><th>Flags</th>';
+        html += '<th class="' + si('status') + '" onclick="actSort(\'status\')">Status</th>';
+        html += '<th>Actions</th></tr></thead><tbody>';
         filtered.forEach(function(a) {
             html += '<tr class="' + (a.active ? '' : 'inactive-row') + '">';
             html += '<td><strong>' + esc(a.name) + '</strong></td>';
@@ -1400,6 +1435,12 @@
         html += '<label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;"><input type="checkbox" id="modal-act-ft"' + (act && act.is_field_trip ? ' checked' : '') + '> Field Trip</label>';
         html += '</div>';
         html += '<div class="modal-footer">';
+        if (act) {
+            html += '<div style="margin-right:auto;display:flex;gap:8px;">';
+            html += '<button class="btn-sm btn-sm-danger" onclick="deleteActivityPermanent(' + act.id + ',\'' + esc(act.name).replace(/'/g, "\\'") + '\')">Delete</button>';
+            if (act.active) html += '<button class="btn-sm" style="color:#D97706;border-color:#D97706;" onclick="deleteActivity(' + act.id + ',\'' + esc(act.name).replace(/'/g, "\\'") + '\');this.closest(\'.modal-overlay\').remove()">Deactivate</button>';
+            html += '</div>';
+        }
         html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
         html += '<button class="btn-sm btn-sm-primary" id="modal-act-save">Save</button>';
         html += '</div></div>';
@@ -1435,6 +1476,19 @@
         fetch('/api/schedule/activities/' + id, { method: 'DELETE' })
             .then(function(r) { return r.json(); })
             .then(function(data) { if (data.success) { showToast('Activity deactivated'); loadActivities(); } });
+    }
+
+    function deleteActivityPermanent(id, name) {
+        if (!confirm('Permanently delete "' + name + '"?\n\nThis cannot be undone.')) return;
+        fetch('/api/schedule/activities/' + id + '?permanent=true', { method: 'DELETE' })
+            .then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    showToast('Activity "' + name + '" deleted permanently');
+                    var modal = document.querySelector('.modal-overlay');
+                    if (modal) modal.remove();
+                    loadActivities();
+                } else showToast('Error: ' + (data.error || 'Unknown'), true);
+            });
     }
 
     function reactivateActivity(id) {

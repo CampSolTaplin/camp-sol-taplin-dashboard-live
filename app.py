@@ -5332,7 +5332,11 @@ def api_schedule_activities_delete(act_id):
     a = ScheduleActivity.query.get(act_id)
     if not a:
         return jsonify({'error': 'Activity not found'}), 404
-    a.active = False
+    permanent = request.args.get('permanent', '').lower() == 'true'
+    if permanent:
+        db.session.delete(a)
+    else:
+        a.active = False
     db.session.commit()
     return jsonify({'success': True})
 
