@@ -947,6 +947,20 @@
         });
     }
 
+    function deleteLocationPermanent(id, name) {
+        if (!confirm('Permanently delete "' + name + '"?\n\nThis cannot be undone. Activities using this location will have their location cleared.')) return;
+        fetch('/api/schedule/locations/' + id + '?permanent=true', { method: 'DELETE' })
+            .then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    showToast('Location "' + name + '" deleted permanently');
+                    var modal = document.querySelector('.modal-overlay');
+                    if (modal) modal.remove();
+                    loadLocations();
+                    loadActivities();
+                } else showToast('Error: ' + (data.error || 'Unknown'), true);
+            });
+    }
+
     function renderLocations() {
         var c = document.getElementById('locations-table-container');
         var search = (document.getElementById('loc-search') || {}).value || '';
@@ -981,10 +995,8 @@
         html += '<th style="width:110px;">Indoor/Outdoor</th>';
         html += '<th class="' + si('zone') + '" onclick="locSort(\'zone\')">Zone</th>';
         html += '<th class="' + si('capacity') + '" onclick="locSort(\'capacity\')" style="width:90px;">Capacity</th>';
-        html += '<th style="width:130px;">Availability</th>';
         html += '</tr></thead><tbody>';
         filtered.forEach(function(l) {
-            var pct = computeAvailPct(l.availability);
             html += '<tr class="loc-row' + (l.active ? '' : ' inactive-row') + '" onclick="locRowClick(event,' + l.id + ')">';
             // Toggle
             html += '<td onclick="event.stopPropagation()"><label class="loc-toggle"><input type="checkbox"' + (l.active ? ' checked' : '') + ' onchange="toggleLocationActive(' + l.id + ',this.checked)"><span class="loc-slider"></span></label></td>';
@@ -1002,8 +1014,6 @@
             html += '<td>' + esc(l.zone || '-') + '</td>';
             // Capacity
             html += '<td>' + (l.capacity || '-') + '</td>';
-            // Availability
-            html += '<td><div class="loc-avail"><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div><span>' + pct + '%</span></div></td>';
             html += '</tr>';
         });
         html += '</tbody></table>';
@@ -1033,7 +1043,12 @@
         html += '</select></div>';
         html += '</div>';
         html += '<div class="modal-footer">';
-        if (loc) html += '<button class="btn-sm btn-sm-danger" style="margin-right:auto;" onclick="toggleLocationActive(' + loc.id + ',false);this.closest(\'.modal-overlay\').remove()">Deactivate</button>';
+        if (loc) {
+            html += '<div style="margin-right:auto;display:flex;gap:8px;">';
+            html += '<button class="btn-sm btn-sm-danger" onclick="deleteLocationPermanent(' + loc.id + ',\'' + esc(loc.name).replace(/'/g, "\\'") + '\')">Delete</button>';
+            if (loc.active) html += '<button class="btn-sm" style="color:#D97706;border-color:#D97706;" onclick="toggleLocationActive(' + loc.id + ',false);this.closest(\'.modal-overlay\').remove()">Deactivate</button>';
+            html += '</div>';
+        }
         html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
         html += '<button class="btn-sm btn-sm-primary" id="modal-loc-save">Save</button>';
         html += '</div></div>';

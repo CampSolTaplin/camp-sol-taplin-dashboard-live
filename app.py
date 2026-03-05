@@ -5091,7 +5091,13 @@ def api_schedule_locations_delete(loc_id):
     loc = ScheduleLocation.query.get(loc_id)
     if not loc:
         return jsonify({'error': 'Location not found'}), 404
-    loc.active = False
+    permanent = request.args.get('permanent', '').lower() == 'true'
+    if permanent:
+        # Clear location_id from any activities referencing this location
+        ScheduleActivity.query.filter_by(location_id=loc.id).update({'location_id': None})
+        db.session.delete(loc)
+    else:
+        loc.active = False
     db.session.commit()
     return jsonify({'success': True})
 
