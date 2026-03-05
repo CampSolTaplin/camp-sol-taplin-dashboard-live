@@ -105,6 +105,123 @@
             .sched-tab { padding: 8px 12px; font-size: 13px; }
             .content { padding: 20px !important; }
         }
+
+        /* ========== PERIOD CALENDAR ========== */
+        .cal-wrapper {
+            display: flex; position: relative; border: 1px solid #E5E7EB;
+            border-radius: 12px; overflow: hidden; background: white;
+            margin-top: 16px;
+        }
+        .cal-time-axis {
+            width: 72px; min-width: 72px; position: relative;
+            background: #F9FAFB; border-right: 1px solid #E5E7EB;
+        }
+        .cal-time-label {
+            position: absolute; right: 10px; transform: translateY(-50%);
+            font-size: 11px; font-weight: 500; color: #9CA3AF;
+            font-family: 'DM Sans', sans-serif; white-space: nowrap;
+        }
+        .cal-day-columns { display: flex; flex: 1; }
+        .cal-day-col {
+            flex: 1; position: relative; border-right: 1px solid #F3F4F6;
+            min-width: 0;
+        }
+        .cal-day-col:last-child { border-right: none; }
+        .cal-day-header {
+            text-align: center; padding: 10px 4px; font-family: 'Outfit', sans-serif;
+            font-size: 13px; font-weight: 600; color: #374151;
+            background: #F9FAFB; border-bottom: 1px solid #E5E7EB;
+            position: sticky; top: 0; z-index: 4;
+        }
+        .cal-day-body { position: relative; }
+
+        /* Grid lines */
+        .cal-gridline {
+            position: absolute; left: 0; right: 0; height: 1px; background: #F3F4F6;
+            pointer-events: none;
+        }
+        .cal-gridline.hour { background: #E5E7EB; }
+
+        /* Period blocks */
+        .cal-block {
+            position: absolute; left: 4px; right: 4px; border-radius: 8px;
+            cursor: grab; transition: box-shadow 0.15s;
+            z-index: 2; user-select: none; overflow: hidden;
+        }
+        .cal-block:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.18); z-index: 3; }
+        .cal-block.dragging {
+            opacity: 0.85; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 10; cursor: grabbing;
+        }
+        .cal-block-inner {
+            padding: 5px 8px; height: 100%; display: flex; flex-direction: column;
+            justify-content: space-between; position: relative; overflow: hidden;
+        }
+        .cal-block-top { display: flex; flex-direction: column; gap: 1px; }
+        .cal-block-label {
+            font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+            color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .cal-block-time {
+            font-size: 10px; opacity: 0.85; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .cal-block-bottom {
+            display: flex; justify-content: space-between; align-items: flex-end;
+        }
+        .cal-block-duration { font-size: 10px; opacity: 0.7; }
+        .cal-block-period-num { font-size: 10px; opacity: 0.7; }
+
+        /* Delete button */
+        .cal-block-delete {
+            position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+            border: none; background: rgba(255,255,255,0.25); border-radius: 4px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.15s; padding: 0;
+        }
+        .cal-block:hover .cal-block-delete { opacity: 1; }
+        .cal-block-delete:hover { background: rgba(239,68,68,0.8); }
+        .cal-block-delete svg {
+            width: 11px; height: 11px; stroke: white; stroke-width: 2; fill: none;
+        }
+
+        /* Resize handle */
+        .cal-resize-handle {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 6px;
+            cursor: ns-resize; border-radius: 0 0 8px 8px; background: transparent;
+        }
+        .cal-resize-handle:hover, .cal-block.resizing .cal-resize-handle {
+            background: rgba(0,0,0,0.12);
+        }
+
+        /* Color palette */
+        .cal-block.cal-c0 { background: linear-gradient(135deg, #0D9488, #14B8A6); color: white; }
+        .cal-block.cal-c1 { background: linear-gradient(135deg, #4F46E5, #6366F1); color: white; }
+        .cal-block.cal-c2 { background: linear-gradient(135deg, #D97706, #F59E0B); color: white; }
+        .cal-block.cal-c3 { background: linear-gradient(135deg, #DB2777, #EC4899); color: white; }
+        .cal-block.cal-c4 { background: linear-gradient(135deg, #2563EB, #3B82F6); color: white; }
+        .cal-block.cal-c5 { background: linear-gradient(135deg, #7C3AED, #8B5CF6); color: white; }
+        .cal-block.cal-c6 { background: linear-gradient(135deg, #059669, #10B981); color: white; }
+        .cal-block.cal-c7 { background: linear-gradient(135deg, #EA580C, #F97316); color: white; }
+
+        /* Empty state */
+        .cal-empty {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 300px; color: #9CA3AF; font-size: 14px; text-align: center;
+            flex-direction: column; gap: 8px; padding: 40px;
+        }
+        .cal-empty svg { opacity: 0.4; }
+
+        /* Calendar mobile */
+        @media (max-width: 768px) {
+            .cal-time-axis { width: 44px; min-width: 44px; }
+            .cal-time-label { font-size: 9px; right: 4px; }
+            .cal-day-header { font-size: 11px; padding: 6px 2px; }
+            .cal-block { left: 2px; right: 2px; border-radius: 5px; }
+            .cal-block-label { font-size: 10px; }
+            .cal-block-time { font-size: 9px; }
+            .cal-block-duration, .cal-block-period-num { font-size: 9px; }
+        }
     </style>
 </head>
 <body>
@@ -154,8 +271,15 @@
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         Period Schemas
                     </h3>
-                    <div class="toolbar">
-                        <button class="btn-sm btn-sm-primary" onclick="promptCreateSchema()">+ Add Schema</button>
+                    <div class="toolbar" style="justify-content:space-between;">
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <select id="period-schema-select" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;min-width:180px;" onchange="onSchemaChanged()"></select>
+                            <button class="btn-sm" onclick="editSchema(getSelectedSchemaId())">Rename</button>
+                            <button class="btn-sm btn-sm-primary" onclick="promptCreateSchema()">+ New Schema</button>
+                        </div>
+                        <div>
+                            <button class="btn-sm btn-sm-primary" onclick="openAddPeriodModal()">+ Add Period</button>
+                        </div>
                     </div>
                     <div id="periods-container"></div>
                 </div>
@@ -362,46 +486,331 @@
         });
     }
 
-    /* ========== PERIODS ========== */
+    /* ========== PERIODS (CALENDAR VIEW) ========== */
+    var PPM = 1.5;          // pixels per minute
+    var CAL_START = 8;      // 8:00 AM
+    var CAL_END = 17;       // 5:00 PM
+    var SNAP = 5;           // snap to 5-minute grid
+    var CAL_DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+    var CAL_COLORS = ['cal-c0','cal-c1','cal-c2','cal-c3','cal-c4','cal-c5','cal-c6','cal-c7'];
+    var dragState = null;
+    var dragMoved = false;
+
+    /* -- Utilities -- */
+    function t2m(t) { var p = t.split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); }
+    function m2t(m) { var h = Math.floor(m / 60), mi = m % 60; return (h < 10 ? '0' + h : h) + ':' + (mi < 10 ? '0' + mi : mi); }
+    function fmtAP(t) {
+        var m = t2m(t), h = Math.floor(m / 60), mi = m % 60;
+        var ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+        return h + ':' + (mi < 10 ? '0' + mi : mi) + ' ' + ap;
+    }
+    function m2px(m) { return (m - CAL_START * 60) * PPM; }
+    function px2m(px) { return Math.round((px / PPM + CAL_START * 60) / SNAP) * SNAP; }
+    function getSelectedSchemaId() { var s = document.getElementById('period-schema-select'); return s ? parseInt(s.value) : null; }
+    function getSelectedSchema() { var id = getSelectedSchemaId(); return allSchemas.find(function(s) { return s.id === id; }) || null; }
+
+    /* -- Schema selector -- */
+    function populateSchemaSelect() {
+        var sel = document.getElementById('period-schema-select');
+        if (!sel) return;
+        var cur = sel.value;
+        sel.innerHTML = '';
+        if (!allSchemas.length) { sel.innerHTML = '<option value="">No schemas</option>'; return; }
+        allSchemas.forEach(function(s) {
+            var o = document.createElement('option'); o.value = s.id; o.textContent = s.name; sel.appendChild(o);
+        });
+        if (cur && allSchemas.some(function(s) { return s.id === parseInt(cur); })) sel.value = cur;
+        else sel.value = allSchemas[0].id;
+    }
+    function onSchemaChanged() { renderPeriodsCalendar(); }
+
+    /* -- Load & render -- */
     function loadPeriods() {
         fetch('/api/schedule/periods')
             .then(function(r) { return r.json(); })
-            .then(function(data) { allSchemas = data.schemas || []; renderPeriods(); });
+            .then(function(data) {
+                allSchemas = data.schemas || [];
+                populateSchemaSelect();
+                renderPeriodsCalendar();
+            });
     }
 
-    function renderPeriods() {
-        var c = document.getElementById('periods-container');
-        if (!allSchemas.length) {
-            c.innerHTML = '<div class="empty-state"><p>No period schemas yet. Click "+ Add Schema" to create one (e.g., "Main").</p></div>';
+    function renderPeriodsCalendar() {
+        var container = document.getElementById('periods-container');
+        var schema = getSelectedSchema();
+        if (!allSchemas.length || !schema) {
+            container.innerHTML = '<div class="cal-empty"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#d1d5db" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><p>No period schemas yet.<br>Click "+ New Schema" to create one.</p></div>';
             return;
         }
-        var html = '';
-        allSchemas.forEach(function(s) {
-            html += '<div style="margin-bottom:24px;padding:16px;background:#F9FAFB;border-radius:10px;">';
-            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
-            html += '<h4 style="margin:0;font-family:Outfit,sans-serif;font-size:16px;font-weight:600;">' + esc(s.name) + '</h4>';
-            html += '<div style="display:flex;gap:8px;">';
-            html += '<button class="btn-sm" onclick="editSchema(' + s.id + ')">Rename</button>';
-            html += '<button class="btn-sm btn-sm-primary" onclick="promptAddPeriod(' + s.id + ')">+ Period</button>';
-            html += '</div></div>';
-            if (s.periods.length) {
-                html += '<table class="sched-table"><thead><tr><th>#</th><th>Start</th><th>End</th><th>Duration</th><th>Actions</th></tr></thead><tbody>';
-                s.periods.forEach(function(p) {
-                    html += '<tr><td><strong>Period ' + p.period_number + '</strong></td>';
-                    html += '<td>' + esc(p.start_time) + '</td><td>' + esc(p.end_time) + '</td>';
-                    html += '<td>' + p.duration_min + ' min</td>';
-                    html += '<td><button class="btn-sm" onclick="editPeriod(' + p.id + ')">Edit</button> ';
-                    html += '<button class="btn-sm btn-sm-danger" onclick="deletePeriod(' + p.id + ')">Delete</button></td></tr>';
-                });
-                html += '</tbody></table>';
-            } else {
-                html += '<p style="color:#9CA3AF;font-size:13px;margin:0;">No periods in this schema yet.</p>';
+        var totalMin = (CAL_END - CAL_START) * 60;
+        var bodyH = totalMin * PPM;
+        var html = '<div class="cal-wrapper">';
+
+        // Time axis
+        html += '<div class="cal-time-axis" style="height:' + (bodyH + 38) + 'px;">';
+        html += '<div style="height:38px;"></div>'; // spacer for day headers
+        for (var h = CAL_START; h <= CAL_END; h++) {
+            var tp = (h - CAL_START) * 60 * PPM + 38;
+            var ap = h >= 12 ? 'PM' : 'AM', h12 = h % 12 || 12;
+            html += '<div class="cal-time-label" style="top:' + tp + 'px;">' + h12 + ' ' + ap + '</div>';
+        }
+        html += '</div>';
+
+        // Day columns
+        html += '<div class="cal-day-columns">';
+        CAL_DAYS.forEach(function(day, di) {
+            html += '<div class="cal-day-col">';
+            html += '<div class="cal-day-header">' + day.substring(0, 3) + '</div>';
+            html += '<div class="cal-day-body" style="height:' + bodyH + 'px;" data-day="' + di + '" onmousedown="calBodyClick(event,' + di + ')">';
+
+            // Grid lines
+            for (var m = 0; m <= totalMin; m += 30) {
+                var gt = m * PPM;
+                html += '<div class="cal-gridline' + (m % 60 === 0 ? ' hour' : '') + '" style="top:' + gt + 'px;"></div>';
             }
-            html += '</div>';
+
+            // Period blocks
+            schema.periods.forEach(function(p, idx) {
+                var sm = t2m(p.start_time), em = t2m(p.end_time);
+                var top = m2px(sm), ht = (em - sm) * PPM;
+                var cc = CAL_COLORS[idx % CAL_COLORS.length];
+                html += '<div class="cal-block ' + cc + '" data-period-id="' + p.id + '" data-day="' + di + '" ';
+                html += 'style="top:' + top + 'px;height:' + ht + 'px;" ';
+                html += 'onmousedown="startDrag(event,' + p.id + ',\'move\')">';
+                html += '<div class="cal-block-inner">';
+                html += '<div class="cal-block-top">';
+                html += '<span class="cal-block-time">' + fmtAP(p.start_time) + ' - ' + fmtAP(p.end_time) + '</span>';
+                html += '</div>';
+                html += '<div class="cal-block-bottom">';
+                html += '<span class="cal-block-duration">' + p.duration_min + 'm</span>';
+                html += '<span class="cal-block-period-num">Period: ' + p.period_number + '</span>';
+                html += '</div>';
+                html += '<button class="cal-block-delete" onclick="event.stopPropagation();deletePeriod(' + p.id + ')" title="Delete">';
+                html += '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+                html += '</button>';
+                html += '</div>';
+                html += '<div class="cal-resize-handle" onmousedown="event.stopPropagation();startDrag(event,' + p.id + ',\'resize\')"></div>';
+                html += '</div>';
+            });
+
+            html += '</div></div>'; // day-body, day-col
         });
-        c.innerHTML = html;
+        html += '</div></div>'; // day-columns, wrapper
+        container.innerHTML = html;
     }
 
+    /* -- Click empty space to add period -- */
+    function calBodyClick(event, dayIdx) {
+        if (event.target.closest('.cal-block')) return;
+        var body = event.currentTarget;
+        var rect = body.getBoundingClientRect();
+        var y = event.clientY - rect.top;
+        var clickMin = px2m(y);
+        var dur = 40;
+        openAddPeriodModal(m2t(clickMin), m2t(clickMin + dur), dur);
+    }
+
+    /* -- Drag-and-drop -- */
+    function startDrag(event, periodId, type) {
+        event.preventDefault();
+        event.stopPropagation();
+        dragMoved = false;
+
+        // Find ALL blocks for this period (one per day column)
+        var blocks = document.querySelectorAll('.cal-block[data-period-id="' + periodId + '"]');
+        if (!blocks.length) return;
+        var first = blocks[0];
+        var startY = event.clientY;
+
+        dragState = {
+            type: type,
+            periodId: periodId,
+            startY: startY,
+            origTop: parseFloat(first.style.top),
+            origHeight: parseFloat(first.style.height),
+            blocks: blocks
+        };
+
+        blocks.forEach(function(b) { b.classList.add(type === 'move' ? 'dragging' : 'resizing'); });
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('mouseup', onDragEnd);
+    }
+
+    function onDragMove(event) {
+        if (!dragState) return;
+        event.preventDefault();
+        var dy = event.clientY - dragState.startY;
+        if (Math.abs(dy) > 3) dragMoved = true;
+
+        dragState.blocks.forEach(function(block) {
+            if (dragState.type === 'move') {
+                var maxH = parseFloat(block.parentElement.style.height) || 810;
+                var newTop = Math.max(0, Math.min(dragState.origTop + dy, maxH - dragState.origHeight));
+                var snapped = px2m(newTop);
+                newTop = m2px(snapped);
+                block.style.top = newTop + 'px';
+                // Live-update labels
+                var dur = Math.round(dragState.origHeight / PPM);
+                var tl = block.querySelector('.cal-block-time');
+                if (tl) tl.textContent = fmtAP(m2t(snapped)) + ' - ' + fmtAP(m2t(snapped + dur));
+            } else {
+                var newH = Math.max(SNAP * PPM, dragState.origHeight + dy);
+                var newDur = Math.round((newH / PPM) / SNAP) * SNAP;
+                newH = newDur * PPM;
+                block.style.height = newH + 'px';
+                var sm = px2m(parseFloat(block.style.top));
+                var dl = block.querySelector('.cal-block-duration');
+                var tl2 = block.querySelector('.cal-block-time');
+                if (dl) dl.textContent = newDur + 'm';
+                if (tl2) tl2.textContent = fmtAP(m2t(sm)) + ' - ' + fmtAP(m2t(sm + newDur));
+            }
+        });
+    }
+
+    function onDragEnd(event) {
+        if (!dragState) return;
+        document.removeEventListener('mousemove', onDragMove);
+        document.removeEventListener('mouseup', onDragEnd);
+
+        var first = dragState.blocks[0];
+        first.classList.remove('dragging', 'resizing');
+        dragState.blocks.forEach(function(b) { b.classList.remove('dragging', 'resizing'); });
+
+        if (!dragMoved) {
+            // It was a click, not a drag — open edit modal
+            var pid = dragState.periodId;
+            dragState = null;
+            openEditPeriodModal(pid);
+            return;
+        }
+
+        var newTop = parseFloat(first.style.top);
+        var newH = parseFloat(first.style.height);
+        var newStart = px2m(newTop);
+        var newDur = Math.round(newH / PPM);
+        var newEnd = newStart + newDur;
+        var periodId = dragState.periodId;
+        dragState = null;
+
+        fetch('/api/schedule/periods/' + periodId, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ start_time: m2t(newStart), end_time: m2t(newEnd), duration_min: newDur })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) { showToast('Period updated'); loadPeriods(); }
+            else { showToast('Error: ' + (data.error || 'Unknown'), true); renderPeriodsCalendar(); }
+        });
+    }
+
+    /* -- Edit period modal -- */
+    function openEditPeriodModal(periodId) {
+        var period = null;
+        allSchemas.forEach(function(s) { s.periods.forEach(function(p) { if (p.id === periodId) period = p; }); });
+        if (!period) return;
+
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+        var html = '<div class="modal-content"><h3>Edit Period ' + period.period_number + '</h3>';
+        html += '<div class="form-grid form-grid-2">';
+        html += '<div class="form-field"><label>Period Number</label><input type="number" id="ep-num" min="1" value="' + period.period_number + '"></div>';
+        html += '<div class="form-field"><label>Duration (minutes)</label><input type="number" id="ep-dur" min="5" step="5" value="' + period.duration_min + '"></div>';
+        html += '<div class="form-field"><label>Start Time</label><input type="time" id="ep-start" value="' + period.start_time + '"></div>';
+        html += '<div class="form-field"><label>End Time</label><input type="time" id="ep-end" value="' + period.end_time + '"></div>';
+        html += '</div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm btn-sm-danger" onclick="deletePeriod(' + period.id + ');this.closest(\'.modal-overlay\').remove();" style="margin-right:auto;">Delete</button>';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm btn-sm-primary" id="ep-save">Save</button>';
+        html += '</div></div>';
+
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+
+        // Auto-calc end from start + duration
+        function autoEnd() {
+            var sv = document.getElementById('ep-start').value;
+            if (sv) {
+                var dur = parseInt(document.getElementById('ep-dur').value) || 40;
+                document.getElementById('ep-end').value = m2t(t2m(sv) + dur);
+            }
+        }
+        document.getElementById('ep-start').addEventListener('change', autoEnd);
+        document.getElementById('ep-dur').addEventListener('input', autoEnd);
+
+        document.getElementById('ep-save').onclick = function() {
+            var payload = {
+                period_number: parseInt(document.getElementById('ep-num').value),
+                start_time: document.getElementById('ep-start').value,
+                end_time: document.getElementById('ep-end').value,
+                duration_min: parseInt(document.getElementById('ep-dur').value)
+            };
+            fetch('/api/schedule/periods/' + periodId, {
+                method: 'PUT', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) { showToast('Period updated'); overlay.remove(); loadPeriods(); }
+                else showToast('Error: ' + (data.error || 'Unknown'), true);
+            });
+        };
+    }
+
+    /* -- Add period modal -- */
+    function openAddPeriodModal(prefillStart, prefillEnd, prefillDur) {
+        var schema = getSelectedSchema();
+        if (!schema) { showToast('Select a schema first', true); return; }
+        var nextNum = schema.periods.length ? Math.max.apply(null, schema.periods.map(function(p) { return p.period_number; })) + 1 : 1;
+
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+        var html = '<div class="modal-content"><h3>Add Period to "' + esc(schema.name) + '"</h3>';
+        html += '<div class="form-grid form-grid-2">';
+        html += '<div class="form-field"><label>Period Number</label><input type="number" id="ap-num" min="1" value="' + nextNum + '"></div>';
+        html += '<div class="form-field"><label>Duration (minutes)</label><input type="number" id="ap-dur" min="5" step="5" value="' + (prefillDur || 40) + '"></div>';
+        html += '<div class="form-field"><label>Start Time</label><input type="time" id="ap-start" value="' + (prefillStart || '') + '"></div>';
+        html += '<div class="form-field"><label>End Time</label><input type="time" id="ap-end" value="' + (prefillEnd || '') + '"></div>';
+        html += '</div>';
+        html += '<div class="modal-footer">';
+        html += '<button class="btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>';
+        html += '<button class="btn-sm btn-sm-primary" id="ap-save">Create Period</button>';
+        html += '</div></div>';
+
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+
+        function autoEnd() {
+            var sv = document.getElementById('ap-start').value;
+            if (sv) {
+                var dur = parseInt(document.getElementById('ap-dur').value) || 40;
+                document.getElementById('ap-end').value = m2t(t2m(sv) + dur);
+            }
+        }
+        document.getElementById('ap-start').addEventListener('change', autoEnd);
+        document.getElementById('ap-dur').addEventListener('input', autoEnd);
+
+        document.getElementById('ap-save').onclick = function() {
+            var st = document.getElementById('ap-start').value;
+            var en = document.getElementById('ap-end').value;
+            if (!st || !en) { showToast('Start and End time are required', true); return; }
+            var payload = {
+                schema_id: schema.id,
+                period_number: parseInt(document.getElementById('ap-num').value),
+                start_time: st, end_time: en,
+                duration_min: parseInt(document.getElementById('ap-dur').value) || 40
+            };
+            fetch('/api/schedule/periods', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) { showToast('Period added!'); overlay.remove(); loadPeriods(); }
+                else showToast('Error: ' + (data.error || 'Unknown'), true);
+            });
+        };
+    }
+
+    /* -- Schema CRUD -- */
     function promptCreateSchema() {
         var name = prompt('Schema name (e.g., "Main", "Friday Short"):');
         if (!name || !name.trim()) return;
@@ -415,6 +824,7 @@
     }
 
     function editSchema(id) {
+        if (!id) return;
         var s = allSchemas.find(function(x) { return x.id === id; });
         if (!s) return;
         var newName = prompt('Schema name:', s.name);
@@ -424,46 +834,6 @@
             body: JSON.stringify({name: newName.trim()})
         }).then(function(r) { return r.json(); }).then(function(data) {
             if (data.success) { showToast('Schema renamed'); loadPeriods(); }
-            else showToast('Error: ' + (data.error || 'Unknown'), true);
-        });
-    }
-
-    function promptAddPeriod(schemaId) {
-        var s = allSchemas.find(function(x) { return x.id === schemaId; });
-        var nextNum = s ? (s.periods.length + 1) : 1;
-        var num = prompt('Period number:', nextNum);
-        if (num === null) return;
-        var start = prompt('Start time (HH:MM):', '');
-        if (start === null) return;
-        var end = prompt('End time (HH:MM):', '');
-        if (end === null) return;
-        var dur = prompt('Duration (minutes):', '40');
-        if (dur === null) return;
-        fetch('/api/schedule/periods', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({schema_id: schemaId, period_number: parseInt(num), start_time: start.trim(), end_time: end.trim(), duration_min: parseInt(dur)})
-        }).then(function(r) { return r.json(); }).then(function(data) {
-            if (data.success) { showToast('Period added!'); loadPeriods(); }
-            else showToast('Error: ' + (data.error || 'Unknown'), true);
-        });
-    }
-
-    function editPeriod(id) {
-        // Find the period across all schemas
-        var period = null;
-        allSchemas.forEach(function(s) { s.periods.forEach(function(p) { if (p.id === id) period = p; }); });
-        if (!period) return;
-        var start = prompt('Start time:', period.start_time);
-        if (start === null) return;
-        var end = prompt('End time:', period.end_time);
-        if (end === null) return;
-        var dur = prompt('Duration (minutes):', period.duration_min);
-        if (dur === null) return;
-        fetch('/api/schedule/periods/' + id, {
-            method: 'PUT', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({start_time: start.trim(), end_time: end.trim(), duration_min: parseInt(dur)})
-        }).then(function(r) { return r.json(); }).then(function(data) {
-            if (data.success) { showToast('Period updated'); loadPeriods(); }
             else showToast('Error: ' + (data.error || 'Unknown'), true);
         });
     }
