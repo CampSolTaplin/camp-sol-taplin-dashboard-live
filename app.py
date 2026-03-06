@@ -347,6 +347,7 @@ class GroupDivisionConfig(db.Model):
     max_difference = db.Column(db.Integer, nullable=False, default=2)
     gender_balance = db.Column(db.Boolean, nullable=False, default=True)
     grade_rules = db.Column(db.Text, nullable=True)  # JSON: {"1": ["K","1st"], "2": ["2nd","3rd"]}
+    week_overrides = db.Column(db.Text, nullable=True)  # JSON: {"9": {"num_groups": 3, "max_per_group": 15}}
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # ==================== INIT DB & DEFAULT USERS ====================
@@ -416,6 +417,13 @@ with app.app_context():
                 for a in null_day_records:
                     a.day = group_to_day.get(a.group_name, 'Monday')
                 db.session.commit()
+    # Migrate group_division_configs: add 'week_overrides' column if missing
+    if 'group_division_configs' in inspector.get_table_names():
+        gdc_cols = [c['name'] for c in inspector.get_columns('group_division_configs')]
+        if 'week_overrides' not in gdc_cols:
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE group_division_configs ADD COLUMN week_overrides TEXT"))
+                conn.commit()
     # Migrate existing users: backfill permissions from role if not set
     for u in UserAccount.query.all():
         if u.permissions is None:
@@ -6003,6 +6011,12 @@ def api_group_division_config_get(program):
                 grade_rules = json.loads(cfg.grade_rules)
             except Exception:
                 grade_rules = {}
+        week_overrides = {}
+        if cfg.week_overrides:
+            try:
+                week_overrides = json.loads(cfg.week_overrides)
+            except Exception:
+                week_overrides = {}
         return jsonify({
             'program': cfg.program,
             'num_groups': cfg.num_groups,
@@ -6010,6 +6024,7 @@ def api_group_division_config_get(program):
             'max_difference': cfg.max_difference,
             'gender_balance': cfg.gender_balance,
             'grade_rules': grade_rules,
+            'week_overrides': week_overrides,
             'updated_at': cfg.updated_at.isoformat() if cfg.updated_at else None,
         })
     # Return defaults
@@ -6020,6 +6035,7 @@ def api_group_division_config_get(program):
         'max_difference': 2,
         'gender_balance': True,
         'grade_rules': {},
+        'week_overrides': {},
         'updated_at': None,
     })
 
@@ -6044,6 +6060,8 @@ def api_group_division_config_put(program):
     cfg.gender_balance = bool(data.get('gender_balance', True))
     grade_rules = data.get('grade_rules', {})
     cfg.grade_rules = json.dumps(grade_rules) if grade_rules else None
+    week_overrides = data.get('week_overrides', {})
+    cfg.week_overrides = json.dumps(week_overrides) if week_overrides else None
     cfg.updated_at = datetime.utcnow()
     db.session.commit()
     return jsonify({'success': True})
@@ -6062,13 +6080,17 @@ def api_group_division_grades(program):
     participants = {}
     if api_cache.get('data') and api_cache['data'].get('participants'):
         participants = api_cache['data']['participants'].get(program, {})
-    # Collect all person IDs
+    # Collect all person IDs and per-week counts
     all_pids = set()
+    week_counts = {}
     for week_str, camper_list in participants.items():
+        week_pids = set()
         for c in camper_list:
             pid = str(c.get('person_id', c.get('PersonID', '')))
             if pid:
                 all_pids.add(pid)
+                week_pids.add(pid)
+        week_counts[week_str] = len(week_pids)
     # Load person details
     persons = _load_and_fetch_persons(list(all_pids))
     grades = set()
@@ -6077,19 +6099,34 @@ def api_group_division_grades(program):
         grade = info.get('grade', '')
         if grade:
             grades.add(grade)
-    # Sort grades in a logical order
-    grade_order = ['Pre-K', 'K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th']
+    # Sort grades in a logical order (includes CampMinder verbose names)
+    grade_order = [
+        'Pre-K', 'PK2', 'PK3', 'PK4', 'PK4 4yr -by 8/31/26',
+        'K', 'Entering Kinder',
+        '1st', 'Entering 1st grade',
+        '2nd', 'Entering 2nd grade',
+        '3rd', 'Entering 3rd grade',
+        '4th', 'Entering 4th grade',
+        '5th', 'Entering 5th grade',
+        '6th', 'Entering 6th grade',
+        '7th', 'Entering 7th grade',
+        '8th', 'Entering 8th grade',
+        '9th', '10th', '11th', '12th',
+    ]
     sorted_grades = sorted(grades, key=lambda g: grade_order.index(g) if g in grade_order else 99)
-    return jsonify({'grades': sorted_grades})
+    return jsonify({'grades': sorted_grades, 'total_campers': len(all_pids), 'week_counts': week_counts})
 
 
 def _fuzzy_match_friends(raw_text, camper_map):
-    """Match free-text friend names to actual camper person IDs using fuzzy matching."""
+    """Match free-text friend names to actual camper person IDs using fuzzy matching.
+    Returns (matched_list, unmatched_list).
+    """
     from difflib import SequenceMatcher
     if not raw_text or not raw_text.strip():
-        return []
+        return [], []
     friend_names = [n.strip() for n in raw_text.replace('\n', ',').split(',') if n.strip()]
     matched = []
+    unmatched = []
     for friend_name in friend_names:
         fn_lower = friend_name.lower()
         best_match = None
@@ -6120,7 +6157,14 @@ def _fuzzy_match_friends(raw_text, camper_map):
                 'raw_name': friend_name,
                 'matched_name': '{} {}'.format(camper_map[best_match]['first_name'], camper_map[best_match]['last_name']),
             })
-    return matched
+        else:
+            # Track unmatched — include best candidate info for debugging
+            unmatched.append({
+                'raw_name': friend_name,
+                'best_candidate': '{} {}'.format(camper_map[best_match]['first_name'], camper_map[best_match]['last_name']) if best_match else None,
+                'best_score': round(best_score, 2) if best_match else 0,
+            })
+    return matched, unmatched
 
 
 def _score_placement(camper, group_members, all_groups, config_dict, camper_map):
@@ -6174,8 +6218,9 @@ def _run_group_division(program, config_dict):
     if not participants:
         return {'success': False, 'error': 'No enrollment data found for this program. Please load data first.'}
 
-    num_groups = config_dict.get('num_groups', 2)
-    grade_rules = config_dict.get('grade_rules', {})
+    base_num_groups = config_dict.get('num_groups', 2)
+    base_grade_rules = config_dict.get('grade_rules', {})
+    week_overrides = config_dict.get('week_overrides', {})
 
     # Collect all person IDs across all weeks
     all_pids = set()
@@ -6215,8 +6260,9 @@ def _run_group_division(program, config_dict):
 
     # Parse friend requests with fuzzy matching
     all_friend_matches = []
+    all_unmatched = []
     for pid, camper in camper_map.items():
-        matches = _fuzzy_match_friends(camper['share_group_with'], camper_map)
+        matches, unmatched = _fuzzy_match_friends(camper['share_group_with'], camper_map)
         camper['friend_matches'] = matches
         for m in matches:
             all_friend_matches.append({
@@ -6227,15 +6273,16 @@ def _run_group_division(program, config_dict):
                 'matched_pid': m['pid'],
                 'confidence': m['score'],
             })
+        for u in unmatched:
+            all_unmatched.append({
+                'camper_pid': pid,
+                'camper_name': '{} {}'.format(camper['first_name'], camper['last_name']),
+                'requested': u['raw_name'],
+                'best_candidate': u['best_candidate'],
+                'best_score': u['best_score'],
+            })
 
-    # Build grade-to-group mapping from rules
-    grade_to_group = {}
-    if grade_rules:
-        for gnum_str, grades_list in grade_rules.items():
-            for g in grades_list:
-                grade_to_group[g] = int(gnum_str)
-
-    # ===== WEEK 1 SEED =====
+    # ===== PROCESS WEEKS =====
     sorted_weeks = sorted(week_pids.keys())
     if not sorted_weeks:
         return {'success': False, 'error': 'No weeks with enrollment found.'}
@@ -6247,6 +6294,20 @@ def _run_group_division(program, config_dict):
         pids_this_week = list(week_pids.get(week, set()))
         if not pids_this_week:
             continue
+
+        # Merge base config with per-week overrides
+        wk_override = week_overrides.get(str(week), {})
+        week_config = dict(config_dict)
+        week_config.update(wk_override)
+        num_groups = int(week_config.get('num_groups', base_num_groups))
+        grade_rules = week_config.get('grade_rules', base_grade_rules)
+
+        # Build grade-to-group mapping for this week
+        grade_to_group = {}
+        if grade_rules:
+            for gnum_str, grades_list in grade_rules.items():
+                for g in grades_list:
+                    grade_to_group[g] = int(gnum_str)
 
         groups = {g: [] for g in range(1, num_groups + 1)}
 
@@ -6270,7 +6331,7 @@ def _run_group_division(program, config_dict):
                 best_group = 1
                 best_score = -9999
                 for g in range(1, num_groups + 1):
-                    s = _score_placement(camper, groups[g], groups, config_dict, camper_map)
+                    s = _score_placement(camper, groups[g], groups, week_config, camper_map)
                     if s > best_score:
                         best_score = s
                         best_group = g
@@ -6289,13 +6350,13 @@ def _run_group_division(program, config_dict):
                                 if c2['grade'] in grade_to_group:
                                     continue
                                 # Calculate current score
-                                current_s1 = _score_placement(c1, [m for m in groups[g1] if m['pid'] != c1['pid']], groups, config_dict, camper_map)
-                                current_s2 = _score_placement(c2, [m for m in groups[g2] if m['pid'] != c2['pid']], groups, config_dict, camper_map)
+                                current_s1 = _score_placement(c1, [m for m in groups[g1] if m['pid'] != c1['pid']], groups, week_config, camper_map)
+                                current_s2 = _score_placement(c2, [m for m in groups[g2] if m['pid'] != c2['pid']], groups, week_config, camper_map)
                                 # Calculate swapped score
                                 test_g1 = [m for m in groups[g1] if m['pid'] != c1['pid']]
                                 test_g2 = [m for m in groups[g2] if m['pid'] != c2['pid']]
-                                swap_s1 = _score_placement(c2, test_g1, groups, config_dict, camper_map)
-                                swap_s2 = _score_placement(c1, test_g2, groups, config_dict, camper_map)
+                                swap_s1 = _score_placement(c2, test_g1, groups, week_config, camper_map)
+                                swap_s2 = _score_placement(c1, test_g2, groups, week_config, camper_map)
                                 if (swap_s1 + swap_s2) > (current_s1 + current_s2):
                                     groups[g1][i] = c2
                                     groups[g2][j] = c1
@@ -6318,7 +6379,7 @@ def _run_group_division(program, config_dict):
                     if forced_g <= num_groups:
                         groups[forced_g].append(c)
                         continue
-                # Try to keep in same group
+                # Try to keep in same group (if group still exists in this week's config)
                 prev_group = pid_primary_group.get(pid)
                 if prev_group and prev_group <= num_groups:
                     groups[prev_group].append(c)
@@ -6331,7 +6392,7 @@ def _run_group_division(program, config_dict):
                 best_group = 1
                 best_score = -9999
                 for g in range(1, num_groups + 1):
-                    s = _score_placement(camper, groups[g], groups, config_dict, camper_map)
+                    s = _score_placement(camper, groups[g], groups, week_config, camper_map)
                     if s > best_score:
                         best_score = s
                         best_group = g
@@ -6412,6 +6473,7 @@ def _run_group_division(program, config_dict):
         'stats': stats,
         'campers': campers_export,
         'friend_matches': friend_details,
+        'unmatched_friends': all_unmatched,
     }
 
 
@@ -6432,12 +6494,19 @@ def api_group_division_run(program):
             grade_rules = json.loads(cfg.grade_rules)
         except Exception:
             grade_rules = {}
+    week_overrides = {}
+    if cfg and cfg.week_overrides:
+        try:
+            week_overrides = json.loads(cfg.week_overrides)
+        except Exception:
+            week_overrides = {}
     config_dict = {
         'num_groups': cfg.num_groups if cfg else 2,
         'max_per_group': cfg.max_per_group if cfg else 0,
         'max_difference': cfg.max_difference if cfg else 2,
         'gender_balance': cfg.gender_balance if cfg else True,
         'grade_rules': grade_rules,
+        'week_overrides': week_overrides,
     }
     result = _run_group_division(program, config_dict)
     return jsonify(result)

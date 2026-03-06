@@ -98,10 +98,57 @@
         .friend-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid #E5E7EB; color: #6B7280; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .friend-table td { padding: 8px 10px; border-bottom: 1px solid #F3F4F6; }
         .friend-table tr:hover td { background: #F9FAFB; }
+        .friend-table tr.row-unmatched td { background: #FFFBEB; }
+        .friend-table tr.row-unmatched:hover td { background: #FEF3C7; }
+        .friend-table tr.row-diff-group td { background: #FFF1F2; }
+        .friend-table tr.row-diff-group:hover td { background: #FFE4E6; }
         .badge-yes { background: #D1FAE5; color: #065F46; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
         .badge-no { background: #FEE2E2; color: #991B1B; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .badge-unmatched { background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
         .confidence-bar { display: inline-block; height: 6px; border-radius: 3px; background: #E5E7EB; width: 60px; position: relative; vertical-align: middle; margin-left: 6px; }
         .confidence-fill { height: 100%; border-radius: 3px; background: var(--teal); }
+
+        /* Friend filter tabs */
+        .friend-filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+        .friend-filter-btn { padding: 6px 14px; border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid #d1d5db; background: white; color: #6B7280; transition: all 0.15s; }
+        .friend-filter-btn:hover { border-color: #9CA3AF; }
+        .friend-filter-btn.active { background: #1A2B3C; color: white; border-color: #1A2B3C; }
+        .friend-filter-btn .filter-count { display: inline-block; min-width: 18px; height: 18px; line-height: 18px; border-radius: 9px; text-align: center; font-size: 11px; margin-left: 4px; }
+        .friend-filter-btn.active .filter-count { background: rgba(255,255,255,0.2); }
+        .friend-filter-btn .filter-count.count-warn { background: #FEF3C7; color: #92400E; }
+        .friend-filter-btn.active .filter-count.count-warn { background: #F59E0B; color: white; }
+        .friend-filter-btn .filter-count.count-danger { background: #FEE2E2; color: #991B1B; }
+        .friend-filter-btn.active .filter-count.count-danger { background: #EF4444; color: white; }
+
+        /* Per-week overrides */
+        .week-override-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #E5E7EB; }
+        .week-cfg-tabs { display: flex; gap: 4px; margin: 10px 0; flex-wrap: wrap; }
+        .week-cfg-tab { padding: 5px 12px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid #d1d5db; background: white; color: #6B7280; transition: all 0.15s; }
+        .week-cfg-tab:hover { border-color: #9CA3AF; }
+        .week-cfg-tab.active { background: var(--teal); color: white; border-color: var(--teal); }
+        .week-cfg-tab.has-override { border-color: var(--teal); color: var(--teal); font-weight: 600; }
+        .week-cfg-tab.has-override.active { background: var(--teal); color: white; }
+        .week-cfg-form { background: #F9FAFB; border-radius: 10px; padding: 16px; margin-top: 8px; }
+        .week-cfg-form .wk-label { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .week-cfg-form .wk-defaults { font-size: 12px; color: #9CA3AF; font-weight: 400; font-style: italic; }
+
+        /* Camper popup */
+        .camper-popup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 9998; display: flex; align-items: center; justify-content: center; }
+        .camper-popup { background: white; border-radius: 14px; padding: 24px; min-width: 340px; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); font-family: 'DM Sans', sans-serif; position: relative; }
+        .camper-popup-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 20px; color: #9CA3AF; cursor: pointer; line-height: 1; }
+        .camper-popup-close:hover { color: #374151; }
+        .camper-popup h4 { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; margin: 0 0 4px 0; }
+        .camper-popup .popup-meta { font-size: 13px; color: #6B7280; margin-bottom: 16px; }
+        .camper-popup .popup-section { margin-bottom: 14px; }
+        .camper-popup .popup-section-title { font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .camper-popup .friend-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; background: #F9FAFB; margin-bottom: 4px; font-size: 13px; }
+        .camper-popup .friend-row.matched { background: #F0FDF4; }
+        .camper-popup .friend-row.unmatched { background: #FFFBEB; }
+        .camper-popup .friend-row .fr-raw { flex: 1; font-weight: 500; }
+        .camper-popup .friend-row .fr-arrow { color: #9CA3AF; }
+        .camper-popup .friend-row .fr-match { color: #059669; font-weight: 600; }
+        .camper-popup .friend-row .fr-nomatch { color: #DC2626; font-style: italic; font-size: 12px; }
+        .camper-popup .no-friends { color: #9CA3AF; font-size: 13px; font-style: italic; }
 
         /* Loading */
         .loading-spinner { text-align: center; padding: 40px; color: #6B7280; font-size: 14px; }
@@ -145,9 +192,12 @@
             <!-- Config Panel -->
             <div id="config-panel" style="display:none;">
                 <div class="admin-section">
-                    <h3>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                        Algorithm Settings
+                    <h3 style="justify-content:space-between;">
+                        <span style="display:flex;align-items:center;gap:8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            Algorithm Settings
+                        </span>
+                        <span id="total-campers-badge" style="display:none;font-size:12px;font-weight:500;color:#6B7280;"></span>
                     </h3>
                     <div class="form-grid form-grid-4">
                         <div class="form-field">
@@ -181,6 +231,17 @@
                         <div id="grade-rules-container"></div>
                     </div>
 
+                    <div class="week-override-section" id="week-override-section">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="cfg-per-week" onchange="togglePerWeek()">
+                            Customize settings per week
+                        </label>
+                        <div id="week-cfg-panel" style="display:none;">
+                            <div class="week-cfg-tabs" id="week-cfg-tabs"></div>
+                            <div id="week-cfg-form-container"></div>
+                        </div>
+                    </div>
+
                     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
                         <button class="btn-sm" onclick="saveConfig()">Save Settings</button>
                         <button class="btn-sm btn-sm-primary" id="btn-run" onclick="runAlgorithm()">
@@ -208,15 +269,16 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         Friend Request Analysis
                     </h3>
+                    <div class="friend-filters" id="friend-filters"></div>
                     <div style="overflow-x:auto;">
                         <table class="friend-table" id="friend-table">
                             <thead>
                                 <tr>
                                     <th>Camper</th>
-                                    <th>Requested</th>
+                                    <th>Requested (raw text)</th>
                                     <th>Matched To</th>
                                     <th>Confidence</th>
-                                    <th>Same Group?</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody id="friend-tbody"></tbody>
@@ -245,6 +307,7 @@
         </div>
     </div>
 
+    <div id="camper-popup-overlay" class="camper-popup-overlay" style="display:none;" onclick="closeCamperPopup(event)"></div>
     <div class="toast" id="toast"></div>
 
     <script>
@@ -254,9 +317,17 @@
     var previewResults = null;
     var currentWeek = null;
     var availableGrades = [];
+    var availableWeeks = [];
     var dragPid = null;
+    var weekOverrides = {};
+    var selectedCfgWeek = null;
 
     function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+    function getWeekNumGroups(week) {
+        var base = parseInt(document.getElementById('cfg-num-groups').value) || 2;
+        var ovr = weekOverrides[String(week)];
+        return (ovr && ovr.num_groups) ? parseInt(ovr.num_groups) : base;
+    }
     function show(id) { document.getElementById(id).style.display = ''; }
     function hide(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -306,8 +377,33 @@
         ]).then(function(results) {
             currentConfig = results[0];
             availableGrades = results[1].grades || [];
+            var weekCounts = results[1].week_counts || {};
+            weekOverrides = currentConfig.week_overrides || {};
             populateConfigForm(currentConfig);
             renderGradeRules();
+            // Show per-week camper counts
+            var badge = document.getElementById('total-campers-badge');
+            availableWeeks = Object.keys(weekCounts).map(Number).sort(function(a,b){return a-b;});
+            if (availableWeeks.length > 0) {
+                var parts = availableWeeks.map(function(w) {
+                    return '<span style="display:inline-block;padding:3px 8px;border-radius:6px;background:#E0F2FE;color:#0369A1;font-weight:600;font-size:11px;">W' + w + ' <strong>' + weekCounts[String(w)] + '</strong></span>';
+                });
+                badge.innerHTML = parts.join(' ');
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+            // Init per-week UI
+            var hasOverrides = Object.keys(weekOverrides).length > 0;
+            document.getElementById('cfg-per-week').checked = hasOverrides;
+            if (hasOverrides) {
+                selectedCfgWeek = availableWeeks[0] || null;
+                renderWeekCfgTabs();
+                renderWeekCfgForm();
+                show('week-cfg-panel');
+            } else {
+                hide('week-cfg-panel');
+            }
             show('config-panel');
         });
     }
@@ -372,7 +468,131 @@
             max_difference: parseInt(document.getElementById('cfg-max-diff').value) || 2,
             gender_balance: document.getElementById('cfg-gender-balance').checked,
             grade_rules: gradeRules,
+            week_overrides: document.getElementById('cfg-per-week').checked ? weekOverrides : {},
         };
+    }
+
+    /* ========== Per-Week Config ========== */
+    function togglePerWeek() {
+        var on = document.getElementById('cfg-per-week').checked;
+        if (on) {
+            selectedCfgWeek = availableWeeks[0] || null;
+            renderWeekCfgTabs();
+            renderWeekCfgForm();
+            show('week-cfg-panel');
+        } else {
+            weekOverrides = {};
+            hide('week-cfg-panel');
+        }
+    }
+
+    function renderWeekCfgTabs() {
+        var html = '';
+        availableWeeks.forEach(function(w) {
+            var hasOvr = weekOverrides[String(w)] ? ' has-override' : '';
+            var active = w === selectedCfgWeek ? ' active' : '';
+            html += '<button class="week-cfg-tab' + active + hasOvr + '" onclick="selectCfgWeek(' + w + ')">W' + w + '</button>';
+        });
+        document.getElementById('week-cfg-tabs').innerHTML = html;
+    }
+
+    function selectCfgWeek(w) {
+        selectedCfgWeek = w;
+        renderWeekCfgTabs();
+        renderWeekCfgForm();
+    }
+
+    function renderWeekCfgForm() {
+        if (!selectedCfgWeek) {
+            document.getElementById('week-cfg-form-container').innerHTML = '';
+            return;
+        }
+        var wk = String(selectedCfgWeek);
+        var ovr = weekOverrides[wk] || {};
+        var base = {
+            num_groups: parseInt(document.getElementById('cfg-num-groups').value) || 2,
+            max_per_group: parseInt(document.getElementById('cfg-max-per-group').value) || 0,
+            max_difference: parseInt(document.getElementById('cfg-max-diff').value) || 2,
+            gender_balance: document.getElementById('cfg-gender-balance').checked,
+        };
+        var hasOvr = Object.keys(ovr).length > 0;
+
+        var html = '<div class="week-cfg-form">';
+        html += '<div class="wk-label"><span>Week ' + selectedCfgWeek + ' Settings</span>';
+        if (hasOvr) {
+            html += '<button class="btn-sm" style="font-size:11px;padding:4px 10px;" onclick="resetWeekOverride()">Reset to Default</button>';
+        } else {
+            html += '<span class="wk-defaults">Using default settings</span>';
+        }
+        html += '</div>';
+
+        html += '<div class="form-grid" style="grid-template-columns:repeat(4,1fr);gap:12px;">';
+
+        // # Groups
+        var ng = ovr.num_groups || base.num_groups;
+        var ngChanged = ovr.num_groups !== undefined;
+        html += '<div class="form-field"><label style="' + (ngChanged ? 'color:var(--teal);' : '') + '"># Groups</label>';
+        html += '<select id="wk-num-groups" onchange="updateWeekOverride()">';
+        for (var i = 2; i <= 4; i++) html += '<option value="' + i + '"' + (ng === i ? ' selected' : '') + '>' + i + '</option>';
+        html += '</select></div>';
+
+        // Max per group
+        var mpg = ovr.max_per_group !== undefined ? ovr.max_per_group : base.max_per_group;
+        var mpgChanged = ovr.max_per_group !== undefined;
+        html += '<div class="form-field"><label style="' + (mpgChanged ? 'color:var(--teal);' : '') + '">Max/Group</label>';
+        html += '<input type="number" id="wk-max-per-group" min="0" value="' + mpg + '" onchange="updateWeekOverride()"></div>';
+
+        // Max difference
+        var md = ovr.max_difference !== undefined ? ovr.max_difference : base.max_difference;
+        var mdChanged = ovr.max_difference !== undefined;
+        html += '<div class="form-field"><label style="' + (mdChanged ? 'color:var(--teal);' : '') + '">Max Diff</label>';
+        html += '<input type="number" id="wk-max-diff" min="0" value="' + md + '" onchange="updateWeekOverride()"></div>';
+
+        // Gender balance
+        var gb = ovr.gender_balance !== undefined ? ovr.gender_balance : base.gender_balance;
+        var gbChanged = ovr.gender_balance !== undefined;
+        html += '<div class="form-field"><label>&nbsp;</label>';
+        html += '<label class="checkbox-label" style="margin-top:4px;' + (gbChanged ? 'color:var(--teal);' : '') + '">';
+        html += '<input type="checkbox" id="wk-gender-balance"' + (gb ? ' checked' : '') + ' onchange="updateWeekOverride()"> Gender Bal.</label></div>';
+
+        html += '</div></div>';
+        document.getElementById('week-cfg-form-container').innerHTML = html;
+    }
+
+    function updateWeekOverride() {
+        if (!selectedCfgWeek) return;
+        var wk = String(selectedCfgWeek);
+        var base = {
+            num_groups: parseInt(document.getElementById('cfg-num-groups').value) || 2,
+            max_per_group: parseInt(document.getElementById('cfg-max-per-group').value) || 0,
+            max_difference: parseInt(document.getElementById('cfg-max-diff').value) || 2,
+            gender_balance: document.getElementById('cfg-gender-balance').checked,
+        };
+        var ng = parseInt(document.getElementById('wk-num-groups').value) || 2;
+        var mpg = parseInt(document.getElementById('wk-max-per-group').value) || 0;
+        var md = parseInt(document.getElementById('wk-max-diff').value) || 2;
+        var gb = document.getElementById('wk-gender-balance').checked;
+
+        var ovr = {};
+        if (ng !== base.num_groups) ovr.num_groups = ng;
+        if (mpg !== base.max_per_group) ovr.max_per_group = mpg;
+        if (md !== base.max_difference) ovr.max_difference = md;
+        if (gb !== base.gender_balance) ovr.gender_balance = gb;
+
+        if (Object.keys(ovr).length > 0) {
+            weekOverrides[wk] = ovr;
+        } else {
+            delete weekOverrides[wk];
+        }
+        renderWeekCfgTabs();
+        renderWeekCfgForm();
+    }
+
+    function resetWeekOverride() {
+        if (!selectedCfgWeek) return;
+        delete weekOverrides[String(selectedCfgWeek)];
+        renderWeekCfgTabs();
+        renderWeekCfgForm();
     }
 
     /* ========== Save Config ========== */
@@ -490,7 +710,7 @@
         document.getElementById('stats-row').innerHTML = html;
 
         // Group columns
-        var numGroups = parseInt(document.getElementById('cfg-num-groups').value) || 2;
+        var numGroups = getWeekNumGroups(week);
         var groupsHtml = '<div class="groups-grid" style="grid-template-columns:repeat(' + numGroups + ',1fr);">';
 
         // Build friend pids set for each camper (for dots)
@@ -534,7 +754,7 @@
                     dotCls = allSatisfied ? 'satisfied' : 'unsatisfied';
                 }
 
-                groupsHtml += '<div class="camper-card" draggable="true" data-pid="' + pid + '" ondragstart="onDragStart(event,\'' + pid + '\')" ondragend="onDragEnd(event)">';
+                groupsHtml += '<div class="camper-card" draggable="true" data-pid="' + pid + '" ondragstart="onDragStart(event,\'' + pid + '\')" ondragend="onDragEnd(event)" onclick="showCamperPopup(\'' + pid + '\')">';
                 groupsHtml += '<div class="camper-gender ' + genderCls + '">' + genderLetter + '</div>';
                 groupsHtml += '<div class="camper-name">' + esc(c.last_name) + ', ' + esc(c.first_name) + '</div>';
                 groupsHtml += '<div class="camper-grade">' + esc(c.grade || '-') + '</div>';
@@ -598,7 +818,7 @@
         if (!assignments) return;
 
         var campers = previewResults.campers;
-        var numGroups = parseInt(document.getElementById('cfg-num-groups').value) || 2;
+        var numGroups = getWeekNumGroups(week);
         var groups = {};
 
         for (var pid in assignments) {
@@ -642,33 +862,206 @@
     }
 
     /* ========== Friend Matches Table ========== */
+    var friendFilter = 'all';
+
+    function buildFriendRows() {
+        // Build unified list of all friend requests (matched + unmatched)
+        var matched = previewResults.friend_matches || [];
+        var unmatched = previewResults.unmatched_friends || [];
+        var weekData = previewResults.results[String(currentWeek)] || {};
+        var rows = [];
+
+        matched.forEach(function(fm) {
+            var sameGroup = weekData[fm.camper_pid] !== undefined && weekData[fm.matched_pid] !== undefined && weekData[fm.camper_pid] === weekData[fm.matched_pid];
+            rows.push({
+                camper_name: fm.camper_name,
+                camper_pid: fm.camper_pid,
+                requested: fm.requested,
+                matched_to: fm.matched_to,
+                confidence: fm.confidence,
+                same_group: sameGroup,
+                type: sameGroup ? 'ok' : 'diff_group'
+            });
+        });
+
+        unmatched.forEach(function(u) {
+            rows.push({
+                camper_name: u.camper_name,
+                camper_pid: u.camper_pid,
+                requested: u.requested,
+                matched_to: null,
+                best_candidate: u.best_candidate,
+                best_score: u.best_score,
+                confidence: 0,
+                same_group: false,
+                type: 'unmatched'
+            });
+        });
+
+        return rows;
+    }
+
     function renderFriendMatches() {
-        var matches = previewResults.friend_matches || [];
-        if (matches.length === 0) {
+        var rows = buildFriendRows();
+        if (rows.length === 0) {
             hide('friend-panel');
             return;
         }
         show('friend-panel');
 
+        // Count by type
+        var counts = { all: rows.length, unmatched: 0, diff_group: 0, ok: 0 };
+        rows.forEach(function(r) { counts[r.type] = (counts[r.type] || 0) + 1; });
+
+        // Render filter tabs
+        var filtersHtml = '';
+        filtersHtml += '<button class="friend-filter-btn' + (friendFilter === 'all' ? ' active' : '') + '" onclick="setFriendFilter(\'all\')">All <span class="filter-count">' + counts.all + '</span></button>';
+        filtersHtml += '<button class="friend-filter-btn' + (friendFilter === 'problems' ? ' active' : '') + '" onclick="setFriendFilter(\'problems\')">&#9888; Problems <span class="filter-count count-danger">' + (counts.unmatched + counts.diff_group) + '</span></button>';
+        filtersHtml += '<button class="friend-filter-btn' + (friendFilter === 'unmatched' ? ' active' : '') + '" onclick="setFriendFilter(\'unmatched\')">&#10060; No Match <span class="filter-count count-warn">' + counts.unmatched + '</span></button>';
+        filtersHtml += '<button class="friend-filter-btn' + (friendFilter === 'diff_group' ? ' active' : '') + '" onclick="setFriendFilter(\'diff_group\')">&#128694; Diff Group <span class="filter-count count-danger">' + counts.diff_group + '</span></button>';
+        document.getElementById('friend-filters').innerHTML = filtersHtml;
+
+        // Filter rows
+        var filtered = rows;
+        if (friendFilter === 'unmatched') {
+            filtered = rows.filter(function(r) { return r.type === 'unmatched'; });
+        } else if (friendFilter === 'diff_group') {
+            filtered = rows.filter(function(r) { return r.type === 'diff_group'; });
+        } else if (friendFilter === 'problems') {
+            filtered = rows.filter(function(r) { return r.type === 'unmatched' || r.type === 'diff_group'; });
+        }
+
+        // Sort: unmatched first, then diff_group, then ok
+        var typeOrder = { unmatched: 1, diff_group: 2, ok: 3 };
+        filtered.sort(function(a, b) { return (typeOrder[a.type] || 9) - (typeOrder[b.type] || 9); });
+
+        // Render table
         var tbody = document.getElementById('friend-tbody');
-        var weekData = previewResults.results[String(currentWeek)] || {};
         var html = '';
-        matches.forEach(function(fm) {
-            var sameGroup = weekData[fm.camper_pid] !== undefined && weekData[fm.matched_pid] !== undefined && weekData[fm.camper_pid] === weekData[fm.matched_pid];
-            var confPct = Math.round(fm.confidence * 100);
-            html += '<tr>';
-            html += '<td>' + esc(fm.camper_name) + '</td>';
-            html += '<td>' + esc(fm.requested) + '</td>';
-            html += '<td>' + esc(fm.matched_to) + '</td>';
-            html += '<td>' + confPct + '% <span class="confidence-bar"><span class="confidence-fill" style="width:' + confPct + '%;"></span></span></td>';
-            html += '<td><span class="' + (sameGroup ? 'badge-yes' : 'badge-no') + '">' + (sameGroup ? 'Yes' : 'No') + '</span></td>';
+        filtered.forEach(function(r) {
+            var rowCls = r.type === 'unmatched' ? ' class="row-unmatched"' : (r.type === 'diff_group' ? ' class="row-diff-group"' : '');
+            html += '<tr' + rowCls + '>';
+            html += '<td>' + esc(r.camper_name) + '</td>';
+            html += '<td><code style="background:#F3F4F6;padding:2px 6px;border-radius:4px;font-size:12px;">' + esc(r.requested) + '</code></td>';
+
+            if (r.type === 'unmatched') {
+                if (r.best_candidate && r.best_score > 0) {
+                    var scorePct = Math.round(r.best_score * 100);
+                    html += '<td style="color:#9CA3AF;font-style:italic;">' + esc(r.best_candidate) + '? <span style="font-size:11px;">(' + scorePct + '%)</span></td>';
+                    html += '<td><span style="color:#DC2626;font-size:12px;">Below 60% threshold</span></td>';
+                } else {
+                    html += '<td style="color:#9CA3AF;font-style:italic;">No candidate found</td>';
+                    html += '<td>-</td>';
+                }
+                html += '<td><span class="badge-unmatched">&#9888; No Match</span></td>';
+            } else {
+                var confPct = Math.round(r.confidence * 100);
+                html += '<td>' + esc(r.matched_to) + '</td>';
+                html += '<td>' + confPct + '% <span class="confidence-bar"><span class="confidence-fill" style="width:' + confPct + '%;"></span></span></td>';
+                html += '<td><span class="' + (r.same_group ? 'badge-yes' : 'badge-no') + '">' + (r.same_group ? '&#10003; Same Group' : '&#10008; Diff Group') + '</span></td>';
+            }
             html += '</tr>';
         });
+
+        if (filtered.length === 0) {
+            html = '<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:20px;">No friend requests match this filter.</td></tr>';
+        }
+
         tbody.innerHTML = html;
+    }
+
+    function setFriendFilter(filter) {
+        friendFilter = filter;
+        renderFriendMatches();
     }
 
     function updateFriendSameGroup() {
         renderFriendMatches();
+    }
+
+    /* ========== Camper Popup ========== */
+    function showCamperPopup(pid) {
+        var camper = previewResults.campers[pid];
+        if (!camper) return;
+
+        var weekData = previewResults.results[String(currentWeek)] || {};
+        var camperGroup = weekData[pid];
+        var matched = previewResults.friend_matches || [];
+        var unmatched = previewResults.unmatched_friends || [];
+
+        // Find this camper's friend requests (matched)
+        var myMatched = matched.filter(function(fm) { return fm.camper_pid === pid; });
+        var myUnmatched = unmatched.filter(function(u) { return u.camper_pid === pid; });
+
+        // Also find who requested THIS camper
+        var requestedBy = matched.filter(function(fm) { return fm.matched_pid === pid; });
+
+        var fullName = camper.first_name + ' ' + camper.last_name;
+        var gender = (camper.gender || '').startsWith('M') ? 'Male' : (camper.gender || '').startsWith('F') ? 'Female' : '-';
+
+        var html = '<div class="camper-popup">';
+        html += '<button class="camper-popup-close" onclick="closeCamperPopup()">&times;</button>';
+        html += '<h4>' + esc(fullName) + '</h4>';
+        html += '<div class="popup-meta">' + esc(camper.grade || '-') + ' &bull; ' + gender + ' &bull; Group ' + (camperGroup || '?') + '</div>';
+
+        // Their friend requests
+        html += '<div class="popup-section">';
+        html += '<div class="popup-section-title">Friend Requests (' + (myMatched.length + myUnmatched.length) + ')</div>';
+
+        if (myMatched.length === 0 && myUnmatched.length === 0) {
+            html += '<div class="no-friends">No friend requests</div>';
+        }
+
+        myMatched.forEach(function(fm) {
+            var friendGroup = weekData[fm.matched_pid];
+            var sameGroup = camperGroup !== undefined && friendGroup !== undefined && camperGroup === friendGroup;
+            var icon = sameGroup ? '<span style="color:#22C55E;">&#10003;</span>' : '<span style="color:#EF4444;">&#10008;</span>';
+            html += '<div class="friend-row matched">';
+            html += '<span class="fr-raw">' + esc(fm.requested) + '</span>';
+            html += '<span class="fr-arrow">&rarr;</span>';
+            html += '<span class="fr-match">' + esc(fm.matched_to) + '</span>';
+            html += '<span style="font-size:12px;color:#6B7280;">(G' + (friendGroup || '?') + ')</span>';
+            html += icon;
+            html += '</div>';
+        });
+
+        myUnmatched.forEach(function(u) {
+            html += '<div class="friend-row unmatched">';
+            html += '<span class="fr-raw">' + esc(u.requested) + '</span>';
+            html += '<span class="fr-arrow">&rarr;</span>';
+            html += '<span class="fr-nomatch">No match found</span>';
+            html += '</div>';
+        });
+
+        html += '</div>';
+
+        // Who requested this camper
+        if (requestedBy.length > 0) {
+            html += '<div class="popup-section">';
+            html += '<div class="popup-section-title">Requested by (' + requestedBy.length + ')</div>';
+            requestedBy.forEach(function(fm) {
+                var reqGroup = weekData[fm.camper_pid];
+                var sameGroup = camperGroup !== undefined && reqGroup !== undefined && camperGroup === reqGroup;
+                var icon = sameGroup ? '<span style="color:#22C55E;">&#10003;</span>' : '<span style="color:#EF4444;">&#10008;</span>';
+                html += '<div class="friend-row">';
+                html += '<span class="fr-raw" style="font-weight:600;">' + esc(fm.camper_name) + '</span>';
+                html += '<span style="font-size:12px;color:#6B7280;">(G' + (reqGroup || '?') + ')</span>';
+                html += icon;
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+
+        var overlay = document.getElementById('camper-popup-overlay');
+        overlay.innerHTML = html;
+        overlay.style.display = 'flex';
+    }
+
+    function closeCamperPopup(e) {
+        if (e && e.target !== e.currentTarget) return;
+        document.getElementById('camper-popup-overlay').style.display = 'none';
     }
 
     /* ========== Apply Assignments ========== */
