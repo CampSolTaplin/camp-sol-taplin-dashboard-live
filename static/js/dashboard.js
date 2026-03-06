@@ -222,13 +222,48 @@ let currentModalProgram = '';
 let currentModalWeek = 0;
 
 // Render participants table from data
+// Sort state for participants table
+var ptSortCol = 'group';  // 'group', 'name', 'grade'
+var ptSortDir = 'asc';
+var ptCachedParticipants = null;
+var ptCachedProgram = null;
+var ptCachedWeek = null;
+var ptCachedIsEca = false;
+
+var GRADE_ORDER = ['Pre-K', 'PK2', 'PK3', 'PK4', 'PK4 4yr -by 8/31/26', 'K', 'Entering Kinder',
+    '1st', 'Entering 1st grade', '2nd', 'Entering 2nd grade', '3rd', 'Entering 3rd grade',
+    '4th', 'Entering 4th grade', '5th', 'Entering 5th grade', '6th', 'Entering 6th grade',
+    '7th', 'Entering 7th grade', '8th', 'Entering 8th grade', '9th', '10th', '11th', '12th'];
+
+function gradeRank(g) {
+    var idx = GRADE_ORDER.indexOf(g);
+    return idx >= 0 ? idx : 999;
+}
+
+function ptSort(col) {
+    if (ptSortCol === col) {
+        ptSortDir = ptSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        ptSortCol = col;
+        ptSortDir = 'asc';
+    }
+    if (ptCachedParticipants) {
+        var list = document.getElementById('participantsList');
+        renderParticipantsTable(ptCachedParticipants, list, ptCachedProgram, ptCachedWeek, ptCachedIsEca);
+    }
+}
+
 function renderParticipantsTable(participants, list, program, week, isEca) {
     if (participants.length === 0) {
         list.innerHTML = '<div class="participant-count">No participants found</div>';
         return;
     }
 
-    const isAdmin = (window.userPermissions && window.userPermissions.indexOf('edit_groups') !== -1);
+    // Cache for re-sorting
+    ptCachedParticipants = participants;
+    ptCachedProgram = program;
+    ptCachedWeek = week;
+    ptCachedIsEca = isEca;
 
     // Collect all unique emails for copy button
     let allEmails = [];
@@ -249,37 +284,84 @@ function renderParticipantsTable(participants, list, program, week, isEca) {
     html += '</div>';
     if (program && week) {
         html += '<div class="participant-action-buttons">';
-        if (isAdmin) {
-            html += '<button class="btn-action btn-reset" onclick="resetGroups()">🔄 Reset Groups</button>';
-        }
         html += '<button class="btn-action btn-download" onclick="downloadByGroups()">📥 Download By Groups</button>';
         html += '<button class="btn-action btn-print" onclick="printByGroups()">🖨️ Print By Groups</button>';
         html += '</div>';
     }
     html += '</div>';
 
+    // Grade breakdown summary
+    var gradeCounts = {};
+    participants.forEach(function(p) {
+        var g = p.grade || '-';
+        gradeCounts[g] = (gradeCounts[g] || 0) + 1;
+    });
+    var gradeKeys = Object.keys(gradeCounts).sort(function(a, b) { return gradeRank(a) - gradeRank(b); });
+    if (gradeKeys.length > 0) {
+        html += '<div class="grade-summary">';
+        gradeKeys.forEach(function(g) {
+            html += '<span class="grade-badge">' + g + ' <strong>' + gradeCounts[g] + '</strong></span>';
+        });
+        html += '</div>';
+    }
+
+    // Sort participants
+    var sorted = participants.slice();
+    var dir = ptSortDir === 'asc' ? 1 : -1;
+    if (ptSortCol === 'name') {
+        sorted.sort(function(a, b) {
+            var na = (a.last_name || '') + ' ' + (a.first_name || '');
+            var nb = (b.last_name || '') + ' ' + (b.first_name || '');
+            return na.localeCompare(nb) * dir;
+        });
+    } else if (ptSortCol === 'grade') {
+        sorted.sort(function(a, b) {
+            var diff = gradeRank(a.grade || '-') - gradeRank(b.grade || '-');
+            if (diff !== 0) return diff * dir;
+            var na = (a.last_name || '') + ' ' + (a.first_name || '');
+            var nb = (b.last_name || '') + ' ' + (b.first_name || '');
+            return na.localeCompare(nb);
+        });
+    } else {
+        // Default: sort by group, then last_name
+        sorted.sort(function(a, b) {
+            var ga = a.group || 0, gb = b.group || 0;
+            if (ga !== gb) return (ga - gb) * dir;
+            var na = (a.last_name || '') + ' ' + (a.first_name || '');
+            var nb = (b.last_name || '') + ' ' + (b.first_name || '');
+            return na.localeCompare(nb);
+        });
+    }
+
+    // Sort indicators
+    function si(col) {
+        if (ptSortCol === col) return ptSortDir === 'asc' ? ' ↑' : ' ↓';
+        return ' ↕';
+    }
+
     html += '<div class="participants-table-wrapper"><table class="participants-table">';
     html += '<thead><tr>';
     html += '<th>#</th>';
     html += '<th>Group</th>';
-    html += '<th>Name</th>';
-    html += '<th>Grade</th>';
+    html += '<th class="sortable" onclick="ptSort(\'name\')" style="cursor:pointer;">Name' + si('name') + '</th>';
+    html += '<th class="col-grade sortable" onclick="ptSort(\'grade\')" style="cursor:pointer;">Grade' + si('grade') + '</th>';
     html += '<th>Gender</th>';
-    html += '<th>Share Group With</th>';
-    html += '<th>F1P1 Login/Email</th>';
-    html += '<th>F1P1 Email 2</th>';
-    html += '<th>F1P2 Login/Email</th>';
-    html += '<th>F1P2 Email 2</th>';
+    html += '<th class="col-share">Share Group With</th>';
+    html += '<th class="col-email">F1P1</th>';
+    html += '<th class="col-email">F1P1-2</th>';
+    html += '<th class="col-email">F1P2</th>';
+    html += '<th class="col-email">F1P2-2</th>';
     html += '</tr></thead><tbody>';
 
     let currentGroup = -1;
     let groupIndex = 0;
+    var showGroupSeparators = (ptSortCol === 'group');
 
-    participants.forEach(function(p, index) {
+    sorted.forEach(function(p, index) {
         const groupVal = p.group || 0;
 
-        // Insert group separator when group changes
-        if (groupVal !== currentGroup) {
+        // Insert group separator when group changes (only when sorting by group)
+        if (showGroupSeparators && groupVal !== currentGroup) {
             currentGroup = groupVal;
             groupIndex = 0;
             const separatorLabel = groupVal === 0 ? 'Unassigned' : 'Group ' + groupVal;
@@ -300,20 +382,9 @@ function renderParticipantsTable(participants, list, program, week, isEca) {
         html += '<tr' + (rowCls ? ' class="' + rowCls.trim() + '"' : '') + '>';
         html += '<td>' + groupIndex + '</td>';
 
-        // Group column
-        if (isAdmin && program && week) {
-            html += '<td class="group-cell">';
-            html += '<select class="group-select" data-person-id="' + p.person_id + '" onchange="saveGroupAssignment(this)">';
-            html += '<option value="0"' + (groupVal === 0 ? ' selected' : '') + '>-</option>';
-            html += '<option value="1"' + (groupVal === 1 ? ' selected' : '') + '>1</option>';
-            html += '<option value="2"' + (groupVal === 2 ? ' selected' : '') + '>2</option>';
-            html += '<option value="3"' + (groupVal === 3 ? ' selected' : '') + '>3</option>';
-            html += '</select>';
-            html += '</td>';
-        } else {
-            const groupDisplay = groupVal > 0 ? groupVal : '-';
-            html += '<td class="group-cell">' + groupDisplay + '</td>';
-        }
+        // Group column (read-only — use Group Division page to assign)
+        const groupDisplay = groupVal > 0 ? groupVal : '-';
+        html += '<td class="group-cell">' + groupDisplay + '</td>';
 
         // Badge logic: ECA → show "WaitList" badge for status 8; non-ECA → show "Applied" badge for status 4
         var badgeHtml = '';
@@ -323,13 +394,13 @@ function renderParticipantsTable(participants, list, program, week, isEca) {
             badgeHtml = ' <span class="applied-badge">Applied</span>';
         }
         html += '<td class="participant-name-cell">' + p.first_name + ' ' + p.last_name + badgeHtml + '</td>';
-        html += '<td>' + (p.grade || '-') + '</td>';
+        html += '<td class="col-grade">' + (p.grade || '-') + '</td>';
         html += '<td>' + (p.gender || '-') + '</td>';
-        html += '<td>' + (p.share_group_with || '-') + '</td>';
-        html += '<td>' + (p.f1p1_email || '-') + '</td>';
-        html += '<td>' + (p.f1p1_email2 || '-') + '</td>';
-        html += '<td>' + (p.f1p2_email || '-') + '</td>';
-        html += '<td>' + (p.f1p2_email2 || '-') + '</td>';
+        html += '<td class="col-share">' + (p.share_group_with || '-') + '</td>';
+        html += '<td class="col-email">' + (p.f1p1_email ? '<span class="email-dot" title="' + p.f1p1_email + '">&#10003;</span>' : '-') + '</td>';
+        html += '<td class="col-email">' + (p.f1p1_email2 ? '<span class="email-dot" title="' + p.f1p1_email2 + '">&#10003;</span>' : '-') + '</td>';
+        html += '<td class="col-email">' + (p.f1p2_email ? '<span class="email-dot" title="' + p.f1p2_email + '">&#10003;</span>' : '-') + '</td>';
+        html += '<td class="col-email">' + (p.f1p2_email2 ? '<span class="email-dot" title="' + p.f1p2_email2 + '">&#10003;</span>' : '-') + '</td>';
         html += '</tr>';
     });
 

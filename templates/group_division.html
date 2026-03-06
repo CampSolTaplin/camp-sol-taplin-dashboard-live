@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Division - Camp Sol Taplin</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00A9CE">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CST Staff App">
+    <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .admin-container { max-width: 1400px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 12px; }
+        .page-title { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 700; }
+        .page-subtitle { color: var(--text-muted); font-size: 14px; }
+        .btn-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); text-decoration: none; font-size: 14px; margin-bottom: 20px; }
+        .btn-back:hover { color: var(--teal); }
+
+        .admin-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .admin-section h3 { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 600; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
+
+        .form-grid { display: grid; gap: 16px; }
+        .form-grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .form-field label { display: block; font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-field input, .form-field select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; box-sizing: border-box; }
+        .form-field input:focus, .form-field select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,169,206,0.1); }
+
+        .program-select { padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; min-width: 240px; }
+        .program-select:focus { outline: none; border-color: var(--teal); }
+
+        .btn-sm { padding: 8px 16px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #d1d5db; background: white; color: #374151; transition: all 0.15s; }
+        .btn-sm:hover { border-color: #9CA3AF; background: #F9FAFB; }
+        .btn-sm-primary { background: var(--teal); color: white; border-color: var(--teal); }
+        .btn-sm-primary:hover { background: #0095b5; }
+        .btn-sm-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-sm-success { background: #059669; color: white; border-color: #059669; }
+        .btn-sm-success:hover { background: #047857; }
+
+        .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+        .checkbox-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--teal); }
+
+        /* Grade rules */
+        .grade-rules-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #E5E7EB; }
+        .grade-rules-section h4 { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; margin: 0 0 4px 0; }
+        .grade-rules-section p { font-size: 13px; color: #6B7280; margin: 0 0 12px 0; }
+        .grade-group-row { margin-bottom: 10px; }
+        .grade-group-row label.group-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px; display: block; }
+        .grade-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+        .grade-chip { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #d1d5db; background: white; transition: all 0.15s; }
+        .grade-chip:hover { border-color: var(--teal); }
+        .grade-chip.selected { background: var(--teal); color: white; border-color: var(--teal); }
+        .grade-chip input { display: none; }
+
+        /* Stats cards */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .stat-card .stat-value { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 700; color: var(--teal); }
+        .stat-card .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+        /* Week tabs */
+        .week-tabs { display: flex; gap: 4px; margin-bottom: 16px; background: #F3F4F6; border-radius: 10px; padding: 4px; flex-wrap: wrap; }
+        .week-tab { padding: 8px 16px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; color: #6B7280; border: none; background: transparent; }
+        .week-tab:hover { color: #111827; background: rgba(255,255,255,0.5); }
+        .week-tab.active { background: white; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
+        .week-tab .tab-count { font-size: 11px; color: #9CA3AF; margin-left: 4px; }
+
+        /* Group columns */
+        .groups-grid { display: grid; gap: 16px; margin-top: 12px; }
+        .group-column { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-height: 120px; transition: all 0.2s; border: 2px solid transparent; }
+        .group-column.drag-over { border-color: var(--teal); background: #F0FDFA; }
+        .group-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 2px solid #E5E7EB; margin-bottom: 10px; }
+        .group-header h4 { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600; margin: 0; }
+        .group-stats { font-size: 12px; color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
+        .group-stats .gs-count { font-weight: 600; color: #374151; }
+        .group-stats .gs-gender { display: flex; gap: 4px; }
+
+        /* Camper cards */
+        .camper-card { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: #F9FAFB; margin-bottom: 4px; cursor: grab; transition: all 0.15s; font-size: 13px; user-select: none; }
+        .camper-card:hover { background: #F0FDFA; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .camper-card.dragging { opacity: 0.4; cursor: grabbing; }
+        .camper-name { font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .camper-grade { color: #9CA3AF; font-size: 12px; min-width: 30px; text-align: center; }
+        .camper-gender { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .camper-gender.male { background: #DBEAFE; color: #2563EB; }
+        .camper-gender.female { background: #FCE7F3; color: #DB2777; }
+        .friend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .friend-dot.satisfied { background: #22C55E; }
+        .friend-dot.unsatisfied { background: #EF4444; }
+        .friend-dot.none { background: transparent; }
+
+        /* Friend matches table */
+        .friend-table { width: 100%; border-collapse: collapse; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .friend-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid #E5E7EB; color: #6B7280; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .friend-table td { padding: 8px 10px; border-bottom: 1px solid #F3F4F6; }
+        .friend-table tr:hover td { background: #F9FAFB; }
+        .badge-yes { background: #D1FAE5; color: #065F46; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .badge-no { background: #FEE2E2; color: #991B1B; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .confidence-bar { display: inline-block; height: 6px; border-radius: 3px; background: #E5E7EB; width: 60px; position: relative; vertical-align: middle; margin-left: 6px; }
+        .confidence-fill { height: 100%; border-radius: 3px; background: var(--teal); }
+
+        /* Loading */
+        .loading-spinner { text-align: center; padding: 40px; color: #6B7280; font-size: 14px; }
+        .empty-state { text-align: center; padding: 40px; color: #9CA3AF; font-size: 14px; }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; right: 30px; background: #1A2B3C; color: white; padding: 14px 24px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
+        .toast.error { background: #DC2626; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .groups-grid { grid-template-columns: 1fr !important; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .program-select { min-width: 180px; }
+        }
+    </style>
+</head>
+<body>
+    {% include '_sidebar.html' %}
+    <div class="content" style="padding: 30px 40px;">
+        <div class="admin-container">
+            <a href="{{ url_for('dashboard') }}" class="btn-back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to Dashboard
+            </a>
+
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Group Division</div>
+                    <div class="page-subtitle">Automatically divide campers into balanced sub-groups</div>
+                </div>
+                <div>
+                    <select class="program-select" id="program-select" onchange="onProgramChanged()">
+                        <option value="">Select Program...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Config Panel -->
+            <div id="config-panel" style="display:none;">
+                <div class="admin-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Algorithm Settings
+                    </h3>
+                    <div class="form-grid form-grid-4">
+                        <div class="form-field">
+                            <label># of Groups</label>
+                            <select id="cfg-num-groups" onchange="onNumGroupsChanged()">
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Max per Group</label>
+                            <input type="number" id="cfg-max-per-group" min="0" value="0" placeholder="0 = no limit">
+                        </div>
+                        <div class="form-field">
+                            <label>Max Difference</label>
+                            <input type="number" id="cfg-max-diff" min="0" value="2">
+                        </div>
+                        <div class="form-field">
+                            <label>&nbsp;</label>
+                            <label class="checkbox-label" style="margin-top:4px;">
+                                <input type="checkbox" id="cfg-gender-balance" checked>
+                                Gender Balance
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grade-rules-section" id="grade-rules-section">
+                        <h4>Grade Rules <span style="font-weight:400;color:#9CA3AF;">(optional)</span></h4>
+                        <p>Assign grade levels to specific groups. When set, these are strict constraints.</p>
+                        <div id="grade-rules-container"></div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+                        <button class="btn-sm" onclick="saveConfig()">Save Settings</button>
+                        <button class="btn-sm btn-sm-primary" id="btn-run" onclick="runAlgorithm()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Run Division
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div id="results-panel" style="display:none;">
+                <!-- Stats -->
+                <div class="stats-row" id="stats-row"></div>
+
+                <!-- Week Tabs -->
+                <div class="week-tabs" id="week-tabs"></div>
+
+                <!-- Groups Grid -->
+                <div id="groups-container"></div>
+
+                <!-- Friend Matches -->
+                <div class="admin-section" id="friend-panel" style="margin-top:24px;">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Friend Request Analysis
+                    </h3>
+                    <div style="overflow-x:auto;">
+                        <table class="friend-table" id="friend-table">
+                            <thead>
+                                <tr>
+                                    <th>Camper</th>
+                                    <th>Requested</th>
+                                    <th>Matched To</th>
+                                    <th>Confidence</th>
+                                    <th>Same Group?</th>
+                                </tr>
+                            </thead>
+                            <tbody id="friend-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="friend-empty" class="empty-state" style="display:none;">No friend requests found for this program.</div>
+                </div>
+
+                <!-- Apply Button -->
+                <div style="text-align:right; margin-top:20px; padding-bottom:40px;">
+                    <button class="btn-sm btn-sm-success" onclick="applyAssignments()" style="padding:12px 32px; font-size:15px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px;"><path d="M20 6L9 17l-5-5"/></svg>
+                        Apply All Assignments
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="empty-state" class="empty-state" style="padding:80px 20px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" style="width:48px;height:48px;margin-bottom:16px;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+                </svg>
+                <p style="font-size:16px; color:#6B7280; margin:0;">Select a program to configure group division</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+    /* ========== Global State ========== */
+    var currentProgram = '';
+    var currentConfig = null;
+    var previewResults = null;
+    var currentWeek = null;
+    var availableGrades = [];
+    var dragPid = null;
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+    function show(id) { document.getElementById(id).style.display = ''; }
+    function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+    function showToast(msg, isError) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast show' + (isError ? ' error' : '');
+        setTimeout(function() { t.className = 'toast'; }, 3000);
+    }
+
+    /* ========== Init ========== */
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPrograms();
+    });
+
+    function loadPrograms() {
+        fetch('/api/attendance/my-programs')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var sel = document.getElementById('program-select');
+                (data.programs || []).forEach(function(p) {
+                    var opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    sel.appendChild(opt);
+                });
+            });
+    }
+
+    /* ========== Program Change ========== */
+    function onProgramChanged() {
+        currentProgram = document.getElementById('program-select').value;
+        if (!currentProgram) {
+            hide('config-panel');
+            hide('results-panel');
+            show('empty-state');
+            return;
+        }
+        hide('empty-state');
+        hide('results-panel');
+        previewResults = null;
+
+        // Load config and grades in parallel
+        Promise.all([
+            fetch('/api/group-division/config/' + encodeURIComponent(currentProgram)).then(function(r) { return r.json(); }),
+            fetch('/api/group-division/grades/' + encodeURIComponent(currentProgram)).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            currentConfig = results[0];
+            availableGrades = results[1].grades || [];
+            populateConfigForm(currentConfig);
+            renderGradeRules();
+            show('config-panel');
+        });
+    }
+
+    function populateConfigForm(cfg) {
+        document.getElementById('cfg-num-groups').value = cfg.num_groups || 2;
+        document.getElementById('cfg-max-per-group').value = cfg.max_per_group || 0;
+        document.getElementById('cfg-max-diff').value = cfg.max_difference || 2;
+        document.getElementById('cfg-gender-balance').checked = cfg.gender_balance !== false;
+    }
+
+    function onNumGroupsChanged() {
+        renderGradeRules();
+    }
+
+    function renderGradeRules() {
+        var container = document.getElementById('grade-rules-container');
+        var numGroups = parseInt(document.getElementById('cfg-num-groups').value) || 2;
+        var rules = (currentConfig && currentConfig.grade_rules) ? currentConfig.grade_rules : {};
+        var html = '';
+
+        for (var g = 1; g <= numGroups; g++) {
+            var assigned = rules[String(g)] || [];
+            html += '<div class="grade-group-row">';
+            html += '<label class="group-label">Group ' + g + ':</label>';
+            html += '<div class="grade-chips">';
+            if (availableGrades.length === 0) {
+                html += '<span style="color:#9CA3AF;font-size:13px;">No grade data available</span>';
+            }
+            availableGrades.forEach(function(grade) {
+                var sel = assigned.indexOf(grade) !== -1 ? ' selected' : '';
+                html += '<div class="grade-chip' + sel + '" onclick="toggleGradeChip(this,' + g + ',\'' + esc(grade) + '\')">';
+                html += esc(grade);
+                html += '</div>';
+            });
+            html += '</div></div>';
+        }
+        container.innerHTML = html;
+    }
+
+    function toggleGradeChip(el, groupNum, grade) {
+        el.classList.toggle('selected');
+    }
+
+    function readConfigFromForm() {
+        var numGroups = parseInt(document.getElementById('cfg-num-groups').value) || 2;
+        // Read grade rules from chips
+        var gradeRules = {};
+        var chips = document.querySelectorAll('.grade-chip.selected');
+        chips.forEach(function(chip) {
+            var row = chip.closest('.grade-group-row');
+            var groupLabel = row.querySelector('.group-label').textContent;
+            var gNum = parseInt(groupLabel.replace('Group ', ''));
+            var grade = chip.textContent.trim();
+            if (!gradeRules[String(gNum)]) gradeRules[String(gNum)] = [];
+            gradeRules[String(gNum)].push(grade);
+        });
+
+        return {
+            num_groups: numGroups,
+            max_per_group: parseInt(document.getElementById('cfg-max-per-group').value) || 0,
+            max_difference: parseInt(document.getElementById('cfg-max-diff').value) || 2,
+            gender_balance: document.getElementById('cfg-gender-balance').checked,
+            grade_rules: gradeRules,
+        };
+    }
+
+    /* ========== Save Config ========== */
+    function saveConfig() {
+        var config = readConfigFromForm();
+        fetch('/api/group-division/config/' + encodeURIComponent(currentProgram), {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(config)
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) {
+                showToast('Settings saved');
+                currentConfig = Object.assign(currentConfig || {}, config);
+            } else {
+                showToast(data.error || 'Error saving', true);
+            }
+        });
+    }
+
+    /* ========== Run Algorithm ========== */
+    function runAlgorithm() {
+        // Save config first, then run
+        var config = readConfigFromForm();
+        var btn = document.getElementById('btn-run');
+        btn.disabled = true;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-dasharray="30 70"/></svg> Running...';
+
+        // Add spin animation if not present
+        if (!document.getElementById('spin-style')) {
+            var style = document.createElement('style');
+            style.id = 'spin-style';
+            style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+            document.head.appendChild(style);
+        }
+
+        fetch('/api/group-division/config/' + encodeURIComponent(currentProgram), {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(config)
+        }).then(function() {
+            return fetch('/api/group-division/run/' + encodeURIComponent(currentProgram), {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: '{}'
+            });
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Division';
+            if (data.success) {
+                previewResults = data;
+                var weeks = Object.keys(data.results).map(Number).sort(function(a,b){return a-b;});
+                currentWeek = weeks[0] || 1;
+                renderResults();
+                show('results-panel');
+                showToast('Division complete! Review results below.');
+            } else {
+                showToast(data.error || 'Algorithm failed', true);
+            }
+        }).catch(function(err) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Division';
+            showToast('Error: ' + err.message, true);
+        });
+    }
+
+    /* ========== Render Results ========== */
+    function renderResults() {
+        renderWeekTabs();
+        renderWeekView(currentWeek);
+        renderFriendMatches();
+    }
+
+    function renderWeekTabs() {
+        var weeks = Object.keys(previewResults.results).map(Number).sort(function(a,b){return a-b;});
+        var html = '';
+        weeks.forEach(function(w) {
+            var stats = previewResults.stats[String(w)] || {};
+            var cls = w === currentWeek ? ' active' : '';
+            html += '<button class="week-tab' + cls + '" onclick="switchWeek(' + w + ')">W' + w;
+            html += '<span class="tab-count">(' + (stats.total || 0) + ')</span>';
+            html += '</button>';
+        });
+        document.getElementById('week-tabs').innerHTML = html;
+    }
+
+    function switchWeek(w) {
+        currentWeek = w;
+        renderWeekTabs();
+        renderWeekView(w);
+        updateFriendSameGroup();
+    }
+
+    function renderWeekView(week) {
+        var weekData = previewResults.results[String(week)];
+        var weekStats = previewResults.stats[String(week)];
+        var campers = previewResults.campers;
+
+        if (!weekData) {
+            document.getElementById('groups-container').innerHTML = '<div class="empty-state">No enrollment for Week ' + week + '</div>';
+            document.getElementById('stats-row').innerHTML = '';
+            return;
+        }
+
+        // Stats cards
+        var html = '';
+        html += '<div class="stat-card"><div class="stat-value">' + (weekStats.total || 0) + '</div><div class="stat-label">Total Campers</div></div>';
+        var fr = weekStats.friend_requests_satisfied || 0;
+        var ft = weekStats.friend_requests_total || 0;
+        var frate = ft > 0 ? Math.round(fr/ft*100) : 100;
+        html += '<div class="stat-card"><div class="stat-value">' + fr + '/' + ft + '</div><div class="stat-label">Friends Matched (' + frate + '%)</div></div>';
+        var totalM = 0, totalF = 0;
+        for (var g in weekStats.groups) { totalM += weekStats.groups[g].male || 0; totalF += weekStats.groups[g].female || 0; }
+        html += '<div class="stat-card"><div class="stat-value">' + totalM + 'M / ' + totalF + 'F</div><div class="stat-label">Gender Distribution</div></div>';
+        html += '<div class="stat-card"><div class="stat-value">' + (weekStats.max_difference || 0) + '</div><div class="stat-label">Max Group Difference</div></div>';
+        document.getElementById('stats-row').innerHTML = html;
+
+        // Group columns
+        var numGroups = parseInt(document.getElementById('cfg-num-groups').value) || 2;
+        var groupsHtml = '<div class="groups-grid" style="grid-template-columns:repeat(' + numGroups + ',1fr);">';
+
+        // Build friend pids set for each camper (for dots)
+        var friendPids = {};
+        (previewResults.friend_matches || []).forEach(function(fm) {
+            if (!friendPids[fm.camper_pid]) friendPids[fm.camper_pid] = [];
+            friendPids[fm.camper_pid].push(fm.matched_pid);
+        });
+
+        for (var gn = 1; gn <= numGroups; gn++) {
+            var members = [];
+            for (var pid in weekData) {
+                if (weekData[pid] === gn) members.push(pid);
+            }
+            members.sort(function(a, b) {
+                var ca = campers[a] || {}, cb = campers[b] || {};
+                var na = (ca.last_name || '') + (ca.first_name || '');
+                var nb = (cb.last_name || '') + (cb.first_name || '');
+                return na.localeCompare(nb);
+            });
+
+            var gs = (weekStats.groups || {})[String(gn)] || {};
+            groupsHtml += '<div class="group-column" data-group="' + gn + '" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,' + gn + ')">';
+            groupsHtml += '<div class="group-header"><h4>Group ' + gn + '</h4>';
+            groupsHtml += '<div class="group-stats"><span class="gs-count">' + (gs.count || members.length) + '</span>';
+            groupsHtml += '<span class="gs-gender"><span style="color:#2563EB;">' + (gs.male || 0) + 'M</span> / <span style="color:#DB2777;">' + (gs.female || 0) + 'F</span></span>';
+            groupsHtml += '</div></div>';
+
+            members.forEach(function(pid) {
+                var c = campers[pid] || {};
+                var genderCls = (c.gender || '').startsWith('M') ? 'male' : (c.gender || '').startsWith('F') ? 'female' : '';
+                var genderLetter = (c.gender || '').startsWith('M') ? 'M' : (c.gender || '').startsWith('F') ? 'F' : '?';
+
+                // Friend dot: check if this camper has friends and if they're in same group
+                var dotCls = 'none';
+                if (friendPids[pid] && friendPids[pid].length > 0) {
+                    var allSatisfied = true;
+                    friendPids[pid].forEach(function(fpid) {
+                        if (weekData[fpid] !== undefined && weekData[fpid] !== gn) allSatisfied = false;
+                    });
+                    dotCls = allSatisfied ? 'satisfied' : 'unsatisfied';
+                }
+
+                groupsHtml += '<div class="camper-card" draggable="true" data-pid="' + pid + '" ondragstart="onDragStart(event,\'' + pid + '\')" ondragend="onDragEnd(event)">';
+                groupsHtml += '<div class="camper-gender ' + genderCls + '">' + genderLetter + '</div>';
+                groupsHtml += '<div class="camper-name">' + esc(c.last_name) + ', ' + esc(c.first_name) + '</div>';
+                groupsHtml += '<div class="camper-grade">' + esc(c.grade || '-') + '</div>';
+                groupsHtml += '<div class="friend-dot ' + dotCls + '" title="' + (dotCls === 'satisfied' ? 'Friend request satisfied' : dotCls === 'unsatisfied' ? 'Friend not in same group' : '') + '"></div>';
+                groupsHtml += '</div>';
+            });
+
+            groupsHtml += '</div>';
+        }
+        groupsHtml += '</div>';
+        document.getElementById('groups-container').innerHTML = groupsHtml;
+    }
+
+    /* ========== Drag and Drop ========== */
+    function onDragStart(e, pid) {
+        dragPid = pid;
+        e.target.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', pid);
+    }
+
+    function onDragEnd(e) {
+        e.target.classList.remove('dragging');
+    }
+
+    function onDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    }
+
+    function onDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+
+    function onDrop(e, targetGroup) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        if (!dragPid) return;
+
+        var weekStr = String(currentWeek);
+        var oldGroup = previewResults.results[weekStr][dragPid];
+        if (oldGroup === targetGroup) { dragPid = null; return; }
+
+        // Update the assignment
+        previewResults.results[weekStr][dragPid] = targetGroup;
+
+        // Recalculate stats
+        recalcWeekStats(currentWeek);
+
+        // Re-render
+        renderWeekView(currentWeek);
+        renderWeekTabs();
+        updateFriendSameGroup();
+
+        dragPid = null;
+    }
+
+    function recalcWeekStats(week) {
+        var weekStr = String(week);
+        var assignments = previewResults.results[weekStr];
+        if (!assignments) return;
+
+        var campers = previewResults.campers;
+        var numGroups = parseInt(document.getElementById('cfg-num-groups').value) || 2;
+        var groups = {};
+
+        for (var pid in assignments) {
+            var gn = String(assignments[pid]);
+            if (!groups[gn]) groups[gn] = { count: 0, male: 0, female: 0, grades: {} };
+            groups[gn].count++;
+            var c = campers[pid] || {};
+            if ((c.gender || '').startsWith('M')) groups[gn].male++;
+            else if ((c.gender || '').startsWith('F')) groups[gn].female++;
+            var gr = c.grade || '-';
+            groups[gn].grades[gr] = (groups[gn].grades[gr] || 0) + 1;
+        }
+
+        // Friend match rate
+        var total = 0, satisfied = 0;
+        var friendPids = {};
+        (previewResults.friend_matches || []).forEach(function(fm) {
+            if (!friendPids[fm.camper_pid]) friendPids[fm.camper_pid] = [];
+            friendPids[fm.camper_pid].push(fm.matched_pid);
+        });
+        for (var pid in assignments) {
+            if (friendPids[pid]) {
+                friendPids[pid].forEach(function(fpid) {
+                    if (assignments[fpid] !== undefined) {
+                        total++;
+                        if (assignments[fpid] === assignments[pid]) satisfied++;
+                    }
+                });
+            }
+        }
+
+        var sizes = Object.keys(groups).map(function(k) { return groups[k].count; });
+        previewResults.stats[weekStr] = {
+            total: Object.keys(assignments).length,
+            groups: groups,
+            friend_requests_total: total,
+            friend_requests_satisfied: satisfied,
+            friend_match_rate: total > 0 ? Math.round(satisfied / total * 100) / 100 : 1.0,
+            max_difference: sizes.length > 0 ? Math.max.apply(null, sizes) - Math.min.apply(null, sizes) : 0,
+        };
+    }
+
+    /* ========== Friend Matches Table ========== */
+    function renderFriendMatches() {
+        var matches = previewResults.friend_matches || [];
+        if (matches.length === 0) {
+            hide('friend-panel');
+            return;
+        }
+        show('friend-panel');
+
+        var tbody = document.getElementById('friend-tbody');
+        var weekData = previewResults.results[String(currentWeek)] || {};
+        var html = '';
+        matches.forEach(function(fm) {
+            var sameGroup = weekData[fm.camper_pid] !== undefined && weekData[fm.matched_pid] !== undefined && weekData[fm.camper_pid] === weekData[fm.matched_pid];
+            var confPct = Math.round(fm.confidence * 100);
+            html += '<tr>';
+            html += '<td>' + esc(fm.camper_name) + '</td>';
+            html += '<td>' + esc(fm.requested) + '</td>';
+            html += '<td>' + esc(fm.matched_to) + '</td>';
+            html += '<td>' + confPct + '% <span class="confidence-bar"><span class="confidence-fill" style="width:' + confPct + '%;"></span></span></td>';
+            html += '<td><span class="' + (sameGroup ? 'badge-yes' : 'badge-no') + '">' + (sameGroup ? 'Yes' : 'No') + '</span></td>';
+            html += '</tr>';
+        });
+        tbody.innerHTML = html;
+    }
+
+    function updateFriendSameGroup() {
+        renderFriendMatches();
+    }
+
+    /* ========== Apply Assignments ========== */
+    function applyAssignments() {
+        if (!confirm('Apply these group assignments to ALL weeks?\n\nThis will overwrite existing group assignments for ' + currentProgram + '.')) return;
+
+        fetch('/api/group-division/apply/' + encodeURIComponent(currentProgram), {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ assignments: previewResults.results })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.success) {
+                showToast('Assignments applied! ' + data.assignments_created + ' assignments across ' + data.weeks_updated + ' weeks.');
+            } else {
+                showToast(data.error || 'Failed to apply', true);
+            }
+        }).catch(function(err) {
+            showToast('Error: ' + err.message, true);
+        });
+    }
+    </script>
+</body>
+</html>
