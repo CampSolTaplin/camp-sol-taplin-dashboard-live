@@ -6080,12 +6080,14 @@ def api_group_division_grades(program):
     participants = {}
     if api_cache.get('data') and api_cache['data'].get('participants'):
         participants = api_cache['data']['participants'].get(program, {})
-    # Collect all person IDs and per-week counts
+    # Collect all person IDs and per-week counts (Enrolled only, exclude WaitList/Applied)
     all_pids = set()
     week_counts = {}
     for week_str, camper_list in participants.items():
         week_pids = set()
         for c in camper_list:
+            if c.get('status_id', 2) != 2:
+                continue  # Skip non-Enrolled (WaitList, Applied)
             pid = str(c.get('person_id', c.get('PersonID', '')))
             if pid:
                 all_pids.add(pid)
@@ -6222,13 +6224,15 @@ def _run_group_division(program, config_dict):
     base_grade_rules = config_dict.get('grade_rules', {})
     week_overrides = config_dict.get('week_overrides', {})
 
-    # Collect all person IDs across all weeks
+    # Collect all person IDs across all weeks (Enrolled only, exclude WaitList/Applied)
     all_pids = set()
     week_pids = {}  # {week_int: set of pids}
     for week_str, camper_list in participants.items():
         week = int(week_str)
         week_pids[week] = set()
         for c in camper_list:
+            if c.get('status_id', 2) != 2:
+                continue  # Skip non-Enrolled (WaitList, Applied)
             pid = str(c.get('person_id', c.get('PersonID', '')))
             if pid:
                 all_pids.add(pid)

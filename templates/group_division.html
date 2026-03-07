@@ -159,12 +159,57 @@
         .toast.show { opacity: 1; }
         .toast.error { background: #DC2626; }
 
-        /* Responsive */
-        @media (max-width: 768px) {
+        /* Responsive — Tablet */
+        @media (max-width: 900px) {
             .form-grid-4 { grid-template-columns: repeat(2, 1fr); }
             .groups-grid { grid-template-columns: 1fr !important; }
             .stats-row { grid-template-columns: repeat(2, 1fr); }
-            .program-select { min-width: 180px; }
+        }
+
+        /* Responsive — Mobile */
+        @media (max-width: 768px) {
+            .content { padding: 60px 12px 16px 12px !important; }
+            .admin-container { max-width: 100%; }
+            .page-header { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 16px; }
+            .page-title { font-size: 22px; }
+            .page-subtitle { font-size: 13px; }
+            .program-select { min-width: unset; width: 100%; }
+            .btn-back { margin-bottom: 10px; }
+            .admin-section { padding: 14px; margin-bottom: 14px; border-radius: 10px; }
+            .admin-section h3 { font-size: 15px; flex-direction: column; align-items: flex-start; gap: 6px; }
+            .form-grid-4 { grid-template-columns: 1fr 1fr; }
+            .form-grid-3 { grid-template-columns: 1fr; }
+            .groups-grid { grid-template-columns: 1fr !important; }
+            .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .stat-card { padding: 10px 14px; }
+            .stat-card .stat-value { font-size: 20px; }
+            .week-tabs { gap: 3px; padding: 3px; }
+            .week-tab { padding: 6px 10px; font-size: 12px; }
+            .group-column { padding: 12px; }
+            .group-header h4 { font-size: 14px; }
+            .friend-table { font-size: 12px; }
+            .friend-table th, .friend-table td { padding: 6px 6px; }
+            .friend-filters { gap: 4px; }
+            .friend-filter-btn { padding: 5px 10px; font-size: 11px; }
+            .camper-popup { min-width: unset; max-width: 92vw; width: 92vw; padding: 16px; margin: 0 auto; }
+            .camper-popup h4 { font-size: 16px; }
+            .toast { bottom: 16px; right: 16px; left: 16px; text-align: center; }
+            .week-cfg-tabs { gap: 3px; }
+            .week-cfg-tab { padding: 4px 9px; font-size: 11px; }
+            .week-cfg-form { padding: 12px; }
+            .week-cfg-form .wk-label { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .grade-chips { gap: 4px; }
+            .grade-chip { padding: 3px 8px; font-size: 12px; }
+            #total-campers-badge { display: flex !important; flex-wrap: wrap; gap: 3px; }
+            div[style*="justify-content:flex-end"] { flex-wrap: wrap; }
+        }
+
+        /* Responsive — Small Mobile */
+        @media (max-width: 420px) {
+            .content { padding: 60px 8px 10px 8px !important; }
+            .form-grid-4 { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: 1fr; }
+            .page-title { font-size: 20px; }
         }
     </style>
 </head>
